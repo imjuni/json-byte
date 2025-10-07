@@ -1,6 +1,9 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+/* eslint-disable import-x/no-default-export */
+import path from 'path';
+
+import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -8,10 +11,14 @@ export default defineConfig({
     tailwindcss(),
     react({
       babel: {
-        plugins: [
-          ['babel-plugin-react-compiler']
-        ],
+        plugins: [['babel-plugin-react-compiler']],
       },
+      exclude: ['**/*.test.ts', '**/*.test.tsx', '**/*.spect.ts', '**/*.spec.tsx'],
     }),
   ],
-})
+  resolve: {
+    alias: {
+      '#': path.resolve(__dirname, './src'),
+    },
+  },
+});
