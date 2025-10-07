@@ -176,7 +176,9 @@ function buildNodes(
       id: `${parent.id}-${currentNode.id}`,
       label: edgeLabel,
       source: parent.id,
+      sourceHandle: `source-${key}`, // Connect from specific complex field handle
       target: currentNode.id,
+      targetHandle: 'target-top', // Connect to the top target handle
       data: {
         parent,
         child: currentNode,

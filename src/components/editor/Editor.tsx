@@ -14,6 +14,22 @@ export const Editor = () => {
   const { content, language, setContent, setDocument } = useEditorStore();
   const { direction, setNodesAndEdges } = useXyFlowStore();
 
+  const handleEditorConent = useCallback(
+    (value?: string) => {
+      const editorContent = getOrDefault(value, '{}');
+      const parsedContent = safeParse(editorContent);
+
+      setContent(editorContent);
+      setDocument(parsedContent);
+
+      if (!(parsedContent instanceof Error)) {
+        const { nodes, edges } = createXyFlowNodesWithEdges(parsedContent, direction);
+        setNodesAndEdges(nodes, edges);
+      }
+    },
+    [direction, setNodesAndEdges, setContent, setDocument],
+  );
+
   const handleEditorWillMount: BeforeMount = useCallback(
     (monaco) => {
       if (language === 'jsonc') {
@@ -26,8 +42,10 @@ export const Editor = () => {
           enableSchemaRequest: false,
         });
       }
+
+      handleEditorConent(content);
     },
-    [language],
+    [content, language, handleEditorConent],
   );
 
   return (
@@ -38,16 +56,7 @@ export const Editor = () => {
       value={content}
       width="100%"
       onChange={(value) => {
-        const editorContent = getOrDefault(value, '{}');
-        const parsedContent = safeParse(editorContent);
-
-        setContent(editorContent);
-        setDocument(parsedContent);
-
-        if (!(parsedContent instanceof Error)) {
-          const { nodes, edges } = createXyFlowNodesWithEdges(parsedContent, direction);
-          setNodesAndEdges(nodes, edges);
-        }
+        handleEditorConent(value);
       }}
     />
   );

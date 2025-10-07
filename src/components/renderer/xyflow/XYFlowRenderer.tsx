@@ -1,4 +1,4 @@
-import { ReactFlow } from '@xyflow/react';
+import { Controls, ReactFlow } from '@xyflow/react';
 
 import { ObjectNode } from '#/components/renderer/xyflow/ObjectNode';
 import { CE_XYFLOW_NODE_TYPE } from '#/lib/xyflow/const-enum/CE_XYFLOW_NODE_TYPE';
@@ -15,6 +15,8 @@ export const XYFlowRenderer = () => {
       nodeTypes={{
         [CE_XYFLOW_NODE_TYPE.PLAIN_OBJECT_NODE]: ObjectNode,
       }}
-    />
+    >
+      <Controls />
+    </ReactFlow>
   );
 };

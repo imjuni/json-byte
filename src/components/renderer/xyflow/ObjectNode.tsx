@@ -36,12 +36,12 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
           </div>
         )}
 
-        {/* Complex fields */}
+        {/* Complex fields with individual handles */}
         {complexFields.length > 0 && (
           <div className="text-sm space-y-1 mt-2 pt-2 border-t border-gray-200">
             {complexFields.map((field) => (
               <React.Fragment key={field.key}>
-                <div className="flex px-2">
+                <div className="flex px-2 relative">
                   <div className="flex gap-2">
                     <span className="font-medium">▪</span>
                     <span className="font-medium text-blue-800">{field.key}:</span>
@@ -49,6 +49,13 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
                       {field.type === 'array' ? `[${field.size} items]` : `{${field.size} keys}`}
                     </span>
                   </div>
+                  {/* Individual source handle for each complex field */}
+                  <Handle
+                    className="!w-3 !h-3 !bg-teal-500 !right-[-6px]"
+                    id={`source-${field.key}`}
+                    position={Position.Right}
+                    type="source"
+                  />
                 </div>
               </React.Fragment>
             ))}
@@ -57,8 +64,10 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
         <div className="h-[10px]" />
       </div>
 
-      <Handle className="w-16 !bg-teal-500" position={Position.Top} type="target" />
-      <Handle className="w-16 !bg-teal-500" position={Position.Bottom} type="source" />
+      {/* Single target handle at the top for incoming connections */}
+      {label !== 'root' && (
+        <Handle className="!w-4 !h-4 !bg-teal-500" id="target-top" position={Position.Left} type="target" />
+      )}
     </div>
   );
 };

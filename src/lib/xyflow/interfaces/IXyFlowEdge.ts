@@ -10,8 +10,14 @@ export interface IXyFlowEdge {
   /** Source node id */
   source: string;
 
+  /** Source handle id - complex field의 key를 사용 */
+  sourceHandle?: string;
+
   /** Target node id */
   target: string;
+
+  /** Target handle id - 고정값 "target-top" */
+  targetHandle?: string;
 
   /** 데이터 */
   data: {

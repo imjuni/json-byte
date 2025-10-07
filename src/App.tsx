@@ -23,6 +23,7 @@ export const App = () => (
         </div>
         <div className="flex flex-7 h-full">
           <XYFlowRenderer />
+
           {/* <ObjectNode
             node={{
               id: '$.phoneNumbers[0]',
