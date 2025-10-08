@@ -105,11 +105,11 @@ function buildNodes(
 
   nodes.push(rootNode);
 
-  // Process stack iteratively
+  // Process queue iteratively (FIFO to maintain correct order)
   let iterations = 0;
   // eslint-disable-next-line no-plusplus
   for (; stack.length > 0 && iterations < MAX_ITERATIONS; iterations++) {
-    const task = stack.pop();
+    const task = stack.shift(); // Use shift() instead of pop() for FIFO order
     if (!task) break;
 
     const { key, value, parent, depth } = task;

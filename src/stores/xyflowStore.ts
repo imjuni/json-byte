@@ -6,7 +6,7 @@ export const useXyFlowStore = create<IXyFlowStore>((set) => ({
   // Initial state
   nodes: [],
   edges: [],
-  direction: 'TB',
+  direction: 'LR',
 
   // Actions
   setNodes: (nodes) => {
@@ -26,6 +26,6 @@ export const useXyFlowStore = create<IXyFlowStore>((set) => ({
   },
 
   reset: () => {
-    set({ nodes: [], edges: [], direction: 'TB' });
+    set({ nodes: [], edges: [], direction: 'LR' });
   },
 }));

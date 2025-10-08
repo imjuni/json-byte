@@ -28,6 +28,18 @@ export interface IXyFlowNode {
   /** XYFlow position */
   position: { x: number; y: number };
 
+  /** Optional width (can be set manually or by measured) */
+  width?: number;
+
+  /** Optional height (can be set manually or by measured) */
+  height?: number;
+
+  /** React Flow measured dimensions (available after rendering) */
+  measured?: {
+    width: number;
+    height: number;
+  };
+
   data: {
     /** 현재 key 값, XyFlow에서 이름이 된다 */
     label: string;
