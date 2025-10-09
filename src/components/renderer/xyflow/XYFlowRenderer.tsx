@@ -1,17 +1,22 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-import { Controls, ReactFlow, ReactFlowProvider, useNodesInitialized } from '@xyflow/react';
+import { Controls, MiniMap, ReactFlow, ReactFlowProvider, useNodesInitialized, useReactFlow } from '@xyflow/react';
 
 import { ObjectNode } from '#/components/renderer/xyflow/ObjectNode';
 import { CE_XYFLOW_NODE_TYPE } from '#/lib/xyflow/const-enum/CE_XYFLOW_NODE_TYPE';
 import { layoutNodes } from '#/lib/xyflow/layoutNodes';
 import { useXyFlowStore } from '#/stores/xyflowStore';
 
+import type { NodeChange } from '@xyflow/react';
+
+import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
+
 // Inner component that uses React Flow hooks
 const FlowContent = () => {
   const { nodes, edges, direction, setNodes } = useXyFlowStore();
   const nodesInitialized = useNodesInitialized();
   const hasRelayoutedRef = useRef(false);
+  const { fitView } = useReactFlow();
 
   // Trigger re-layout when nodes are measured
   useEffect(() => {
@@ -24,9 +29,14 @@ const FlowContent = () => {
         const layoutedNodes = layoutNodes(nodes, edges, direction);
         setNodes(layoutedNodes);
         hasRelayoutedRef.current = true;
+
+        // Call fitView after re-layout
+        setTimeout(() => {
+          fitView({ padding: 0.2, duration: 200 });
+        }, 0);
       }
     }
-  }, [nodesInitialized, nodes, edges, direction, setNodes]);
+  }, [nodesInitialized, nodes, edges, direction, setNodes, fitView]);
 
   // Reset re-layout flag when edges change (new document loaded)
   useEffect(() => {
@@ -34,24 +44,37 @@ const FlowContent = () => {
   }, [edges.length]);
 
   const handleNodesChange = useCallback(
-    (changes: any) => {
+    (changes: NodeChange<IXyFlowNode>[]) => {
       // Handle node changes from React Flow
       const updatedNodes = nodes.map((node) => {
-        const change = changes.find((c: any) => c.id === node.id);
-        if (change?.type === 'dimensions' && change.dimensions) {
+        const finded = changes.find((change: NodeChange<IXyFlowNode>) => {
+          if ('id' in change) {
+            return change.id === node.id;
+          }
+
+          return false;
+        });
+
+        if (finded?.type === 'dimensions' && finded.dimensions) {
           return {
             ...node,
             measured: {
-              width: change.dimensions.width,
-              height: change.dimensions.height,
+              width: finded.dimensions.width,
+              height: finded.dimensions.height,
             },
           };
         }
         return node;
       });
+
       setNodes(updatedNodes);
+
+      // Call fitView after re-layout
+      setTimeout(() => {
+        fitView({ padding: 0.2, duration: 200 });
+      }, 0);
     },
-    [nodes, setNodes],
+    [nodes, setNodes, fitView],
   );
 
   return (
@@ -65,6 +88,7 @@ const FlowContent = () => {
       }}
     >
       <Controls className="!bottom-[50px]" showInteractive={false} />
+      <MiniMap className="!bottom-[50px]" />
     </ReactFlow>
   );
 };

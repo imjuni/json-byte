@@ -10,21 +10,16 @@ import { getOrDefault } from '#/lib/getOrDefault';
 import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
 
 const variants = tv({
-  variants: {
-    'handle-position': {
-      left: '!right-[-2px]',
-      right: '!right-[-6px]',
-    },
-  },
   slots: {
+    heading: 'text-gray-700 px-4 font-bold mb-2',
     container: 'text-sm space-y-1',
-    line: 'flex px-2 gap-2',
-    heading: 'font-medium text-gray-600',
+    line: 'flex px-4 gap-2',
+    fieldHeading: 'font-medium text-gray-600',
     hanlde: '!w-3 !h-3 !bg-indigo-500',
   },
 });
 
-const { container, line, heading, hanlde } = variants();
+const { container, line, fieldHeading, heading, hanlde } = variants();
 
 const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
   const label = getOrDefault(data?.label, '');
@@ -35,7 +30,7 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
     <div className="shadow-md h-fit rounded-md bg-white border-2 border-stone-400">
       <div className="h-[10px]" />
       <div className="flex flex-col">
-        <div className="text-gray-700 px-2 font-bold mb-2">{label}</div>
+        <div className={heading()}>{label}</div>
 
         {/* Primitive fields */}
         {primitiveFields.length > 0 && (
@@ -44,7 +39,7 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
               <React.Fragment key={field.key}>
                 <div className={line()}>
                   <TypeDisc type={field.type} />
-                  <span className={heading()}>{field.key}:</span>
+                  <span className={fieldHeading()}>{field.key}:</span>
                   <FieldValue type={field.type} value={field.value} />
                 </div>
 
@@ -63,22 +58,22 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
 
             {complexFields.map((field, index) => (
               <React.Fragment key={field.key}>
-                <div className={line()}>
+                <div className={line({ class: 'relative' })}>
                   <TypeDisc type={field.type} />
-                  <span className={heading()}>{field.key}:</span>
+                  <span className={fieldHeading()}>{field.key}:</span>
                   <FieldValue
                     type={field.type}
                     value={field.type === 'array' ? `[${field.size} items]` : `{${field.size} keys}`}
                   />
-                </div>
 
-                {/* Individual source handle for each complex field */}
-                <Handle
-                  className={hanlde({ 'handle-position': 'right' })}
-                  id={`source-${field.key}`}
-                  position={Position.Right}
-                  type="source"
-                />
+                  {/* Individual source handle for each complex field */}
+                  <Handle
+                    className={hanlde({ class: '!right-[-6px]' })}
+                    id={`source-${field.key}`}
+                    position={Position.Right}
+                    type="source"
+                  />
+                </div>
 
                 {index < complexFields.length - 1 && <hr />}
               </React.Fragment>
@@ -90,12 +85,7 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
 
       {/* Single target handle at the top for incoming connections */}
       {label !== 'root' && (
-        <Handle
-          className={hanlde({ 'handle-position': 'left' })}
-          id="target-top"
-          position={Position.Left}
-          type="target"
-        />
+        <Handle className={hanlde({ class: '!right-[-2px]' })} id="target-top" position={Position.Left} type="target" />
       )}
     </div>
   );
