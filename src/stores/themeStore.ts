@@ -1,13 +1,8 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-export type TTheme = 'light' | 'dark';
-
-interface IThemeStore {
-  theme: TTheme;
-  toggleTheme: () => void;
-  setTheme: (theme: TTheme) => void;
-}
+import type { IThemeStore } from '#/contracts/theme/IThemeStore';
+import type { TTheme } from '#/contracts/theme/TTheme';
 
 const applyTheme = (theme: TTheme) => {
   if (theme === 'dark') {

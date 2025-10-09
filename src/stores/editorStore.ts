@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-
-import type { JsonValue } from 'type-fest';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { TEditorLanguage } from '#/contracts/editors/editor';
 import type { IEditorStore } from '#/contracts/editors/IEditorStore';
@@ -27,26 +26,29 @@ const example = {
   ],
 };
 
-export const useEditorStore = create<IEditorStore>((set) => ({
-  // Initial state
-  content: JSON.stringify(example, undefined, 2),
-  language: 'json',
-  document: {},
+export const useEditorStore = create<IEditorStore>()(
+  persist(
+    (set) => ({
+      // Initial state
+      content: JSON.stringify(example, undefined, 2),
+      language: 'json',
 
-  // Actions
-  setContent: (content: string) => {
-    set({ content });
-  },
+      // Actions
+      setContent: (content: string) => {
+        set({ content });
+      },
 
-  setDocument: (document: JsonValue | Error) => {
-    set({ document });
-  },
+      setLanguage: (language: TEditorLanguage) => {
+        set({ language });
+      },
 
-  setLanguage: (language: TEditorLanguage) => {
-    set({ language });
-  },
-
-  reset: () => {
-    set({ content: '{}', language: 'json' });
-  },
-}));
+      reset: () => {
+        set({ content: '{}', language: 'json' });
+      },
+    }),
+    {
+      name: 'json-byte-editor',
+      storage: createJSONStorage(() => localStorage),
+    },
+  ),
+);

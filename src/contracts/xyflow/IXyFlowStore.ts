@@ -1,7 +1,6 @@
-import type { TLayoutDirection } from '#/lib/xyflow/layoutNodes';
-
 import type { IXyFlowEdge } from '#/lib/xyflow/interfaces/IXyFlowEdge';
 import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
+import type { TLayoutDirection } from '#/lib/xyflow/layoutNodes';
 
 export interface IXyFlowStore {
   // State

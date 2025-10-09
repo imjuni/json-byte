@@ -7,13 +7,13 @@ import { debounceTime, distinctUntilChanged, filter, tap } from 'rxjs/operators'
 
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
-
-import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
+import { useFuseStore } from '#/stores/fuseStore';
 
 export const SearchPanel = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
-  const { getNodes, setCenter, getZoom } = useReactFlow();
+  const { setCenter, getZoom } = useReactFlow();
+  const { fuse } = useFuseStore();
 
   // Create Subject once using useMemo
   const searchTerm$ = useMemo(() => new Subject<string>(), []);
@@ -24,22 +24,18 @@ export const SearchPanel = () => {
         return;
       }
 
-      const nodes = getNodes() as IXyFlowNode[];
-      const foundNode = nodes.find(
-        (node) =>
-          node.data.label.toLowerCase().includes(term.toLowerCase()) ||
-          node.id.toLowerCase().includes(term.toLowerCase()),
-      );
+      const foundNodes = fuse.search(term);
+      const foundNode = foundNodes.at(0);
 
       if (foundNode) {
-        const x = foundNode.position.x + (foundNode.measured?.width ?? 0) / 2;
-        const y = foundNode.position.y + (foundNode.measured?.height ?? 0) / 2;
+        const x = foundNode.item.position.x + (foundNode.item.measured?.width ?? 0) / 2;
+        const y = foundNode.item.position.y + (foundNode.item.measured?.height ?? 0) / 2;
         const currentZoom = getZoom();
 
         setCenter(x, y, { zoom: currentZoom, duration: 400 });
       }
     },
-    [getNodes, setCenter, getZoom],
+    [fuse, setCenter, getZoom],
   );
 
   // Setup RxJS pipe with operators

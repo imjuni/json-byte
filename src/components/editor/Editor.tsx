@@ -1,33 +1,39 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import MonacoEditor from '@monaco-editor/react';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, filter, tap } from 'rxjs/operators';
 
 import { getOrDefault } from '#/lib/getOrDefault';
-import { safeParse } from '#/lib/json/safeParse';
+import { safeYamlParse } from '#/lib/json/safeYamlParse';
 import { createXyFlowNodesWithEdges } from '#/lib/xyflow/createXyFlowNodesWithEdges';
 import { useEditorStore } from '#/stores/editorStore';
+import { createFuse, useFuseStore } from '#/stores/fuseStore';
 import { useXyFlowStore } from '#/stores/xyflowStore';
 
 import type { BeforeMount } from '@monaco-editor/react';
 
+import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
+
 export const Editor = () => {
-  const { content, language, setContent, setDocument } = useEditorStore();
+  const { content, language, setContent } = useEditorStore();
   const { direction, setNodesAndEdges } = useXyFlowStore();
+  const { setFuse } = useFuseStore();
 
-  const handleEditorConent = useCallback(
-    (value?: string) => {
-      const editorContent = getOrDefault(value, '{}');
-      const parsedContent = safeParse(editorContent);
+  // Create Subject once using useMemo
+  const content$ = useMemo(() => new Subject<string | undefined | null>(), []);
 
-      setContent(editorContent);
-      setDocument(parsedContent);
-
-      if (!(parsedContent instanceof Error)) {
-        const { nodes, edges } = createXyFlowNodesWithEdges(parsedContent, direction);
+  const handleBuildXyFlow = useCallback(
+    (value: ReturnType<typeof safeYamlParse>): IXyFlowNode[] => {
+      if (!(value instanceof Error)) {
+        const { nodes, edges } = createXyFlowNodesWithEdges(value, direction);
         setNodesAndEdges(nodes, edges);
+        return nodes;
       }
+
+      return [];
     },
-    [direction, setNodesAndEdges, setContent, setDocument],
+    [direction, setNodesAndEdges],
   );
 
   const handleEditorWillMount: BeforeMount = useCallback(
@@ -43,10 +49,30 @@ export const Editor = () => {
         });
       }
 
-      handleEditorConent(content);
+      const nodes = handleBuildXyFlow(safeYamlParse(content));
+      setFuse(createFuse(nodes));
     },
-    [content, language, handleEditorConent],
+    [language, content, handleBuildXyFlow, setFuse],
   );
+
+  // Setup RxJS pipe with operators
+  useEffect(() => {
+    const subscription = content$
+      .pipe(
+        distinctUntilChanged(), // Only emit when value changes
+        filter((value) => value != null),
+        debounceTime(500), // Wait 0.5 second after last input
+        tap((value) => {
+          const nodes = handleBuildXyFlow(safeYamlParse(value));
+          setFuse(createFuse(nodes));
+        }), // Side effect: perform search
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [content$, handleBuildXyFlow, setFuse]);
 
   return (
     <MonacoEditor
@@ -56,7 +82,8 @@ export const Editor = () => {
       value={content}
       width="100%"
       onChange={(value) => {
-        handleEditorConent(value);
+        setContent(getOrDefault(value, '{}'));
+        content$.next(value);
       }}
     />
   );

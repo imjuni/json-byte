@@ -75,14 +75,13 @@ const FlowContent = () => {
 
   const handleNodeClick = useCallback(
     (_event: React.MouseEvent, node: IXyFlowNode) => {
-      // eslint-disable-next-line no-console
-      console.log('Node clicked:', node.id, node);
-
       const x = node.position.x + (node.measured?.width ?? 0) / 2;
       const y = node.position.y + (node.measured?.height ?? 0) / 2;
       const currentZoom = getZoom();
 
-      setCenter(x, y, { zoom: currentZoom, duration: 400 });
+      const zoom = currentZoom > 0.8 ? currentZoom : 1;
+
+      setCenter(x, y, { zoom, duration: 400 });
     },
     [setCenter, getZoom],
   );
