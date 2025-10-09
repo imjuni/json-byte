@@ -18,14 +18,17 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dagre": "^0.8.5",
+    "jsonpath-plus": "^10.3.0",
     "lucide-react": "^0.544.0",
     "my-easy-fp": "^0.22.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "rxjs": "^7.8.2",
     "tailwind-merge": "^3.3.1",
     "tailwind-variants": "^3.1.1",
     "tailwindcss": "^4.1.14",
     "type-fest": "^5.0.1",
+    "zod": "^4.1.12",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

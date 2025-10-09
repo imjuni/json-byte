@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { Controls, MiniMap, ReactFlow, ReactFlowProvider, useNodesInitialized, useReactFlow } from '@xyflow/react';
 
 import { ObjectNode } from '#/components/renderer/xyflow/ObjectNode';
+import { SearchPanel } from '#/components/renderer/xyflow/SearchPanel';
 import { CE_XYFLOW_NODE_TYPE } from '#/lib/xyflow/const-enum/CE_XYFLOW_NODE_TYPE';
 import { layoutNodes } from '#/lib/xyflow/layoutNodes';
 import { useXyFlowStore } from '#/stores/xyflowStore';
@@ -16,7 +17,7 @@ const FlowContent = () => {
   const { nodes, edges, direction, setNodes } = useXyFlowStore();
   const nodesInitialized = useNodesInitialized();
   const hasRelayoutedRef = useRef(false);
-  const { fitView } = useReactFlow();
+  const { fitView, setCenter, getZoom } = useReactFlow();
 
   // Trigger re-layout when nodes are measured
   useEffect(() => {
@@ -68,28 +69,41 @@ const FlowContent = () => {
       });
 
       setNodes(updatedNodes);
-
-      // Call fitView after re-layout
-      setTimeout(() => {
-        fitView({ padding: 0.2, duration: 200 });
-      }, 0);
     },
-    [nodes, setNodes, fitView],
+    [nodes, setNodes],
+  );
+
+  const handleNodeClick = useCallback(
+    (_event: React.MouseEvent, node: IXyFlowNode) => {
+      // eslint-disable-next-line no-console
+      console.log('Node clicked:', node.id, node);
+
+      const x = node.position.x + (node.measured?.width ?? 0) / 2;
+      const y = node.position.y + (node.measured?.height ?? 0) / 2;
+      const currentZoom = getZoom();
+
+      setCenter(x, y, { zoom: currentZoom, duration: 400 });
+    },
+    [setCenter, getZoom],
   );
 
   return (
     <ReactFlow
       className="bg-background"
-      fitView
       edges={edges}
       nodes={nodes}
+      onNodeClick={handleNodeClick}
       onNodesChange={handleNodesChange}
       nodeTypes={{
         [CE_XYFLOW_NODE_TYPE.PLAIN_OBJECT_NODE]: ObjectNode,
       }}
     >
-      <Controls className="!bottom-[50px]" showInteractive={false} />
+      <Controls
+        className="!bottom-[50px] [&_button]:!bg-card [&_button]:!border-border [&_button]:!text-foreground [&_button:hover]:!bg-accent"
+        showInteractive={false}
+      />
       <MiniMap className="!bottom-[50px] !bg-card !border-border" />
+      <SearchPanel />
     </ReactFlow>
   );
 };
