@@ -11,6 +11,7 @@ import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
 
 const variants = tv({
   slots: {
+    node: 'shadow-md h-fit rounded-md bg-card border-2 border-border dark:hover:border-blue-900 hover:border-blue-400',
     heading: 'text-foreground px-4 font-bold mb-2',
     container: 'text-sm space-y-1',
     line: 'flex px-4 gap-2',
@@ -35,7 +36,7 @@ const handleVariants = tv({
   },
 });
 
-const { container, line, fieldHeading, heading } = variants();
+const { container, line, fieldHeading, heading, node } = variants();
 
 const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
   const label = getOrDefault(data?.label, '');
@@ -43,7 +44,7 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
   const complexFields = getOrDefault(data?.complexFields, []);
 
   return (
-    <div className="shadow-md h-fit rounded-md bg-card border-2 border-border">
+    <div className={node()}>
       <div className="h-[10px]" />
       <div className="flex flex-col">
         <div className={heading()}>{label}</div>

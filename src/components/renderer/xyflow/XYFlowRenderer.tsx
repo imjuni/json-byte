@@ -93,6 +93,11 @@ const FlowContent = () => {
       nodes={nodes}
       onNodeClick={handleNodeClick}
       onNodesChange={handleNodesChange}
+      defaultEdgeOptions={{
+        labelStyle: { padding: '0 8px' },
+        labelBgPadding: [8, 4],
+        labelBgBorderRadius: 4,
+      }}
       nodeTypes={{
         [CE_XYFLOW_NODE_TYPE.PLAIN_OBJECT_NODE]: ObjectNode,
       }}

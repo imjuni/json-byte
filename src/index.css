@@ -137,9 +137,23 @@
 
 /* ReactFlow edge labels theme */
 .react-flow__edge-text {
-  @apply fill-foreground;
+  @apply fill-foreground transition-all duration-200;
 }
 
 .react-flow__edge-textbg {
-  @apply fill-card;
+  @apply fill-card transition-all duration-200;
+}
+
+/* Edge hover styles */
+.react-flow__edge:hover .react-flow__edge-path {
+  @apply stroke-blue-600 dark:stroke-blue-900;
+  stroke-width: 2;
+}
+
+.react-flow__edge:hover .react-flow__edge-text {
+  @apply fill-blue-600 dark:fill-blue-500 font-semibold;
+}
+
+.react-flow__edge:hover .react-flow__edge-textbg {
+  @apply fill-blue-50 dark:fill-blue-950;
 }
