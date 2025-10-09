@@ -134,3 +134,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ReactFlow edge labels theme */
+.react-flow__edge-text {
+  @apply fill-foreground;
+}
+
+.react-flow__edge-textbg {
+  @apply fill-card;
+}

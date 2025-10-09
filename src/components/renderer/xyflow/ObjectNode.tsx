@@ -15,11 +15,27 @@ const variants = tv({
     container: 'text-sm space-y-1',
     line: 'flex px-4 gap-2',
     fieldHeading: 'font-medium text-muted-foreground',
-    hanlde: '!w-3 !h-3 !bg-primary',
   },
 });
 
-const { container, line, fieldHeading, heading, hanlde } = variants();
+const handleVariants = tv({
+  base: '!w-3 !h-3',
+  variants: {
+    type: {
+      object: '!bg-amber-500 dark:!bg-amber-400',
+      array: '!bg-red-500 dark:!bg-red-400',
+    },
+    side: {
+      left: '!right-[-2px]',
+      right: '!right-[-2px]',
+    },
+  },
+  defaultVariants: {
+    type: 'object',
+  },
+});
+
+const { container, line, fieldHeading, heading } = variants();
 
 const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
   const label = getOrDefault(data?.label, '');
@@ -68,7 +84,7 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
 
                   {/* Individual source handle for each complex field */}
                   <Handle
-                    className={hanlde({ class: '!right-[-6px]' })}
+                    className={handleVariants({ type: field.type, side: 'right' })}
                     id={`source-${field.key}`}
                     position={Position.Right}
                     type="source"
@@ -85,7 +101,12 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
 
       {/* Single target handle at the top for incoming connections */}
       {label !== 'root' && (
-        <Handle className={hanlde({ class: '!right-[-2px]' })} id="target-top" position={Position.Left} type="target" />
+        <Handle
+          className={handleVariants({ type: data.nodeType, side: 'left' })}
+          id="target-top"
+          position={Position.Left}
+          type="target"
+        />
       )}
     </div>
   );
