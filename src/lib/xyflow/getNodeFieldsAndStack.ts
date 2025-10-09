@@ -4,8 +4,11 @@ import { isPrimitive } from '#/lib/tools/isPrimitive';
 
 import type { JsonValue } from 'type-fest';
 
+import type { TComplexTypeString } from '#/contracts/json/TComplexTypeString';
 import type { IBuildTask } from '#/lib/xyflow/interfaces/IBuildTask';
-import type { IComplexField, IPrimitiveField, IXyFlowNode, TNodeType } from '#/lib/xyflow/interfaces/IXyFlowNode';
+import type { IComplexField } from '#/lib/xyflow/interfaces/IComplexField';
+import type { IPrimitiveField } from '#/lib/xyflow/interfaces/IPrimitiveField';
+import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
 
 export function getNodeFieldsAndStack({
   entries,
@@ -37,7 +40,7 @@ export function getNodeFieldsAndStack({
     } else {
       const isFieldArrayIndex = /^\d+$/.test(fieldKey);
       const fieldPath = isFieldArrayIndex ? `${currentPath}[${fieldKey}]` : `${currentPath}.${fieldKey}`;
-      const fieldType: TNodeType = Array.isArray(fieldValue) ? 'array' : 'object';
+      const fieldType: TComplexTypeString = Array.isArray(fieldValue) ? 'array' : 'object';
 
       complexFields.push({
         key: fieldKey,

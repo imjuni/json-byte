@@ -6,9 +6,12 @@ import { layoutNodes } from '#/lib/xyflow/layoutNodes';
 
 import type { JsonValue } from 'type-fest';
 
+import type { TComplexTypeString } from '#/contracts/json/TComplexTypeString';
 import type { IBuildTask } from '#/lib/xyflow/interfaces/IBuildTask';
+import type { IComplexField } from '#/lib/xyflow/interfaces/IComplexField';
+import type { IPrimitiveField } from '#/lib/xyflow/interfaces/IPrimitiveField';
 import type { IXyFlowEdge } from '#/lib/xyflow/interfaces/IXyFlowEdge';
-import type { IComplexField, IPrimitiveField, IXyFlowNode, TNodeType } from '#/lib/xyflow/interfaces/IXyFlowNode';
+import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
 import type { TLayoutDirection } from '#/lib/xyflow/layoutNodes';
 
 export function buildXyFlowNodes(
@@ -25,7 +28,7 @@ export function buildXyFlowNodes(
   const stack: IBuildTask[] = [];
 
   // Determine root type
-  const rootType: TNodeType = Array.isArray(document) ? 'array' : 'object';
+  const rootType: TComplexTypeString = Array.isArray(document) ? 'array' : 'object';
   const rootEntries = Array.isArray(document)
     ? document.map((item, index) => ({ key: String(index), value: item }))
     : Object.entries(document).map(([key, value]) => ({ key, value }));
@@ -76,7 +79,8 @@ export function buildXyFlowNodes(
     // Create node for this complex value
     const isArrayIndex = /^\d+$/.test(key);
     const currentPath = isArrayIndex ? `${parent.id}[${key}]` : `${parent.id}.${key}`;
-    const nodeType: TNodeType = Array.isArray(value) ? 'array' : 'object';
+    const label = isArrayIndex ? `${parent.data.label}[${key}]` : key;
+    const nodeType: TComplexTypeString = Array.isArray(value) ? 'array' : 'object';
 
     const childEntries = Array.isArray(value)
       ? value.map((item, index) => ({ key: String(index), value: item }))
@@ -91,7 +95,7 @@ export function buildXyFlowNodes(
       position: { x: 0, y: 0 },
       type: CE_XYFLOW_NODE_TYPE.PLAIN_OBJECT_NODE,
       data: {
-        label: key,
+        label,
         origin: value,
         nodeType,
         primitiveFields,

@@ -4,7 +4,7 @@ import MonacoEditor from '@monaco-editor/react';
 
 import { getOrDefault } from '#/lib/getOrDefault';
 import { safeParse } from '#/lib/json/safeParse';
-import { createXyFlowNodesWithEdges } from '#/lib/xyflow/createXyFlowNodes';
+import { createXyFlowNodesWithEdges } from '#/lib/xyflow/createXyFlowNodesWithEdges';
 import { useEditorStore } from '#/stores/editorStore';
 import { useXyFlowStore } from '#/stores/xyflowStore';
 

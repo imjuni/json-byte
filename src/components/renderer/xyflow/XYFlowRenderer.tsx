@@ -59,10 +59,10 @@ const FlowContent = () => {
       fitView
       edges={edges}
       nodes={nodes}
+      onNodesChange={handleNodesChange}
       nodeTypes={{
         [CE_XYFLOW_NODE_TYPE.PLAIN_OBJECT_NODE]: ObjectNode,
       }}
-      onNodesChange={handleNodesChange}
     >
       <Controls />
     </ReactFlow>
@@ -70,10 +70,8 @@ const FlowContent = () => {
 };
 
 // Outer component with ReactFlowProvider
-export const XYFlowRenderer = () => {
-  return (
-    <ReactFlowProvider>
-      <FlowContent />
-    </ReactFlowProvider>
-  );
-};
+export const XYFlowRenderer = () => (
+  <ReactFlowProvider>
+    <FlowContent />
+  </ReactFlowProvider>
+);

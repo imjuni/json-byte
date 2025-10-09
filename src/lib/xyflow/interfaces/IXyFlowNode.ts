@@ -1,19 +1,8 @@
 import type { JsonValue } from 'type-fest';
 
-export type TNodeType = 'object' | 'array';
-
-export interface IPrimitiveField {
-  key: string;
-  value: JsonValue;
-  type: 'string' | 'number' | 'boolean' | 'null';
-}
-
-export interface IComplexField {
-  key: string;
-  type: 'object' | 'array';
-  size: number; // object의 경우 key 개수, array의 경우 item 개수
-  nodeId: string; // 연결된 노드의 id
-}
+import type { TComplexTypeString } from '#/contracts/json/TComplexTypeString';
+import type { IComplexField } from '#/lib/xyflow/interfaces/IComplexField';
+import type { IPrimitiveField } from '#/lib/xyflow/interfaces/IPrimitiveField';
 
 export interface IXyFlowNode {
   /** JSONPath를 사용한 id 값 */
@@ -48,7 +37,7 @@ export interface IXyFlowNode {
     origin: JsonValue;
 
     /** 노드의 데이터 타입 (object 또는 array만) */
-    nodeType: TNodeType;
+    nodeType: TComplexTypeString;
 
     /** Primitive 타입 필드들 (노드 내부에 표시) */
     primitiveFields: IPrimitiveField[];
