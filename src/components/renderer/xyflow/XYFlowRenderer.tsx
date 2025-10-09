@@ -79,6 +79,7 @@ const FlowContent = () => {
 
   return (
     <ReactFlow
+      className="bg-background"
       fitView
       edges={edges}
       nodes={nodes}
@@ -88,7 +89,7 @@ const FlowContent = () => {
       }}
     >
       <Controls className="!bottom-[50px]" showInteractive={false} />
-      <MiniMap className="!bottom-[50px]" />
+      <MiniMap className="!bottom-[50px] !bg-card !border-border" />
     </ReactFlow>
   );
 };

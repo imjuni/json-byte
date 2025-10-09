@@ -11,11 +11,11 @@ import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
 
 const variants = tv({
   slots: {
-    heading: 'text-gray-700 px-4 font-bold mb-2',
+    heading: 'text-foreground px-4 font-bold mb-2',
     container: 'text-sm space-y-1',
     line: 'flex px-4 gap-2',
-    fieldHeading: 'font-medium text-gray-600',
-    hanlde: '!w-3 !h-3 !bg-indigo-500',
+    fieldHeading: 'font-medium text-muted-foreground',
+    hanlde: '!w-3 !h-3 !bg-primary',
   },
 });
 
@@ -27,7 +27,7 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
   const complexFields = getOrDefault(data?.complexFields, []);
 
   return (
-    <div className="shadow-md h-fit rounded-md bg-white border-2 border-stone-400">
+    <div className="shadow-md h-fit rounded-md bg-card border-2 border-border">
       <div className="h-[10px]" />
       <div className="flex flex-col">
         <div className={heading()}>{label}</div>

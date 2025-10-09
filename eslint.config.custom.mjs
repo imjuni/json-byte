@@ -175,6 +175,7 @@ export const customIgnore = [
       'eslint.config.mjs',
       'eslint.config.custom.mjs',
       'vitest.config.mts',
+      './src/components/ui/*.tsx',
     ],
   },
 ];
