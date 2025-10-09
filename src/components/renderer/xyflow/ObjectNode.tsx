@@ -1,12 +1,30 @@
 import React, { memo } from 'react';
 
 import { Handle, Position } from '@xyflow/react';
+import { tv } from 'tailwind-variants';
 
 import { FieldValue } from '#/components/renderer/xyflow/FieldValue';
 import { TypeDisc } from '#/components/renderer/xyflow/TypeDisc';
 import { getOrDefault } from '#/lib/getOrDefault';
 
 import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
+
+const variants = tv({
+  variants: {
+    'handle-position': {
+      left: '!right-[-2px]',
+      right: '!right-[-6px]',
+    },
+  },
+  slots: {
+    container: 'text-sm space-y-1',
+    line: 'flex px-2 gap-2',
+    heading: 'font-medium text-gray-600',
+    hanlde: '!w-3 !h-3 !bg-indigo-500',
+  },
+});
+
+const { container, line, heading, hanlde } = variants();
 
 const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
   const label = getOrDefault(data?.label, '');
@@ -21,15 +39,13 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
 
         {/* Primitive fields */}
         {primitiveFields.length > 0 && (
-          <div className="text-sm space-y-1">
+          <div className={container()}>
             {primitiveFields.map((field, index) => (
               <React.Fragment key={field.key}>
-                <div className="flex px-2">
-                  <div className="flex gap-2">
-                    <TypeDisc type={field.type} />
-                    <span className="font-medium text-gray-600">{field.key}:</span>
-                    <FieldValue type={field.type} value={field.value} />
-                  </div>
+                <div className={line()}>
+                  <TypeDisc type={field.type} />
+                  <span className={heading()}>{field.key}:</span>
+                  <FieldValue type={field.type} value={field.value} />
                 </div>
 
                 {index < primitiveFields.length - 1 && <hr />}
@@ -42,29 +58,27 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
 
         {/* Complex fields with individual handles */}
         {complexFields.length > 0 && (
-          <div className="text-sm space-y-1">
+          <div className={container()}>
             {primitiveFields.length > 0 && <hr />}
 
             {complexFields.map((field, index) => (
               <React.Fragment key={field.key}>
-                <div className="flex px-2 relative">
-                  <div className="flex gap-2">
-                    <TypeDisc type={field.type} />
-                    <span className="font-medium text-gray-600">{field.key}:</span>
-                    <FieldValue
-                      type={field.type}
-                      value={field.type === 'array' ? `[${field.size} items]` : `{${field.size} keys}`}
-                    />
-                  </div>
-
-                  {/* Individual source handle for each complex field */}
-                  <Handle
-                    className="!w-3 !h-3 !bg-teal-500 !right-[-2px]"
-                    id={`source-${field.key}`}
-                    position={Position.Right}
-                    type="source"
+                <div className={line()}>
+                  <TypeDisc type={field.type} />
+                  <span className={heading()}>{field.key}:</span>
+                  <FieldValue
+                    type={field.type}
+                    value={field.type === 'array' ? `[${field.size} items]` : `{${field.size} keys}`}
                   />
                 </div>
+
+                {/* Individual source handle for each complex field */}
+                <Handle
+                  className={hanlde({ 'handle-position': 'right' })}
+                  id={`source-${field.key}`}
+                  position={Position.Right}
+                  type="source"
+                />
 
                 {index < complexFields.length - 1 && <hr />}
               </React.Fragment>
@@ -77,7 +91,7 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
       {/* Single target handle at the top for incoming connections */}
       {label !== 'root' && (
         <Handle
-          className="!w-3 !h-3 !bg-teal-500 !right-[-6px]"
+          className={hanlde({ 'handle-position': 'left' })}
           id="target-top"
           position={Position.Left}
           type="target"

@@ -9,6 +9,7 @@ const example = {
   firstName: 'John',
   lastName: 'doe',
   age: 26,
+  work: true,
   address: {
     streetAddress: 'naist street',
     city: 'Nara',

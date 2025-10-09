@@ -64,7 +64,7 @@ const FlowContent = () => {
         [CE_XYFLOW_NODE_TYPE.PLAIN_OBJECT_NODE]: ObjectNode,
       }}
     >
-      <Controls />
+      <Controls className="!bottom-[50px]" showInteractive={false} />
     </ReactFlow>
   );
 };
