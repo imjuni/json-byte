@@ -4,6 +4,7 @@ import MonacoEditor from '@monaco-editor/react';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, filter, tap } from 'rxjs/operators';
 
+import { replaceHref } from '#/components/editor/replaceHref';
 import { getOrDefault } from '#/lib/getOrDefault';
 import { safeYamlParse } from '#/lib/json/safeYamlParse';
 import { createXyFlowNodesWithEdges } from '#/lib/xyflow/createXyFlowNodesWithEdges';
@@ -36,6 +37,19 @@ export const Editor = () => {
     [direction, setNodesAndEdges],
   );
 
+  const handleUpdate = useCallback(
+    (editorContent: string) => {
+      const document = safeYamlParse(editorContent);
+      const nodes = handleBuildXyFlow(document);
+      setFuse(createFuse(nodes));
+
+      setTimeout(() => {
+        replaceHref(document);
+      }, 10);
+    },
+    [setFuse, handleBuildXyFlow],
+  );
+
   const handleEditorWillMount: BeforeMount = useCallback(
     (monaco) => {
       if (language === 'jsonc') {
@@ -49,10 +63,9 @@ export const Editor = () => {
         });
       }
 
-      const nodes = handleBuildXyFlow(safeYamlParse(content));
-      setFuse(createFuse(nodes));
+      handleUpdate(content);
     },
-    [language, content, handleBuildXyFlow, setFuse],
+    [language, content, handleUpdate],
   );
 
   // Setup RxJS pipe with operators
@@ -62,9 +75,8 @@ export const Editor = () => {
         distinctUntilChanged(), // Only emit when value changes
         filter((value) => value != null),
         debounceTime(500), // Wait 0.5 second after last input
-        tap((value) => {
-          const nodes = handleBuildXyFlow(safeYamlParse(value));
-          setFuse(createFuse(nodes));
+        tap((editorContent) => {
+          handleUpdate(editorContent);
         }), // Side effect: perform search
       )
       .subscribe();
@@ -72,7 +84,7 @@ export const Editor = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [content$, handleBuildXyFlow, setFuse]);
+  }, [content$, handleUpdate]);
 
   return (
     <MonacoEditor

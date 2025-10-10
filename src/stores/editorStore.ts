@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { CE_EDITOR_URL } from '#/contracts/editors/CE_EDITOR_URL';
+import { decode } from '#/lib/messagepack/decode';
+import { fromBase64 } from '#/lib/messagepack/fromBase64';
+
+import type { JsonValue } from 'type-fest';
+
 import type { TEditorLanguage } from '#/contracts/editors/editor';
 import type { IEditorStore } from '#/contracts/editors/IEditorStore';
 
@@ -26,6 +32,39 @@ const example = {
   ],
 };
 
+/**
+ * Load content from querystring 'q' parameter
+ * Priority: querystring > localStorage > default
+ */
+const loadFromQueryString = (): JsonValue | Error => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const contentFromQuerystring = params.get(CE_EDITOR_URL.CONTENT);
+
+    if (contentFromQuerystring == null) {
+      return new Error('Cannot found content in Querystring');
+    }
+
+    // Decode: base64 -> Uint8Array -> JsonValue
+    const base64Decoded = fromBase64(contentFromQuerystring);
+
+    if (base64Decoded instanceof Error) {
+      return base64Decoded;
+    }
+
+    // Convert JsonValue to string
+    const decoded = decode(base64Decoded);
+
+    if (decoded instanceof Error) {
+      return decoded;
+    }
+
+    return decoded;
+  } catch {
+    return null;
+  }
+};
+
 export const useEditorStore = create<IEditorStore>()(
   persist(
     (set) => ({
@@ -49,6 +88,27 @@ export const useEditorStore = create<IEditorStore>()(
     {
       name: 'json-byte-editor',
       storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        // Try to load from querystring first
+        const loaded = loadFromQueryString();
+
+        if (loaded != null && !(loaded instanceof Error) && state != null) {
+          const content = JSON.stringify(loaded, undefined, 2);
+
+          // aviod param reassign, create referance of the state
+          const reassign = state;
+          reassign.content = content;
+
+          // Save to localStorage for future use
+          const updatedState = {
+            state: { content, language: state.language },
+            version: 0,
+          };
+
+          localStorage.setItem('json-byte-editor', JSON.stringify(updatedState));
+        }
+        // If qContent is null, state already has localStorage value from rehydration
+      },
     },
   ),
 );

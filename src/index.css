@@ -151,7 +151,7 @@
 }
 
 .react-flow__edge:hover .react-flow__edge-text {
-  @apply fill-blue-600 dark:fill-blue-500 font-semibold;
+  @apply fill-blue-600 dark:fill-blue-300 font-semibold;
 }
 
 .react-flow__edge:hover .react-flow__edge-textbg {

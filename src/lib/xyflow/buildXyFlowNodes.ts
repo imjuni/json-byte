@@ -1,5 +1,6 @@
 /* eslint-disable no-restricted-syntax */
 
+import { getOrDefault } from '#/lib/getOrDefault';
 import { CE_XYFLOW_NODE_TYPE } from '#/lib/xyflow/const-enum/CE_XYFLOW_NODE_TYPE';
 import { getNodeFieldsAndStack } from '#/lib/xyflow/getNodeFieldsAndStack';
 import { layoutNodes } from '#/lib/xyflow/layoutNodes';
@@ -14,15 +15,18 @@ import type { IXyFlowEdge } from '#/lib/xyflow/interfaces/IXyFlowEdge';
 import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
 import type { TLayoutDirection } from '#/lib/xyflow/layoutNodes';
 
+const MAX_ITERATIONS = 1000000;
+
 export function buildXyFlowNodes(
   document: JsonValue,
   direction: TLayoutDirection = 'TB',
+  _maxIterations?: number,
 ): { nodes: IXyFlowNode[]; edges: IXyFlowEdge[] } {
   if (typeof document !== 'object' || document === null) {
     return { nodes: [], edges: [] };
   }
 
-  const MAX_ITERATIONS = 1000000;
+  const maxIterations = getOrDefault(_maxIterations, MAX_ITERATIONS);
   const nodes: IXyFlowNode[] = [];
   const edges: IXyFlowEdge[] = [];
   const stack: IBuildTask[] = [];
@@ -70,9 +74,10 @@ export function buildXyFlowNodes(
   // Process queue iteratively (FIFO to maintain correct order)
   let iterations = 0;
 
-  for (; stack.length > 0 && iterations < MAX_ITERATIONS; iterations += 1) {
-    const task = stack.shift(); // Use shift() instead of pop() for FIFO order
-    if (!task) break;
+  for (; stack.length > 0 && iterations < maxIterations; iterations += 1) {
+    // The for loop only executes when stack.length > 0, so shift() result cannot be undefined
+    // Use shift() instead of pop() for FIFO order
+    const task = stack.shift() as IBuildTask;
 
     const { key, value, parent, depth } = task;
 

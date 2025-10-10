@@ -16,6 +16,8 @@ export function getOrDefault<T>(value: T, defaultValue?: T): NonNullable<T> {
     case 'number':
     case 'symbol':
       return value;
+
+    /* v8 ignore next 2 */
     default:
       return '' as NonNullable<T>;
   }
