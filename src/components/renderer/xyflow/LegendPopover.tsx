@@ -16,13 +16,13 @@ const { line } = variants();
 
 export const LegendPopover = () => (
   <Popover>
-    <PopoverTrigger>
+    <PopoverTrigger asChild>
       <Button variant="outline">
         <IconInfo />
       </Button>
     </PopoverTrigger>
 
-    <PopoverContent className="w-35 px-2">
+    <PopoverContent className="w-40 px-2">
       <div className={line()}>
         <TypeDisc type="string" />
         <FieldValue type="string" value="String" />

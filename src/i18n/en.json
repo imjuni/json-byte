@@ -10,6 +10,11 @@
       "description": "Anyone who has this link will be able to view this. It has already been copied. If you want to copy it again, please copy the link below.",
       "sr-textarea-label":"Export Link",
       "action-close": "Close"
+    },
+    "import-dialog": {
+      "title": "Import",
+      "description": "데이터를 삽입합니다",
+      "action-close": "Close"
     }
   }
 }

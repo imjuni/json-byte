@@ -1,3 +1,5 @@
+import { isError } from 'my-easy-fp';
+
 import { encode } from '#/lib/messagepack/encode';
 import { toBase64 } from '#/lib/messagepack/toBase64';
 
@@ -26,7 +28,10 @@ export function replaceHref(value: JsonValue | Error): boolean {
     window.history.replaceState(null, '', `${url.pathname}${url.search}`);
 
     return true;
-  } catch {
+  } catch (caught) {
+    const err = isError(caught, new Error('unknown error raised'));
+    // eslint-disable-next-line
+    console.warn(err.message, err.stack);
     return false;
   }
 }
