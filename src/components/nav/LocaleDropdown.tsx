@@ -1,3 +1,4 @@
+import { clsx } from 'clsx';
 import { Languages } from 'lucide-react';
 
 import { Button } from '#/components/ui/button';
@@ -11,10 +12,10 @@ import {
 import { useThemeStore } from '#/stores/themeStore';
 
 export const LocaleDropdown = () => {
-  const { setLocale } = useThemeStore();
+  const { locale, setLocale } = useThemeStore();
 
-  const handleLocaleChange = (locale: 'en' | 'ko') => {
-    setLocale(locale);
+  const handleLocaleChange = (selected: 'en' | 'ko') => {
+    setLocale(selected);
   };
 
   return (
@@ -26,8 +27,26 @@ export const LocaleDropdown = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-36 mx-[1rem]">
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => handleLocaleChange('en')}>English</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleLocaleChange('ko')}>Korean</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleLocaleChange('en')}>
+            <span
+              className={clsx({
+                'font-bold': locale === 'en',
+                'text-blue-500': locale === 'en',
+              })}
+            >
+              English
+            </span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleLocaleChange('ko')}>
+            <span
+              className={clsx({
+                'font-bold': locale === 'ko',
+                'text-blue-500': locale === 'ko',
+              })}
+            >
+              Korean
+            </span>
+          </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
