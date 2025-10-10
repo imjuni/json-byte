@@ -38,12 +38,6 @@ export const ExportDialog = () => {
         text: () => window.location.href,
       });
 
-      // Optional: show success message
-      // clipboard.on('success', () => {});
-
-      // Optional: show error message
-      // clipboard.on('error', () => {});
-
       return () => {
         clipboard.destroy();
       };

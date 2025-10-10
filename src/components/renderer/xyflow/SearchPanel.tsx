@@ -5,6 +5,7 @@ import { Search, Trash2, X } from 'lucide-react';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, filter, tap } from 'rxjs/operators';
 
+import { LegendPopover } from '#/components/renderer/xyflow/LegendPopover';
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
 import { useFuseStore } from '#/stores/fuseStore';
@@ -61,6 +62,8 @@ export const SearchPanel = () => {
   return (
     <Panel className="!bottom-[50px] !left-[35px]" position="bottom-left">
       <div className="flex items-center gap-2">
+        <LegendPopover />
+
         {!isOpen && (
           <Button onClick={() => setIsOpen(true)} size="icon" variant="outline">
             <Search className="w-4 h-4" />
