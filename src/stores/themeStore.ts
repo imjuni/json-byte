@@ -12,10 +12,15 @@ const applyTheme = (theme: TTheme) => {
   }
 };
 
+const applyLocale = (locale: IThemeStore['locale']) => {
+  document.documentElement.setAttribute('lang', locale);
+};
+
 export const useThemeStore = create<IThemeStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       theme: 'light',
+      locale: 'en',
       toggleTheme: () =>
         set((state) => {
           const newTheme = state.theme === 'light' ? 'dark' : 'light';
@@ -27,14 +32,21 @@ export const useThemeStore = create<IThemeStore>()(
           applyTheme(theme);
           return { theme };
         }),
+      getLocale: () => get().locale,
+      setLocale: (locale) =>
+        set(() => {
+          applyLocale(locale);
+          return { locale };
+        }),
     }),
     {
       name: 'json-byte-theme',
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
-        // Apply theme when rehydrated from localStorage
+        // Apply theme and locale when rehydrated from localStorage
         if (state) {
           applyTheme(state.theme);
+          applyLocale(state.locale);
         }
       },
     },

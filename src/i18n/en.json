@@ -1,6 +1,15 @@
 {
   "locale": "en",
   "import": "Import",
+  "export": "Export",
   "format": "Format",
-  "minify": "Minify"
+  "minify": "Minify",
+  "graph": {
+    "export-dialog": {
+      "title": "Export",
+      "description": "Anyone who has this link will be able to view this. It has already been copied. If you want to copy it again, please copy the link below.",
+      "sr-textarea-label":"Export Link",
+      "action-close": "Close"
+    }
+  }
 }

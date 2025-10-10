@@ -1,6 +1,15 @@
 {
   "locale": "ko",
   "import": "Import",
+  "export": "Export",
   "format": "Format",
-  "minify": "Minify"
+  "minify": "Minify",
+  "graph": {
+    "export-dialog": {
+      "title": "Export",
+      "description": "다른 사람에게 이 링크를 전달하면 동일한 화면을 볼 수 있습니다. 이미 복사되어 있습니다. 다시 복사 하고 싶으면 아래 링크를 복사하세요.",
+      "sr-textarea-label":"Export Link",
+      "action-close": "Close"
+    }
+  }
 }

@@ -4,9 +4,9 @@ import MonacoEditor from '@monaco-editor/react';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, filter, tap } from 'rxjs/operators';
 
-import { replaceHref } from '#/components/editor/replaceHref';
 import { getOrDefault } from '#/lib/getOrDefault';
 import { safeYamlParse } from '#/lib/json/safeYamlParse';
+import { replaceHref } from '#/lib/replaceHref';
 import { createXyFlowNodesWithEdges } from '#/lib/xyflow/createXyFlowNodesWithEdges';
 import { useEditorStore } from '#/stores/editorStore';
 import { createFuse, useFuseStore } from '#/stores/fuseStore';

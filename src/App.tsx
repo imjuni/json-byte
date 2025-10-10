@@ -1,8 +1,9 @@
 import '@xyflow/react/dist/style.css';
-import { Link as IconLink, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { useIntl } from 'react-intl';
 
 import { Editor } from '#/components/editor/Editor';
+import { ExportDialog } from '#/components/editor/ExportDialog';
 import { Nav } from '#/components/nav/Nav';
 import { XYFlowRenderer } from '#/components/renderer/xyflow/XYFlowRenderer';
 import { Button } from '#/components/ui/button';
@@ -25,9 +26,7 @@ export const App = () => {
                   {intl.$t({ id: 'import' })}
                 </Button>
 
-                <Button size="sm" variant="outline">
-                  <IconLink />
-                </Button>
+                <ExportDialog />
 
                 <Button size="sm" variant="outline">
                   <Settings />
