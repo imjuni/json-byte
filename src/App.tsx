@@ -11,10 +11,10 @@ import { Button } from '#/components/ui/button';
 import './App.css';
 
 export const App = () => (
-  <div className="w-full h-full">
+  <div className="flex flex-col w-full h-full">
     <Nav />
 
-    <main className="mt-13 h-full">
+    <main className="flex-1 mt-13 overflow-hidden">
       <div className="flex flex-row h-full">
         <div className="flex flex-3 h-full">
           <div className="flex flex-col h-full w-full">
@@ -27,7 +27,7 @@ export const App = () => (
                 <Settings />
               </Button>
             </div>
-            <div className="h-full">
+            <div className="flex-1 overflow-hidden">
               <Editor />
             </div>
           </div>
@@ -37,5 +37,17 @@ export const App = () => (
         </div>
       </div>
     </main>
+
+    <footer className="h-6 px-4 bg-card border-t flex items-center justify-between text-xs text-muted-foreground">
+      <div>© 2025 JSON Byte</div>
+      <div className="flex gap-4">
+        <a className="hover:text-foreground transition-colors" href="https://github.com">
+          GitHub
+        </a>
+        <button className="hover:text-foreground transition-colors" type="button">
+          Docs
+        </button>
+      </div>
+    </footer>
   </div>
 );
