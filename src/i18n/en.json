@@ -23,11 +23,21 @@
       "file-upload": "Upload",
       "file-uploading": "Uploading...",
       "file-uploaded": "Upload Complete",
+      "file-error": {
+        "title": "오류"
+      },
       "api-fetch": "Fetch",
       "api-fetching": "Fetching...",
       "api-fetched": "Fetch Complete",
       "api-fetch-card-title": "Import from URL",
       "api-fetch-card-description": "Enter a URL to fetch JSON data from a remote source.",
+      "api-fetch-error": {
+        "title": "Error",
+        "fetch-fail": "API 요청에 실패했습니다",
+        "raise-error": "오류가 발생하였습니다{message}",
+        "invalid-url": "URL 형식이 올바르지 않습니다",
+        "invalid-json": "Body는 올바른 JSON 형식이어야 합니다"
+      },
       "action-close": "Close"
     }
   }

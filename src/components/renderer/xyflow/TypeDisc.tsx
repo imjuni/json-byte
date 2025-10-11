@@ -27,7 +27,7 @@ const disc = tv({
 });
 
 export const TypeDisc = ({ type }: { type: TPrimitiveTypeString | TComplexTypeString }) => (
-  <div className="flex justify-items-center items-center">
+  <div className="flex justify-center items-center">
     <div className={disc({ color: type })} />
   </div>
 );

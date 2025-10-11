@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
 import { Upload } from 'lucide-react';
+import { isError } from 'my-easy-fp';
 import { Controller, useForm } from 'react-hook-form';
 import { useIntl } from 'react-intl';
 import { Subject } from 'rxjs';
@@ -35,6 +36,7 @@ import { multiParse } from '#/lib/json/multiParse';
 import { multiStringify } from '#/lib/json/multiStringify';
 import { useEditorStore } from '#/stores/editorStore';
 import { useImportStore } from '#/stores/importStore';
+import { useNotificationStore } from '#/stores/notificationStore';
 
 import type { TApiFetchFormSchema } from '#/components/editor/schemas/apiFetchFormSchema';
 
@@ -47,6 +49,7 @@ export const ImportDialog = () => {
   const fetch$ = useMemo(() => new Subject<TApiFetchFormSchema>(), []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { setContent } = useEditorStore();
+  const { setNotification } = useNotificationStore();
   const { updateFromContent } = useXyFlowBuilder();
   const { file, open, error, isUploading, isFetching, setError, setFile, setOpen, reset } = useImportStore();
   const apiFetchForm = useForm<TApiFetchFormSchema>({
@@ -65,7 +68,8 @@ export const ImportDialog = () => {
     handleUploadProgress('non-dirty');
     handleFetchProgress('non-dirty');
     reset();
-  }, [handleUploadProgress, handleFetchProgress, reset]);
+    apiFetchForm.reset();
+  }, [handleUploadProgress, handleFetchProgress, apiFetchForm, reset]);
 
   const handleFileChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,6 +114,18 @@ export const ImportDialog = () => {
 
       if (parsed instanceof Error) {
         setError(parsed);
+
+        setNotification({
+          open: true,
+          kind: 'danger',
+          autoClose: 5000,
+          title: intl.$t({ id: 'graph.import-dialog.file-error.title' }),
+          description: intl.$t({ id: 'graph.import-dialog.file-error.fail-parse' }),
+        });
+
+        setTimeout(() => {
+          handleOpenChange(false);
+        }, 100);
         return;
       }
 
@@ -118,6 +134,21 @@ export const ImportDialog = () => {
 
       if (formattedJson instanceof Error) {
         setError(formattedJson);
+
+        setNotification({
+          open: true,
+          kind: 'danger',
+          autoClose: 5000,
+          title: intl.$t({ id: 'graph.import-dialog.file-error.title' }),
+          description: intl.$t(
+            { id: 'graph.import-dialog.file-error.fail-format' },
+            { message: `: ${formattedJson.message}` },
+          ),
+        });
+
+        setTimeout(() => {
+          handleOpenChange(false);
+        }, 100);
         return;
       }
 
@@ -131,10 +162,19 @@ export const ImportDialog = () => {
       setTimeout(() => {
         handleOpenChange(false);
       }, 100);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Invalid JSON file'));
+    } catch (caught) {
+      const err = isError(caught, new Error('Invalid JSON file'));
+      setError(err);
+
+      setNotification({
+        open: true,
+        kind: 'danger',
+        autoClose: 5000,
+        title: intl.$t({ id: 'graph.import-dialog.file-error.title' }),
+        description: intl.$t({ id: 'graph.import-dialog.file-error.raise-error' }, { message: `: ${err.message}` }),
+      });
     }
-  }, [file, handleUploadProgress, setError, setContent, handleOpenChange, updateFromContent]);
+  }, [file, intl, handleUploadProgress, setError, setContent, setNotification, handleOpenChange, updateFromContent]);
 
   const handleAPIFetch = useCallback(
     async (data: TApiFetchFormSchema) => {
@@ -169,9 +209,30 @@ export const ImportDialog = () => {
 
           handleFetchProgress('fetch-complete');
         } else {
+          setNotification({
+            open: true,
+            kind: 'danger',
+            autoClose: 5000,
+            title: intl.$t({ id: 'graph.import-dialog.api-fetch-error.title' }),
+            description: intl.$t({ id: 'graph.import-dialog.api-fetch-error.fetch-fail' }),
+          });
+
           handleFetchProgress('fetch-fail');
         }
-      } catch {
+      } catch (caught) {
+        const err = isError(caught, new Error('unknown error raised from API fetching'));
+
+        setNotification({
+          open: true,
+          kind: 'danger',
+          autoClose: 5000,
+          title: intl.$t({ id: 'graph.import-dialog.api-fetch-error.title' }),
+          description: intl.$t(
+            { id: 'graph.import-dialog.api-fetch-error.raise-error' },
+            { message: `: ${err.message}` },
+          ),
+        });
+
         handleFetchProgress('fetch-fail');
       }
 
@@ -179,7 +240,7 @@ export const ImportDialog = () => {
         handleOpenChange(false);
       }, 100);
     },
-    [setContent, hanldeJsonParse, handleFetchProgress, updateFromContent, handleOpenChange],
+    [intl, setContent, setNotification, hanldeJsonParse, handleFetchProgress, updateFromContent, handleOpenChange],
   );
 
   useEffect(() => {
@@ -226,6 +287,8 @@ export const ImportDialog = () => {
       subscription.unsubscribe();
     };
   }, [fetch$, handleAPIFetch, handleFetchProgress]);
+
+  useEffect(() => () => apiFetchForm.reset(), [apiFetchForm]);
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>

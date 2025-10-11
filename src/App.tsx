@@ -5,6 +5,7 @@ import { Editor } from '#/components/editor/Editor';
 import { ExportDialog } from '#/components/editor/ExportDialog';
 import { ImportDialog } from '#/components/editor/ImportDialog';
 import { Nav } from '#/components/nav/Nav';
+import { Notification } from '#/components/nav/Notification';
 import { XYFlowRenderer } from '#/components/renderer/xyflow/XYFlowRenderer';
 import { Button } from '#/components/ui/button';
 
@@ -13,6 +14,7 @@ import './App.css';
 export const App = () => (
   <div className="flex flex-col w-full h-full">
     <Nav />
+    <Notification />
 
     <main className="flex-1 mt-13 overflow-hidden">
       <div className="flex flex-row h-full">

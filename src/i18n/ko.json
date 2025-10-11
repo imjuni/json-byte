@@ -23,12 +23,21 @@
       "file-upload": "업로드",
       "file-uploading": "업로드 중 입니다",
       "file-uploaded": "업로드 완료 되었습니다",
+      "file-error": {
+        "title": "오류",
+        "raise-error": "오류가 발생하였습니다{message}",
+        "fail-parse": "파일 파싱에 실패하였습니다. JSON 또는 Yaml 형식이 아닙니다{message}",
+        "fail-format": "가독성 향상을 위해 정렬(Formatted)하는 작업에 실패하였습니다{message}"
+      },
       "api-fetch": "가져오기",
       "api-fetching": "업로드 중 입니다",
       "api-fetched": "업로드 완료 되었습니다",
       "api-fetch-card-title": "URL에서 가져오기",
       "api-fetch-card-description": "JSON 데이터를 가져올 수 있는 URL 주소를 입력하세요",
       "api-fetch-error": {
+        "title": "오류",
+        "fetch-fail": "API 요청에 실패했습니다",
+        "raise-error": "오류가 발생하였습니다{message}",
         "invalid-url": "URL 형식이 올바르지 않습니다",
         "invalid-json": "Body는 올바른 JSON 형식이어야 합니다"
       },
