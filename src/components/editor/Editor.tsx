@@ -8,10 +8,10 @@ import { useXyFlowBuilder } from '#/hooks/useXyFlowBuilder';
 import { getOrDefault } from '#/lib/getOrDefault';
 import { useEditorStore } from '#/stores/editorStore';
 
-import type { BeforeMount } from '@monaco-editor/react';
+import type { BeforeMount, OnMount } from '@monaco-editor/react';
 
 export const Editor = () => {
-  const { content, language, setContent } = useEditorStore();
+  const { content, language, setContent, setEditorInstance } = useEditorStore();
   const { updateFromContent } = useXyFlowBuilder();
 
   // Create Subject once using useMemo
@@ -33,6 +33,13 @@ export const Editor = () => {
       updateFromContent(content);
     },
     [language, content, updateFromContent],
+  );
+
+  const handleEditorMount: OnMount = useCallback(
+    (editor) => {
+      setEditorInstance(editor);
+    },
+    [setEditorInstance],
   );
 
   // Setup RxJS pipe with operators
@@ -58,6 +65,7 @@ export const Editor = () => {
       beforeMount={handleEditorWillMount}
       height="100%"
       language={language === 'jsonc' ? 'json' : language}
+      onMount={handleEditorMount}
       value={content}
       width="100%"
       onChange={(value) => {

@@ -68,6 +68,9 @@ importers:
       lucide-react:
         specifier: ^0.544.0
         version: 0.544.0(react@19.2.0)
+      monaco-editor:
+        specifier: ^0.54.0
+        version: 0.54.0
       my-easy-fp:
         specifier: ^0.22.0
         version: 0.22.0

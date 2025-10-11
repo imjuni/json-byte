@@ -4,8 +4,10 @@ import { Controls, MiniMap, ReactFlow, ReactFlowProvider, useNodesInitialized, u
 
 import { ObjectNode } from '#/components/renderer/xyflow/ObjectNode';
 import { SearchPanel } from '#/components/renderer/xyflow/SearchPanel';
+import { findTextPositionByJsonPath } from '#/lib/editor/findTextPositionByJsonPath';
 import { CE_XYFLOW_NODE_TYPE } from '#/lib/xyflow/const-enum/CE_XYFLOW_NODE_TYPE';
 import { layoutNodes } from '#/lib/xyflow/layoutNodes';
+import { useEditorStore } from '#/stores/editorStore';
 import { useXyFlowStore } from '#/stores/xyflowStore';
 
 import type { NodeChange } from '@xyflow/react';
@@ -15,6 +17,7 @@ import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
 // Inner component that uses React Flow hooks
 const FlowContent = () => {
   const { nodes, edges, direction, setNodes } = useXyFlowStore();
+  const { content, editorInstance } = useEditorStore();
   const nodesInitialized = useNodesInitialized();
   const hasRelayoutedRef = useRef(false);
   const { fitView, setCenter, getZoom } = useReactFlow();
@@ -75,6 +78,7 @@ const FlowContent = () => {
 
   const handleNodeClick = useCallback(
     (_event: React.MouseEvent, node: IXyFlowNode) => {
+      // Center the node in the viewport
       const x = node.position.x + (node.measured?.width ?? 0) / 2;
       const y = node.position.y + (node.measured?.height ?? 0) / 2;
       const currentZoom = getZoom();
@@ -82,8 +86,29 @@ const FlowContent = () => {
       const zoom = currentZoom > 0.8 ? currentZoom : 1;
 
       setCenter(x, y, { zoom, duration: 400 });
+
+      // Select the corresponding text in the editor
+      if (editorInstance && content) {
+        const position = findTextPositionByJsonPath(content, node.id);
+
+        if (position) {
+          // Set selection in the editor
+          editorInstance.setSelection({
+            startLineNumber: position.startLine,
+            startColumn: position.startColumn,
+            endLineNumber: position.endLine,
+            endColumn: position.endColumn,
+          });
+
+          // Reveal the selection in the editor viewport
+          editorInstance.revealLineInCenter(position.startLine);
+
+          // Focus the editor
+          editorInstance.focus();
+        }
+      }
     },
-    [setCenter, getZoom],
+    [setCenter, getZoom, editorInstance, content],
   );
 
   return (

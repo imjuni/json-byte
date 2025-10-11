@@ -30,6 +30,7 @@
     "fuse.js": "^7.1.0",
     "jsonpath-plus": "^10.3.0",
     "lucide-react": "^0.544.0",
+    "monaco-editor": "^0.54.0",
     "my-easy-fp": "^0.22.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

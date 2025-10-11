@@ -71,6 +71,7 @@ export const useEditorStore = create<IEditorStore>()(
       // Initial state
       content: JSON.stringify(example, undefined, 2),
       language: 'json',
+      editorInstance: undefined,
 
       // Actions
       setContent: (content: string) => {
@@ -81,6 +82,10 @@ export const useEditorStore = create<IEditorStore>()(
         set({ language });
       },
 
+      setEditorInstance: (instance) => {
+        set({ editorInstance: instance });
+      },
+
       reset: () => {
         set({ content: '{}', language: 'json' });
       },
@@ -88,6 +93,11 @@ export const useEditorStore = create<IEditorStore>()(
     {
       name: 'json-byte-editor',
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        content: state.content,
+        language: state.language,
+        // Exclude editorInstance from persistence (it's not serializable)
+      }),
       onRehydrateStorage: () => (state) => {
         // Try to load from querystring first
         const loaded = loadFromQueryString();
