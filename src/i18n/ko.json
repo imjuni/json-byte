@@ -12,9 +12,18 @@
       "action-close": "Close"
     },
     "import-dialog": {
-      "title": "Import",
-      "description": "데이터를 삽입합니다",
-      "action-close": "Close"
+      "trigger": "입력",
+      "title": "입력",
+      "upload-card-tab-title": "파일 업로드",
+      "upload-card-tab-api": "API",
+      "upload-card-title": "JSON 파일 업로드",
+      "upload-card-description": "선택한 JSON 파일의 그래프를 그립니다. 선택한 파일은 파싱에 성공하면 에디터에 추가되고 그래프가 그려집니다.",
+      "upload-card-input-label": "JSON 파일",
+      "upload-card-input-placeholder": "선택한 JSON 파일이 없습니다",
+      "file-upload": "업로드",
+      "file-uploading": "업로드 중 입니다",
+      "file-uploaded": "업로드 완료 되었습니다",
+      "action-close": "닫기"
     }
   }
   

@@ -13,7 +13,15 @@
     },
     "import-dialog": {
       "title": "Import",
-      "description": "데이터를 삽입합니다",
+      "upload-card-tab-title": "File Upload",
+      "upload-card-tab-api": "API",
+      "upload-card-title": "Upload JSON File",
+      "upload-card-description": "Select a JSON file to visualize. The file will be parsed and displayed in the editor.",
+      "upload-card-input-label": "JSON File",
+      "upload-card-input-placeholder": "No file selected",
+      "file-upload": "Upload",
+      "file-uploading": "Uploading...",
+      "file-uploaded": "Upload Complete",
       "action-close": "Close"
     }
   }
