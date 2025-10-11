@@ -1,41 +1,44 @@
 import { useState } from 'react';
 
 import { Plus, Trash2 } from 'lucide-react';
-import { nanoid } from 'nanoid';
+import { Controller, useFieldArray } from 'react-hook-form';
 
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
 import { Label } from '#/components/ui/label';
-import { useImportStore } from '#/stores/importStore';
 
-export const FetchImportHeaderAppendable = () => {
+import type { UseFormReturn } from 'react-hook-form';
+
+import type { TApiFetchFormSchema } from '#/components/editor/schemas/apiFetchFormSchema';
+
+export const FetchImportHeaderAppendable = ({ form }: { form: UseFormReturn<TApiFetchFormSchema> }) => {
   const [newHeaderKey, setNewHeaderKey] = useState('');
   const [newHeaderValue, setNewHeaderValue] = useState('');
-  const { headers, addHeader, updateHeader, removeHeader } = useImportStore();
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'headers',
+  });
 
   return (
     <>
       <Label htmlFor="headers">Header</Label>
       <div className="flex flex-col gap-2 min-h-[5rem] max-h-[10rem] overflow-y-scroll">
         {/* Existing headers list */}
-        {headers.map((header, index) => (
-          <div key={nanoid()} className="flex flex-row gap-2">
+        {fields.map((headerField, index) => (
+          <div key={headerField.id} className="flex flex-row gap-2">
             <div className="flex flex-3">
-              <Input
-                placeholder="key"
-                value={header.key}
-                onChange={(event) => {
-                  updateHeader(index, { ...header, key: event.target.value });
-                }}
+              <Controller
+                control={form.control}
+                name={`headers.${index}.key`}
+                render={({ field }) => <Input {...field} placeholder="key" />}
               />
             </div>
             <div className="flex flex-6">
-              <Input
-                placeholder="value"
-                value={header.value}
-                onChange={(event) => {
-                  updateHeader(index, { ...header, value: event.target.value });
-                }}
+              <Controller
+                control={form.control}
+                name={`headers.${index}.value`}
+                render={({ field }) => <Input {...field} placeholder="value" />}
               />
             </div>
             <div className="flex flex-1">
@@ -43,7 +46,7 @@ export const FetchImportHeaderAppendable = () => {
                 size="icon"
                 variant="outline"
                 onClick={() => {
-                  removeHeader(index);
+                  remove(index);
                 }}
               >
                 <Trash2 className="h-4 w-4" />
@@ -80,7 +83,7 @@ export const FetchImportHeaderAppendable = () => {
               variant="outline"
               onClick={() => {
                 if (newHeaderKey.trim() !== '' && newHeaderValue.trim() !== '') {
-                  addHeader({ key: newHeaderKey, value: newHeaderValue });
+                  append({ key: newHeaderKey, value: newHeaderValue });
                   setNewHeaderKey('');
                   setNewHeaderValue('');
                 }

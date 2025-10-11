@@ -2,7 +2,10 @@ import { useCallback, useState } from 'react';
 
 import { useIntl } from 'react-intl';
 
+import { multiParse } from '#/lib/json/multiParse';
 import { useImportStore } from '#/stores/importStore';
+
+import type { JsonValue } from 'type-fest';
 
 import type { TImportStore } from '#/contracts/editors/TImportStore';
 
@@ -15,6 +18,24 @@ export function useImportProgressHookBuilder() {
   const [apiFetchButtonTitle, setApiFetchButtonTitle] = useState<string>(
     intl.$t({ id: 'graph.import-dialog.api-fetch' }),
   );
+
+  const hanldeJsonParse = useCallback((value?: string | null): JsonValue | undefined => {
+    if (value == null) {
+      return undefined;
+    }
+
+    if (value === '') {
+      return undefined;
+    }
+
+    const parsed = multiParse(value);
+
+    if (parsed instanceof Error) {
+      return undefined;
+    }
+
+    return parsed;
+  }, []);
 
   const handleUploadProgress = useCallback(
     (isUploadingValue: TImportStore['isUploading']) => {
@@ -65,6 +86,7 @@ export function useImportProgressHookBuilder() {
   return {
     fileUploadButtonTitle,
     apiFetchButtonTitle,
+    hanldeJsonParse,
     handleUploadProgress,
     handleFetchProgress,
   };

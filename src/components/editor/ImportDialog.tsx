@@ -1,16 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
 import { Upload } from 'lucide-react';
+import { Controller, useForm } from 'react-hook-form';
 import { useIntl } from 'react-intl';
 import { Subject } from 'rxjs';
 import { debounceTime, switchMap, tap } from 'rxjs/operators';
 import { z } from 'zod';
 
+import { FetchImportBodyJsonContent } from '#/components/editor/features/FetchImportBodyJsonContent';
 import { FetchImportHeaderAppendable } from '#/components/editor/features/FetchImportHeaderAppendable';
 import { FetchImportMethodDropdown } from '#/components/editor/features/FetchImportMethodDropdown';
 import { useImportProgressHookBuilder } from '#/components/editor/hooks/useImportProgressHookBuilder';
 import { useXyFlowBuilder } from '#/components/editor/hooks/useXyFlowBuilder';
+import { apiFetchFormSchema } from '#/components/editor/schemas/apiFetchFormSchema';
 import { Button } from '#/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '#/components/ui/card';
 import {
@@ -22,44 +26,39 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '#/components/ui/dialog';
+import { Field, FieldError, FieldLabel } from '#/components/ui/field';
 import { Input } from '#/components/ui/input';
 import { Label } from '#/components/ui/label';
 import { Spinner } from '#/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs';
+import { multiParse } from '#/lib/json/multiParse';
+import { multiStringify } from '#/lib/json/multiStringify';
 import { useEditorStore } from '#/stores/editorStore';
 import { useImportStore } from '#/stores/importStore';
 
+import type { TApiFetchFormSchema } from '#/components/editor/schemas/apiFetchFormSchema';
+
 const filenameSchema = z.string().default('');
-
-const urlSchema = z.string().default('');
-
-const urlValidateSchema = z.url().default('');
 
 export const ImportDialog = () => {
   const intl = useIntl();
   const fileSelect$ = useMemo(() => new Subject<void>(), []);
   const upload$ = useMemo(() => new Subject<void>(), []);
-  const fetch$ = useMemo(() => new Subject<void>(), []);
+  const fetch$ = useMemo(() => new Subject<TApiFetchFormSchema>(), []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { setContent } = useEditorStore();
   const { updateFromContent } = useXyFlowBuilder();
-  const {
-    file,
-    open,
-    error,
-    method,
-    isUploading,
-    isFetching,
-    url,
-    headers,
-    setError,
-    setFile,
-    setOpen,
-    setUrl,
-    reset,
-  } = useImportStore();
+  const { file, open, error, isUploading, isFetching, setError, setFile, setOpen, reset } = useImportStore();
+  const apiFetchForm = useForm<TApiFetchFormSchema>({
+    mode: 'onChange',
+    resolver: zodResolver(apiFetchFormSchema),
+    defaultValues: {
+      url: '',
+      method: 'get',
+    },
+  });
 
-  const { fileUploadButtonTitle, apiFetchButtonTitle, handleUploadProgress, handleFetchProgress } =
+  const { fileUploadButtonTitle, apiFetchButtonTitle, hanldeJsonParse, handleUploadProgress, handleFetchProgress } =
     useImportProgressHookBuilder();
 
   const hanldeDialogReset = useCallback(() => {
@@ -107,10 +106,20 @@ export const ImportDialog = () => {
       const text = await file.text();
 
       // Try to parse as JSON to validate
-      const parsed = JSON.parse(text);
+      const parsed = multiParse(text);
+
+      if (parsed instanceof Error) {
+        setError(parsed);
+        return;
+      }
 
       // If successful, update editor content and visualization
-      const formattedJson = JSON.stringify(parsed, null, 2);
+      const formattedJson = multiStringify(parsed.data, parsed.kind, undefined, 2);
+
+      if (formattedJson instanceof Error) {
+        setError(formattedJson);
+        return;
+      }
 
       setContent(formattedJson);
       updateFromContent(formattedJson);
@@ -127,44 +136,51 @@ export const ImportDialog = () => {
     }
   }, [file, handleUploadProgress, setError, setContent, handleOpenChange, updateFromContent]);
 
-  const handleFetch = useCallback(async () => {
-    handleFetchProgress('fetching');
+  const handleAPIFetch = useCallback(
+    async (data: TApiFetchFormSchema) => {
+      handleFetchProgress('fetching');
 
-    // Convert headers array to axios headers object
-    const headersObject = headers.reduce<Record<string, string>>((aggregated, header) => {
-      if (header.key.trim() !== '') {
-        return { ...aggregated, [header.key]: header.value };
-      }
+      // Convert headers array to axios headers object
+      const headersObject = data.headers?.reduce<Record<string, string>>((aggregated, header) => {
+        if (header.key.trim() !== '') {
+          return { ...aggregated, [header.key]: header.value };
+        }
 
-      return aggregated;
-    }, {});
+        return aggregated;
+      }, {});
 
-    try {
-      const reply = await axios.request({
-        method,
-        url,
-        headers: headersObject,
-        validateStatus: () => true,
-      });
+      // Parse body if provided
+      const parsedBody = hanldeJsonParse(data.body);
 
-      if (reply.status < 300 && reply.data != null) {
-        const formattedJson = JSON.stringify(reply.data, null, 2);
+      try {
+        const reply = await axios.request({
+          method: data.method,
+          url: data.url,
+          headers: headersObject,
+          data: parsedBody,
+          validateStatus: () => true,
+        });
 
-        setContent(formattedJson);
-        updateFromContent(formattedJson);
+        if (reply.status < 300 && reply.data != null) {
+          const formattedJson = JSON.stringify(reply.data, null, 2);
 
-        handleFetchProgress('fetch-complete');
-      } else {
+          setContent(formattedJson);
+          updateFromContent(formattedJson);
+
+          handleFetchProgress('fetch-complete');
+        } else {
+          handleFetchProgress('fetch-fail');
+        }
+      } catch {
         handleFetchProgress('fetch-fail');
       }
-    } catch {
-      handleFetchProgress('fetch-fail');
-    }
 
-    setTimeout(() => {
-      handleOpenChange(false);
-    }, 100);
-  }, [method, url, headers, setContent, handleFetchProgress, updateFromContent, handleOpenChange]);
+      setTimeout(() => {
+        handleOpenChange(false);
+      }, 100);
+    },
+    [setContent, hanldeJsonParse, handleFetchProgress, updateFromContent, handleOpenChange],
+  );
 
   useEffect(() => {
     const subscription = fileSelect$
@@ -200,8 +216,8 @@ export const ImportDialog = () => {
       .pipe(
         tap(() => handleFetchProgress('fetching')),
         debounceTime(500),
-        switchMap(async () => {
-          await handleFetch();
+        switchMap(async (data) => {
+          await handleAPIFetch(data);
         }),
       )
       .subscribe();
@@ -209,7 +225,7 @@ export const ImportDialog = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetch$, handleFetch, handleFetchProgress]);
+  }, [fetch$, handleAPIFetch, handleFetchProgress]);
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
@@ -219,7 +235,7 @@ export const ImportDialog = () => {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="lg:max-w-lg">
+      <DialogContent aria-describedby="" className="lg:max-w-lg">
         <DialogHeader>
           <DialogTitle>{intl.$t({ id: 'graph.import-dialog.title' })}</DialogTitle>
         </DialogHeader>
@@ -247,7 +263,7 @@ export const ImportDialog = () => {
                     <div className="flex gap-2">
                       <Input
                         ref={fileInputRef}
-                        accept=".json,application/json"
+                        accept=".json,.yml,.yaml,application/json"
                         className="hidden"
                         id="file-upload"
                         onChange={handleFileChange}
@@ -278,36 +294,45 @@ export const ImportDialog = () => {
             <TabsContent value="url">
               <Card>
                 <CardHeader>
-                  <CardTitle>Import from URL</CardTitle>
-                  <CardDescription>Enter a URL to fetch JSON data from a remote source.</CardDescription>
+                  <CardTitle>{intl.$t({ id: 'graph.import-dialog.api-fetch-card-title' })}</CardTitle>
+                  <CardDescription>{intl.$t({ id: 'graph.import-dialog.api-fetch-card-description' })}</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-6">
-                  <div className="grid gap-3">
-                    <Label htmlFor="url-input">URL</Label>
-                    <div className="flex flex-row gap-2">
-                      <FetchImportMethodDropdown />
-                      <Input
-                        id="url-input"
-                        placeholder="https://petstore3.swagger.io/api/v3/openapi.json"
-                        value={urlSchema.parse(url)}
-                        onChange={(event) => {
-                          setUrl(event.target.value);
-                        }}
-                      />
-                    </div>
+                  <form>
+                    <div className="grid gap-3">
+                      <Controller
+                        control={apiFetchForm.control}
+                        name="url"
+                        render={({ field, fieldState }) => (
+                          <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor="url-input">URL</FieldLabel>
+                            <div className="flex flex-row gap-2">
+                              <FetchImportMethodDropdown form={apiFetchForm} />
 
-                    <FetchImportHeaderAppendable />
-                  </div>
+                              <Input
+                                {...field}
+                                id="url-input"
+                                placeholder="https://petstore3.swagger.io/api/v3/openapi.json"
+                              />
+                            </div>
+                            {fieldState.invalid && fieldState.error?.message ? (
+                              <FieldError errors={[{ message: intl.$t({ id: fieldState.error.message }) }]} />
+                            ) : null}
+                          </Field>
+                        )}
+                      />
+
+                      <FetchImportHeaderAppendable form={apiFetchForm} />
+
+                      <FetchImportBodyJsonContent form={apiFetchForm} />
+                    </div>
+                  </form>
                 </CardContent>
                 <CardFooter>
                   <Button
-                    onClick={() => fetch$.next()}
-                    disabled={
-                      url == null ||
-                      url === '' ||
-                      isFetching === 'fetching' ||
-                      !urlValidateSchema.safeParse(url).success
-                    }
+                    disabled={!apiFetchForm.formState.isValid || isFetching === 'fetching'}
+                    onClick={apiFetchForm.handleSubmit((data) => fetch$.next(data))}
+                    type="submit"
                   >
                     {isFetching === 'fetching' && <Spinner />}
                     {apiFetchButtonTitle}
