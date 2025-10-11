@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
+import axios from 'axios';
 import { Upload } from 'lucide-react';
 import { useIntl } from 'react-intl';
 import { Subject } from 'rxjs';
 import { debounceTime, switchMap, tap } from 'rxjs/operators';
+import { z } from 'zod';
 
 import { Button } from '#/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '#/components/ui/card';
@@ -20,19 +22,37 @@ import { Input } from '#/components/ui/input';
 import { Label } from '#/components/ui/label';
 import { Spinner } from '#/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs';
-import { useXyFlowBuilder } from '#/hooks/useXyFlowBuilder';
+import { useXyFlowBuilder } from '#/components/editor/hooks/useXyFlowBuilder';
 import { useEditorStore } from '#/stores/editorStore';
 import { useImportStore } from '#/stores/importStore';
+import { useImportProgressHookBuilder } from '#/components/editor/hooks/useImportProgressHookBuilder';
+import { FetchImportMethodDropdown } from '#/components/editor/features/FetchImportMethodDropdown';
+
+const filenameSchema = z.string().default('');
+
+const urlSchema = z.string().default('');
+
+const urlValidateSchema = z.url().default('');
 
 export const ImportDialog = () => {
   const intl = useIntl();
-  const { setContent } = useEditorStore();
-  const { updateFromContent } = useXyFlowBuilder();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { file, open, error, isUploading, setError, setFile, setOpen, reset, setIsUploading } = useImportStore();
   const fileSelect$ = useMemo(() => new Subject<void>(), []);
   const upload$ = useMemo(() => new Subject<void>(), []);
-  const [buttonTitle, setButtonTitle] = useState<string>(intl.$t({ id: 'graph.import-dialog.file-upload' }));
+  const fetch$ = useMemo(() => new Subject<void>(), []);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { setContent } = useEditorStore();
+  const { updateFromContent } = useXyFlowBuilder();
+  const { file, open, error, method, isUploading, isFetching, url, setError, setFile, setOpen, setUrl, reset } =
+    useImportStore();
+
+  const { fileUploadButtonTitle, apiFetchButtonTitle, handleUploadProgress, handleFetchProgress } =
+    useImportProgressHookBuilder();
+
+  const hanldeDialogReset = useCallback(() => {
+    handleUploadProgress('non-dirty');
+    handleFetchProgress('non-dirty');
+    reset();
+  }, [handleUploadProgress, handleFetchProgress, reset]);
 
   const handleFileChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,23 +74,21 @@ export const ImportDialog = () => {
       setOpen(isOpen);
 
       if (!isOpen) {
-        reset();
-        setButtonTitle(intl.$t({ id: 'graph.import-dialog.file-upload' }));
+        hanldeDialogReset();
       }
     },
-    [intl, setOpen, setButtonTitle, reset],
+    [setOpen, hanldeDialogReset],
   );
 
   const handleFileUpload = useCallback(async () => {
     if (file == null) {
-      setButtonTitle(intl.$t({ id: 'graph.import-dialog.file-upload' }));
+      handleUploadProgress('upload-fail');
       setError(new Error('Please select a file'));
       return;
     }
 
     try {
-      setButtonTitle(intl.$t({ id: 'graph.import-dialog.file-uploading' }));
-      setIsUploading('uploading');
+      handleUploadProgress('uploading');
 
       const text = await file.text();
 
@@ -83,12 +101,6 @@ export const ImportDialog = () => {
       setContent(formattedJson);
       updateFromContent(formattedJson);
 
-      // Close dialog and reset state
-      reset();
-
-      setButtonTitle(intl.$t({ id: 'graph.import-dialog.file-uploaded' }));
-      setIsUploading('upload-complete');
-
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -99,7 +111,31 @@ export const ImportDialog = () => {
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Invalid JSON file'));
     }
-  }, [file, intl, reset, setError, setContent, setButtonTitle, setIsUploading, handleOpenChange, updateFromContent]);
+  }, [file, handleUploadProgress, setError, setContent, handleOpenChange, updateFromContent]);
+
+  const handleFetch = useCallback(async () => {
+    handleFetchProgress('fetching');
+
+    const reply = await axios.request({
+      method,
+      url,
+    });
+
+    if (reply.status < 300 && reply.data != null) {
+      const formattedJson = JSON.stringify(reply.data, null, 2);
+
+      setContent(formattedJson);
+      updateFromContent(formattedJson);
+
+      handleFetchProgress('fetch-complete');
+    } else {
+      handleFetchProgress('fetch-fail');
+    }
+
+    setTimeout(() => {
+      handleOpenChange(false);
+    }, 100);
+  }, [method, url, setContent, handleFetchProgress, updateFromContent, handleOpenChange]);
 
   useEffect(() => {
     const subscription = fileSelect$
@@ -117,6 +153,7 @@ export const ImportDialog = () => {
   useEffect(() => {
     const subscription = upload$
       .pipe(
+        tap(() => handleUploadProgress('uploading')),
         debounceTime(500),
         switchMap(async () => {
           await handleFileUpload();
@@ -127,7 +164,23 @@ export const ImportDialog = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [upload$, handleFileUpload, setError]);
+  }, [upload$, handleFileUpload, handleUploadProgress]);
+
+  useEffect(() => {
+    const subscription = fetch$
+      .pipe(
+        tap(() => handleFetchProgress('fetching')),
+        debounceTime(500),
+        switchMap(async () => {
+          await handleFetch();
+        }),
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [fetch$, handleFetch, handleFetchProgress]);
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
@@ -175,7 +228,7 @@ export const ImportDialog = () => {
                         readOnly
                         className="flex-1"
                         placeholder={intl.$t({ id: 'graph.import-dialog.upload-card-input-placeholder' })}
-                        value={file?.name ?? ''}
+                        value={filenameSchema.parse(file?.name)}
                         onClick={() => {
                           fileSelect$.next();
                         }}
@@ -185,9 +238,9 @@ export const ImportDialog = () => {
                   {error != null && <div className="text-sm text-red-500">{error.message}</div>}
                 </CardContent>
                 <CardFooter>
-                  <Button disabled={file == null || isUploading === 'uploading'} onClick={handleFileUpload}>
+                  <Button disabled={file == null || isUploading === 'uploading'} onClick={() => upload$.next()}>
                     {isUploading === 'uploading' && <Spinner />}
-                    {buttonTitle}
+                    {fileUploadButtonTitle}
                   </Button>
                 </CardFooter>
               </Card>
@@ -202,11 +255,32 @@ export const ImportDialog = () => {
                 <CardContent className="grid gap-6">
                   <div className="grid gap-3">
                     <Label htmlFor="url-input">URL</Label>
-                    <Input id="url-input" placeholder="https://example.com/data.json" />
+                    <div className="flex flex-row gap-2">
+                      <FetchImportMethodDropdown />
+                      <Input
+                        id="url-input"
+                        placeholder="https://petstore3.swagger.io/api/v3/openapi.json"
+                        value={urlSchema.parse(url)}
+                        onChange={(event) => {
+                          setUrl(event.target.value);
+                        }}
+                      />
+                    </div>
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button disabled>Fetch (Coming Soon)</Button>
+                  <Button
+                    onClick={() => fetch$.next()}
+                    disabled={
+                      url == null ||
+                      url === '' ||
+                      isFetching === 'fetching' ||
+                      !urlValidateSchema.safeParse(url).success
+                    }
+                  >
+                    {isFetching === 'fetching' && <Spinner />}
+                    {apiFetchButtonTitle}
+                  </Button>
                 </CardFooter>
               </Card>
             </TabsContent>

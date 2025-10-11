@@ -27,7 +27,12 @@ export const LocaleDropdown = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-36 mx-[1rem]">
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => handleLocaleChange('en')}>
+          <DropdownMenuItem
+            className="data-[disabled]:pointer-events-none"
+            disabled={locale === 'en'}
+            onClick={() => handleLocaleChange('en')}
+            style={{ opacity: 1 }}
+          >
             <span
               className={clsx({
                 'font-bold': locale === 'en',
@@ -37,7 +42,12 @@ export const LocaleDropdown = () => {
               English
             </span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleLocaleChange('ko')}>
+          <DropdownMenuItem
+            className="data-[disabled]:pointer-events-none"
+            disabled={locale === 'ko'}
+            onClick={() => handleLocaleChange('ko')}
+            style={{ opacity: 1 }}
+          >
             <span
               className={clsx({
                 'font-bold': locale === 'ko',

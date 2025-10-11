@@ -12,6 +12,7 @@
       "action-close": "Close"
     },
     "import-dialog": {
+      "trigger": "Import",
       "title": "Import",
       "upload-card-tab-title": "File Upload",
       "upload-card-tab-api": "API",
@@ -22,6 +23,9 @@
       "file-upload": "Upload",
       "file-uploading": "Uploading...",
       "file-uploaded": "Upload Complete",
+      "api-fetch": "Fetch",
+      "api-fetching": "Fetching...",
+      "api-fetched": "Fetch Complete",
       "action-close": "Close"
     }
   }

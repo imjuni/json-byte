@@ -41,11 +41,11 @@ export const App = () => (
     <footer className="h-6 px-4 bg-card border-t flex items-center justify-between text-xs text-muted-foreground">
       <div>© 2025 JSON Byte</div>
       <div className="flex gap-4">
-        <a className="hover:text-foreground transition-colors" href="https://github.com">
+        {/* <a className="hover:text-foreground transition-colors" href="https://github.com">
           GitHub
-        </a>
+        </a> */}
         <button className="hover:text-foreground transition-colors" type="button">
-          Docs
+          Rovinj Soft Co.
         </button>
       </div>
     </footer>

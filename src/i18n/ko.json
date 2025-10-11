@@ -23,6 +23,9 @@
       "file-upload": "업로드",
       "file-uploading": "업로드 중 입니다",
       "file-uploaded": "업로드 완료 되었습니다",
+      "api-fetch": "가져오기",
+      "api-fetching": "업로드 중 입니다",
+      "api-fetched": "업로드 완료 되었습니다",
       "action-close": "닫기"
     }
   }

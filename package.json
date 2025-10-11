@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite -- --max-http-header-size 9072",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
