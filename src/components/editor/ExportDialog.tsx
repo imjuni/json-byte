@@ -65,11 +65,11 @@ export const ExportDialog = () => {
             <Label className="sr-only" htmlFor="link">
               {intl.$t({ id: 'graph.export-dialog.sr-textarea-label' })}
             </Label>
+
             <Textarea
               ref={textareaRef}
               readOnly
               className="min-h-[120px] max-h-[120px] resize-none"
-              defaultValue={window.location.href}
               id="link"
               rows={5}
               value={window.location.href}

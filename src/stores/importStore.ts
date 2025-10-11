@@ -11,6 +11,7 @@ export const useImportStore = create<TImportStore>()((set) => ({
 
   method: 'get',
   isFetching: 'non-dirty',
+  headers: [],
 
   // Actions
   setOpen: (open) => set({ open }),
@@ -20,6 +21,18 @@ export const useImportStore = create<TImportStore>()((set) => ({
   setFile: (file) => set({ file }),
   setUrl: (url) => set({ url }),
   setMethod: (method) => set({ method }),
+  addHeader: (header) =>
+    set((state) => ({
+      headers: [...state.headers, header],
+    })),
+  updateHeader: (index, header) =>
+    set((state) => ({
+      headers: state.headers.map((prev, i) => (i === index ? header : prev)),
+    })),
+  removeHeader: (index) =>
+    set((state) => ({
+      headers: state.headers.filter((_, i) => i !== index),
+    })),
   reset: () =>
     set({
       file: undefined,
@@ -28,5 +41,6 @@ export const useImportStore = create<TImportStore>()((set) => ({
       url: undefined,
       isUploading: 'non-dirty',
       isFetching: 'non-dirty',
+      headers: [],
     }),
 }));

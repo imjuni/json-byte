@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite -- --max-http-header-size 9072",
+    "dev": "NODE_OPTIONS='--max-http-header-size=8192' vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -32,6 +32,7 @@
     "lucide-react": "^0.544.0",
     "monaco-editor": "^0.54.0",
     "my-easy-fp": "^0.22.0",
+    "nanoid": "^5.1.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-intl": "^7.1.14",

@@ -7,6 +7,10 @@ import { Subject } from 'rxjs';
 import { debounceTime, switchMap, tap } from 'rxjs/operators';
 import { z } from 'zod';
 
+import { FetchImportHeaderAppendable } from '#/components/editor/features/FetchImportHeaderAppendable';
+import { FetchImportMethodDropdown } from '#/components/editor/features/FetchImportMethodDropdown';
+import { useImportProgressHookBuilder } from '#/components/editor/hooks/useImportProgressHookBuilder';
+import { useXyFlowBuilder } from '#/components/editor/hooks/useXyFlowBuilder';
 import { Button } from '#/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '#/components/ui/card';
 import {
@@ -22,11 +26,8 @@ import { Input } from '#/components/ui/input';
 import { Label } from '#/components/ui/label';
 import { Spinner } from '#/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs';
-import { useXyFlowBuilder } from '#/components/editor/hooks/useXyFlowBuilder';
 import { useEditorStore } from '#/stores/editorStore';
 import { useImportStore } from '#/stores/importStore';
-import { useImportProgressHookBuilder } from '#/components/editor/hooks/useImportProgressHookBuilder';
-import { FetchImportMethodDropdown } from '#/components/editor/features/FetchImportMethodDropdown';
 
 const filenameSchema = z.string().default('');
 
@@ -42,8 +43,21 @@ export const ImportDialog = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { setContent } = useEditorStore();
   const { updateFromContent } = useXyFlowBuilder();
-  const { file, open, error, method, isUploading, isFetching, url, setError, setFile, setOpen, setUrl, reset } =
-    useImportStore();
+  const {
+    file,
+    open,
+    error,
+    method,
+    isUploading,
+    isFetching,
+    url,
+    headers,
+    setError,
+    setFile,
+    setOpen,
+    setUrl,
+    reset,
+  } = useImportStore();
 
   const { fileUploadButtonTitle, apiFetchButtonTitle, handleUploadProgress, handleFetchProgress } =
     useImportProgressHookBuilder();
@@ -116,26 +130,41 @@ export const ImportDialog = () => {
   const handleFetch = useCallback(async () => {
     handleFetchProgress('fetching');
 
-    const reply = await axios.request({
-      method,
-      url,
-    });
+    // Convert headers array to axios headers object
+    const headersObject = headers.reduce<Record<string, string>>((aggregated, header) => {
+      if (header.key.trim() !== '') {
+        return { ...aggregated, [header.key]: header.value };
+      }
 
-    if (reply.status < 300 && reply.data != null) {
-      const formattedJson = JSON.stringify(reply.data, null, 2);
+      return aggregated;
+    }, {});
 
-      setContent(formattedJson);
-      updateFromContent(formattedJson);
+    try {
+      const reply = await axios.request({
+        method,
+        url,
+        headers: headersObject,
+        validateStatus: () => true,
+      });
 
-      handleFetchProgress('fetch-complete');
-    } else {
+      if (reply.status < 300 && reply.data != null) {
+        const formattedJson = JSON.stringify(reply.data, null, 2);
+
+        setContent(formattedJson);
+        updateFromContent(formattedJson);
+
+        handleFetchProgress('fetch-complete');
+      } else {
+        handleFetchProgress('fetch-fail');
+      }
+    } catch {
       handleFetchProgress('fetch-fail');
     }
 
     setTimeout(() => {
       handleOpenChange(false);
     }, 100);
-  }, [method, url, setContent, handleFetchProgress, updateFromContent, handleOpenChange]);
+  }, [method, url, headers, setContent, handleFetchProgress, updateFromContent, handleOpenChange]);
 
   useEffect(() => {
     const subscription = fileSelect$
@@ -190,12 +219,12 @@ export const ImportDialog = () => {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="lg:max-w-lg">
         <DialogHeader>
           <DialogTitle>{intl.$t({ id: 'graph.import-dialog.title' })}</DialogTitle>
         </DialogHeader>
 
-        <div className="flex w-full max-w-sm flex-col gap-6">
+        <div className="flex w-full max-w-lg flex-col gap-6">
           <Tabs defaultValue="file-upload">
             <TabsList>
               <TabsTrigger value="file-upload">
@@ -266,6 +295,8 @@ export const ImportDialog = () => {
                         }}
                       />
                     </div>
+
+                    <FetchImportHeaderAppendable />
                   </div>
                 </CardContent>
                 <CardFooter>
