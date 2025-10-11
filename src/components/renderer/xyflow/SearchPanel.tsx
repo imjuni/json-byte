@@ -60,7 +60,7 @@ export const SearchPanel = () => {
   }, []);
 
   return (
-    <Panel className="!bottom-[50px] !left-[35px]" position="bottom-left">
+    <Panel className="!left-[35px]" position="bottom-left">
       <div className="flex items-center gap-2">
         <LegendPopover />
 

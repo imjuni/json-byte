@@ -91,7 +91,10 @@ const FlowContent = () => {
       className="bg-background"
       edges={edges}
       nodes={nodes}
+      proOptions={{ hideAttribution: true }}
+      // eslint-disable-next-line react/jsx-sort-props
       onNodeClick={handleNodeClick}
+      // eslint-disable-next-line react/jsx-sort-props
       onNodesChange={handleNodesChange}
       defaultEdgeOptions={{
         labelStyle: { padding: '0 8px' },
@@ -103,10 +106,10 @@ const FlowContent = () => {
       }}
     >
       <Controls
-        className="!bottom-[50px] [&_button]:!bg-card [&_button]:!border-border [&_button]:!text-foreground [&_button:hover]:!bg-accent"
+        className="[&_button]:!bg-card [&_button]:!border-border [&_button]:!text-foreground [&_button:hover]:!bg-accent"
         showInteractive={false}
       />
-      <MiniMap className="!bottom-[50px] !bg-card !border-border" />
+      <MiniMap className="!bg-card !border-border" />
       <SearchPanel />
     </ReactFlow>
   );

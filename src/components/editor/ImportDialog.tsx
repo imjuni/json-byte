@@ -132,7 +132,7 @@ export const ImportDialog = () => {
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button size="sm" variant="outline">
           <Upload /> {intl.$t({ id: 'graph.import-dialog.trigger' })}
         </Button>
       </DialogTrigger>
