@@ -16,9 +16,9 @@ export const App = () => (
     <Nav />
     <Notification />
 
-    <main className="flex-1 mt-13 overflow-hidden">
-      <div className="flex flex-row h-full">
-        <div className="flex flex-3 h-full">
+    <main className="flex-1 mt-13 overflow-y-scroll md:overflow-hidden">
+      <div className="flex flex-col md:flex-row h-full">
+        <div className="flex w-full h-[30rem] md:flex-2 md:h-full">
           <div className="flex flex-col h-full w-full">
             <div className="h-10 px-4 bg-card flex justify-end items-center space-x-1">
               <ImportDialog />
@@ -34,7 +34,7 @@ export const App = () => (
             </div>
           </div>
         </div>
-        <div className="flex flex-7 h-full">
+        <div className="flex w-full h-[60rem] md:flex-8 md:h-full">
           <XYFlowRenderer />
         </div>
       </div>

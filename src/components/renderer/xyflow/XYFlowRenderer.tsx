@@ -134,7 +134,7 @@ const FlowContent = () => {
         className="[&_button]:!bg-card [&_button]:!border-border [&_button]:!text-foreground [&_button:hover]:!bg-accent"
         showInteractive={false}
       />
-      <MiniMap className="!bg-card !border-border" />
+      <MiniMap className="hidden md:block !bg-card !border-border" />
       <SearchPanel />
     </ReactFlow>
   );
