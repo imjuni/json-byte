@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { FetchImportBodyJsonContent } from '#/components/editor/features/FetchImportBodyJsonContent';
 import { FetchImportHeaderAppendable } from '#/components/editor/features/FetchImportHeaderAppendable';
 import { FetchImportMethodDropdown } from '#/components/editor/features/FetchImportMethodDropdown';
+import { useEditorConfiger } from '#/components/editor/hooks/useEditorConfiger';
 import { useImportProgressHookBuilder } from '#/components/editor/hooks/useImportProgressHookBuilder';
 import { useXyFlowBuilder } from '#/components/editor/hooks/useXyFlowBuilder';
 import { apiFetchFormSchema } from '#/components/editor/schemas/apiFetchFormSchema';
@@ -48,8 +49,9 @@ export const ImportDialog = () => {
   const upload$ = useMemo(() => new Subject<void>(), []);
   const fetch$ = useMemo(() => new Subject<TApiFetchFormSchema>(), []);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { setContent } = useEditorStore();
+  const { language, setLanguage, setContent } = useEditorStore();
   const { setNotification } = useNotificationStore();
+  const { handleChangeEditorLanguage } = useEditorConfiger();
   const { updateFromContent } = useXyFlowBuilder();
   const { file, open, error, isUploading, isFetching, setError, setFile, setOpen, reset } = useImportStore();
   const apiFetchForm = useForm<TApiFetchFormSchema>({
@@ -152,6 +154,11 @@ export const ImportDialog = () => {
         return;
       }
 
+      if (language !== parsed.language) {
+        setLanguage(parsed.language);
+        handleChangeEditorLanguage(parsed.language);
+      }
+
       setContent(formattedJson);
       updateFromContent(formattedJson);
 
@@ -174,7 +181,19 @@ export const ImportDialog = () => {
         description: intl.$t({ id: 'graph.import-dialog.file-error.raise-error' }, { message: `: ${err.message}` }),
       });
     }
-  }, [file, intl, handleUploadProgress, setError, setContent, setNotification, handleOpenChange, updateFromContent]);
+  }, [
+    file,
+    intl,
+    language,
+    handleUploadProgress,
+    handleChangeEditorLanguage,
+    setError,
+    setContent,
+    setLanguage,
+    setNotification,
+    handleOpenChange,
+    updateFromContent,
+  ]);
 
   const handleAPIFetch = useCallback(
     async (data: TApiFetchFormSchema) => {

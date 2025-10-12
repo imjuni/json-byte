@@ -6,6 +6,7 @@ import { nanoid } from 'nanoid';
 import { Controller, useForm } from 'react-hook-form';
 import { useIntl } from 'react-intl';
 
+import { useEditorConfiger } from '#/components/editor/hooks/useEditorConfiger';
 import { useLanguageConvertor } from '#/components/editor/hooks/useLanguageConvertor';
 import { useXyFlowBuilder } from '#/components/editor/hooks/useXyFlowBuilder';
 import { editorConfigFormSchema, indents, languages, themes } from '#/components/editor/schemas/editorConfigFormSchema';
@@ -31,6 +32,7 @@ export const EditorConfigDialog = () => {
   const intl = useIntl();
   const [open, setOpen] = useState<boolean>(false);
   const { convertToYaml, convertToJson, convertIndent } = useLanguageConvertor();
+  const { handleChangeEditorLanguage } = useEditorConfiger();
   const { updateFromContent } = useXyFlowBuilder();
   const { content, language, indent, theme, setEditorConfig, setContent, editorInstance, monacoInstance } =
     useEditorStore();
@@ -78,25 +80,7 @@ export const EditorConfigDialog = () => {
 
       // Update Monaco Editor language model
       if (editorInstance != null && monacoInstance != null && language !== data.language) {
-        const model = editorInstance.getModel();
-
-        if (model != null) {
-          const monacoLanguage = data.language === 'jsonc' ? 'json' : data.language;
-
-          // Update the model's language using monacoInstance
-          monacoInstance.editor.setModelLanguage(model, monacoLanguage);
-
-          // Configure JSON language options if switching to jsonc
-          if (data.language === 'jsonc') {
-            monacoInstance.languages.json.jsonDefaults.setDiagnosticsOptions({
-              validate: true,
-              allowComments: true,
-              trailingCommas: 'ignore',
-              schemas: [],
-              enableSchemaRequest: false,
-            });
-          }
-        }
+        handleChangeEditorLanguage(data.language as TEditorLanguage);
       }
 
       // Update editor indent settings
@@ -117,6 +101,7 @@ export const EditorConfigDialog = () => {
       indent,
       editorInstance,
       monacoInstance,
+      handleChangeEditorLanguage,
       convertToYaml,
       convertToJson,
       convertIndent,
