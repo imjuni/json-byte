@@ -52,7 +52,7 @@ export const ExportDialog = () => {
   useEffect(() => {
     if (copyButtonRef.current) {
       const clipboard = new Clipboard(copyButtonRef.current, {
-        text: () => `${window.location.host}?${CE_EDITOR_URL.CONTENT}=${querystring}`,
+        text: () => `${window.location.origin}${window.location.pathname}?${CE_EDITOR_URL.CONTENT}=${querystring}`,
       });
 
       return () => {
@@ -89,7 +89,7 @@ export const ExportDialog = () => {
               className="min-h-[120px] max-h-[120px] resize-none"
               id="link"
               rows={5}
-              value={`${window.location.host}?${CE_EDITOR_URL.CONTENT}=${querystring}`}
+              value={`${window.location.origin}${window.location.pathname}?${CE_EDITOR_URL.CONTENT}=${querystring}`}
             />
           </div>
         </div>

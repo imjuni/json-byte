@@ -49,6 +49,8 @@ const loadFromQueryString = (): JsonValue | Error => {
     const base64Decoded = fromBase64(contentFromQuerystring);
 
     if (base64Decoded instanceof Error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to decode base64:', base64Decoded.message);
       return base64Decoded;
     }
 
@@ -56,18 +58,24 @@ const loadFromQueryString = (): JsonValue | Error => {
     const decoded = decode(base64Decoded);
 
     if (decoded instanceof Error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to decode messagepack:', decoded.message);
       return decoded;
     }
 
     const jsonValue = safeParse(decoded as string);
 
     if (jsonValue instanceof Error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to parse JSON:', jsonValue.message);
       return jsonValue;
     }
 
     return jsonValue;
-  } catch {
-    return null;
+  } catch (caught) {
+    // eslint-disable-next-line no-console
+    console.error('Unexpected error in loadFromQueryString:', caught);
+    return new Error(`Unexpected error: ${caught instanceof Error ? caught.message : String(caught)}`);
   }
 };
 

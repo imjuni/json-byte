@@ -31,7 +31,7 @@ describe('decode', () => {
 
   it('should decode Uint8Array to JsonValue when pass valid MessagePack bytes', () => {
     const bytes = fromBase64(validBase64);
-    const result = decode(bytes);
+    const result = decode(bytes as unknown as Uint8Array);
 
     if (result instanceof Error) {
       throw new Error('decode fail');

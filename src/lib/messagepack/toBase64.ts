@@ -7,5 +7,10 @@ export function toBase64(values: Uint8Array): string {
   }
 
   const base64String = btoa(arr.join(''));
-  return base64String;
+
+  // Convert standard base64 to URL-safe base64
+  // Replace standard characters with URL-safe characters and remove padding
+  const urlSafeBase64 = base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+  return urlSafeBase64;
 }
