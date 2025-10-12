@@ -67,7 +67,7 @@ export const ExportDialog = () => {
     <Dialog onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button ref={copyButtonRef} size="sm" variant="outline">
-          <IconLink />
+          <IconLink /> Export
         </Button>
       </DialogTrigger>
 

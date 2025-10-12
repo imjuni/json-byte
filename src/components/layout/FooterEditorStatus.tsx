@@ -6,8 +6,8 @@ export const FooterEditorStatus = () => {
   const { language, indent, theme } = useEditorStore();
 
   return (
-    <div className="flex gap-6">
-      <BrowserView>
+    <>
+      <BrowserView className="flex gap-6">
         <div className="flex gap-2">
           <span>{`{}`}</span>
           <span className="font-bold">{language.toUpperCase()}</span>
@@ -24,19 +24,17 @@ export const FooterEditorStatus = () => {
         </div>
       </BrowserView>
 
-      <MobileView>
-        <div className="flex gap-1">
-          <span className="font-bold">
-            {language.toUpperCase()}
-            {' / '}
-          </span>
-          <span className="font-bold">
-            {indent}
-            {' / '}
-          </span>
-          <span className="font-bold">{theme}</span>
-        </div>
+      <MobileView className="flex gap-1">
+        <span className="font-bold">
+          {language.toUpperCase()}
+          {' / '}
+        </span>
+        <span className="font-bold">
+          {indent}
+          {' / '}
+        </span>
+        <span className="font-bold">{theme}</span>
       </MobileView>
-    </div>
+    </>
   );
 };
