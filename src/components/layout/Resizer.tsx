@@ -22,7 +22,7 @@ const variants = tv({
         'transition-colors',
         'group',
         'relative',
-        'z-[500]',
+        'z-[40]',
       ].join(' '),
       horizontal: [
         'flex',
@@ -35,7 +35,7 @@ const variants = tv({
         'transition-colors',
         'group',
         'relative',
-        'z-[500]',
+        'z-[40]',
       ].join(' '),
     },
     dividerHandle: {

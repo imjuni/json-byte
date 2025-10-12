@@ -8,8 +8,7 @@ import { fromBase64 } from '#/lib/messagepack/fromBase64';
 
 import type { JsonValue } from 'type-fest';
 
-import type { TEditorLanguage } from '#/contracts/editors/editor';
-import type { IEditorStore } from '#/contracts/editors/IEditorStore';
+import type { TEditorStore } from '#/contracts/editors/IEditorStore';
 
 const example = {
   firstName: 'John',
@@ -72,38 +71,36 @@ const loadFromQueryString = (): JsonValue | Error => {
   }
 };
 
-export const useEditorStore = create<IEditorStore>()(
+export const useEditorStore = create<TEditorStore>()(
   persist(
     (set) => ({
       // Initial state
       content: JSON.stringify(example, undefined, 2),
       language: 'json',
+      indent: 2,
+      theme: 'vs',
       editorInstance: undefined,
+      monacoInstance: undefined,
 
       // Actions
-      setContent: (content: string) => {
-        set({ content });
-      },
-
-      setLanguage: (language: TEditorLanguage) => {
-        set({ language });
-      },
-
-      setEditorInstance: (instance) => {
-        set({ editorInstance: instance });
-      },
-
-      reset: () => {
-        set({ content: '{}', language: 'json' });
-      },
+      setContent: (content: string) => set({ content }),
+      setLanguage: (language) => set({ language }),
+      setIndent: (theme) => set({ theme }),
+      setTheme: (theme) => set({ theme }),
+      setEditorInstance: (instance) => set({ editorInstance: instance }),
+      setMonacoInstance: (instance) => set({ monacoInstance: instance }),
+      setEditorConfig: (config) => set({ language: config.language, indent: config.indent, theme: config.theme }),
+      reset: () => set({ content: '{}', language: 'json', theme: 'vs', indent: 2 }),
     }),
     {
       name: 'json-byte-editor',
       storage: createJSONStorage(() => localStorage),
+      // Exclude editorInstance from persistence (it's not serializable)
       partialize: (state) => ({
         content: state.content,
         language: state.language,
-        // Exclude editorInstance from persistence (it's not serializable)
+        theme: state.theme,
+        indent: state.indent,
       }),
       onRehydrateStorage: () => (state) => {
         // Try to load from querystring first

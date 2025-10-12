@@ -1,10 +1,9 @@
 import '@xyflow/react/dist/style.css';
-import { Settings } from 'lucide-react';
 
+import { EditorConfigDialog } from '#/components/editor/EditorConfigDialog';
 import { ExportDialog } from '#/components/editor/ExportDialog';
 import { ImportDialog } from '#/components/editor/ImportDialog';
 import { JsonByteEditor } from '#/components/editor/JsonByteEditor';
-import { Button } from '#/components/ui/button';
 
 export const Editor = () => (
   <div className="flex flex-col h-full w-full">
@@ -13,9 +12,7 @@ export const Editor = () => (
 
       <ExportDialog />
 
-      <Button size="sm" variant="outline">
-        <Settings />
-      </Button>
+      <EditorConfigDialog />
     </div>
 
     <div className="flex-1 overflow-hidden">

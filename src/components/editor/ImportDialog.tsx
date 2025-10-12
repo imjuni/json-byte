@@ -130,7 +130,7 @@ export const ImportDialog = () => {
       }
 
       // If successful, update editor content and visualization
-      const formattedJson = multiStringify(parsed.data, parsed.kind, undefined, 2);
+      const formattedJson = multiStringify(parsed.data, parsed.language, undefined, 2);
 
       if (formattedJson instanceof Error) {
         setError(formattedJson);

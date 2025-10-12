@@ -11,7 +11,7 @@ import { useEditorStore } from '#/stores/editorStore';
 import type { BeforeMount, OnMount } from '@monaco-editor/react';
 
 export const JsonByteEditor = () => {
-  const { content, language, setContent, setEditorInstance } = useEditorStore();
+  const { content, language, theme, indent, setContent, setEditorInstance, setMonacoInstance } = useEditorStore();
   const { updateFromContent } = useXyFlowBuilder();
 
   // Create Subject once using useMemo
@@ -19,6 +19,8 @@ export const JsonByteEditor = () => {
 
   const handleEditorWillMount: BeforeMount = useCallback(
     (monaco) => {
+      setMonacoInstance(monaco);
+
       if (language === 'jsonc') {
         // Configure JSON language to allow comments and trailing commas
         monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
@@ -32,14 +34,19 @@ export const JsonByteEditor = () => {
 
       updateFromContent(content);
     },
-    [language, content, updateFromContent],
+    [language, content, updateFromContent, setMonacoInstance],
   );
 
   const handleEditorMount: OnMount = useCallback(
     (editor) => {
+      editor.updateOptions({
+        tabSize: indent,
+        insertSpaces: true,
+      });
+
       setEditorInstance(editor);
     },
-    [setEditorInstance],
+    [indent, setEditorInstance],
   );
 
   // Setup RxJS pipe with operators
@@ -66,6 +73,7 @@ export const JsonByteEditor = () => {
       height="100%"
       language={language === 'jsonc' ? 'json' : language}
       onMount={handleEditorMount}
+      theme={theme}
       value={content}
       width="100%"
       onChange={(value) => {

@@ -24,7 +24,10 @@
       "file-uploading": "Uploading...",
       "file-uploaded": "Upload Complete",
       "file-error": {
-        "title": "오류"
+        "title": "Error",
+        "raise-error": "An error occurred{message}",
+        "fail-parse": "Failed to parse file. The file is not in JSON or YAML format{message}",
+        "fail-format": "Failed to format the file for better readability{message}"
       },
       "api-fetch": "Fetch",
       "api-fetching": "Fetching...",
@@ -33,10 +36,10 @@
       "api-fetch-card-description": "Enter a URL to fetch JSON data from a remote source.",
       "api-fetch-error": {
         "title": "Error",
-        "fetch-fail": "API 요청에 실패했습니다",
-        "raise-error": "오류가 발생하였습니다{message}",
-        "invalid-url": "URL 형식이 올바르지 않습니다",
-        "invalid-json": "Body는 올바른 JSON 형식이어야 합니다"
+        "fetch-fail": "Failed to fetch from API",
+        "raise-error": "An error occurred{message}",
+        "invalid-url": "Invalid URL format",
+        "invalid-json": "Body must be in valid JSON format"
       },
       "action-close": "Close"
     }
