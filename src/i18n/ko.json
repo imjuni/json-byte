@@ -8,6 +8,9 @@
     "editor-config-dialog": {
       "title": "에디터 설정",
       "description": "에디터 관련 설정을 변경할 수 있습니다",
+      "indent": "들여쓰기",
+      "language": "언어",
+      "theme": "테마",
       "action-submit": "저장",
       "action-close": "닫기"
     },

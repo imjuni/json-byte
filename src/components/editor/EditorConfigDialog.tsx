@@ -147,7 +147,9 @@ export const EditorConfigDialog = () => {
               name="indent"
               render={({ field, fieldState }) => (
                 <Field>
-                  <FieldLabel htmlFor="editor-config-indent-select">들여쓰기</FieldLabel>
+                  <FieldLabel htmlFor="editor-config-indent-select">
+                    {intl.$t({ id: 'graph.editor-config-dialog.indent' })}
+                  </FieldLabel>
 
                   <Select name={field.name} onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger
@@ -177,7 +179,9 @@ export const EditorConfigDialog = () => {
               name="language"
               render={({ field, fieldState }) => (
                 <Field>
-                  <FieldLabel htmlFor="editor-config-language-select">언어</FieldLabel>
+                  <FieldLabel htmlFor="editor-config-language-select">
+                    {intl.$t({ id: 'graph.editor-config-dialog.language' })}
+                  </FieldLabel>
 
                   <Select name={field.name} onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger
@@ -207,7 +211,9 @@ export const EditorConfigDialog = () => {
               name="theme"
               render={({ field, fieldState }) => (
                 <Field>
-                  <FieldLabel htmlFor="editor-config-theme-select">테마</FieldLabel>
+                  <FieldLabel htmlFor="editor-config-theme-select">
+                    {intl.$t({ id: 'graph.editor-config-dialog.theme' })}
+                  </FieldLabel>
 
                   <Select name={field.name} onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger

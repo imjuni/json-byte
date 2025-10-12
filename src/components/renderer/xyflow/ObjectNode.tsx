@@ -11,11 +11,12 @@ import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
 
 const variants = tv({
   slots: {
-    node: 'shadow-md h-fit rounded-md bg-card border-2 border-border dark:hover:border-blue-900 hover:border-blue-400',
-    heading: 'text-foreground px-4 font-bold mb-2',
+    node: 'shadow-md h-fit w-[240px] rounded-md bg-card border-2 border-border dark:hover:border-blue-900 hover:border-blue-400',
+    heading: 'text-foreground px-4 font-bold mb-2 truncate',
     container: 'text-sm space-y-1',
-    line: 'flex px-4 gap-2',
-    fieldHeading: 'font-medium text-muted-foreground',
+    line: 'flex px-4 gap-2 min-w-0',
+    fieldHeading: 'font-medium text-muted-foreground flex-shrink-0',
+    fieldValue: 'truncate min-w-0',
   },
 });
 
@@ -36,7 +37,7 @@ const handleVariants = tv({
   },
 });
 
-const { container, line, fieldHeading, heading, node } = variants();
+const { container, line, fieldHeading, fieldValue, heading, node } = variants();
 
 const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
   const label = getOrDefault(data?.label, '');
@@ -57,7 +58,9 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
                 <div className={line()}>
                   <TypeDisc type={field.type} />
                   <span className={fieldHeading()}>{field.key}:</span>
-                  <FieldValue type={field.type} value={field.value} />
+                  <div className={fieldValue()}>
+                    <FieldValue type={field.type} value={field.value} />
+                  </div>
                 </div>
 
                 {index < primitiveFields.length - 1 && <hr />}
@@ -78,10 +81,12 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
                 <div className={line({ class: 'relative' })}>
                   <TypeDisc type={field.type} />
                   <span className={fieldHeading()}>{field.key}:</span>
-                  <FieldValue
-                    type={field.type}
-                    value={field.type === 'array' ? `[${field.size} items]` : `{${field.size} keys}`}
-                  />
+                  <div className={fieldValue()}>
+                    <FieldValue
+                      type={field.type}
+                      value={field.type === 'array' ? `[${field.size} items]` : `{${field.size} keys}`}
+                    />
+                  </div>
 
                   {/* Individual source handle for each complex field */}
                   <Handle
