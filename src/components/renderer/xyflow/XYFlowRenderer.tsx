@@ -10,13 +10,14 @@ import { layoutNodes } from '#/lib/xyflow/layoutNodes';
 import { useEditorStore } from '#/stores/editorStore';
 import { useXyFlowStore } from '#/stores/xyflowStore';
 
-import type { NodeChange } from '@xyflow/react';
+import type { Edge, NodeChange } from '@xyflow/react';
 
+import type { IXyFlowEdge } from '#/lib/xyflow/interfaces/IXyFlowEdge';
 import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
 
 // Inner component that uses React Flow hooks
 const FlowContent = () => {
-  const { nodes, edges, direction, setNodes } = useXyFlowStore();
+  const { nodes, edges, nodeMap, direction, setNodes } = useXyFlowStore();
   const { content, editorInstance } = useEditorStore();
   const nodesInitialized = useNodesInitialized();
   const hasRelayoutedRef = useRef(false);
@@ -76,8 +77,8 @@ const FlowContent = () => {
     [nodes, setNodes],
   );
 
-  const handleNodeClick = useCallback(
-    (_event: React.MouseEvent, node: IXyFlowNode) => {
+  const handleMoveNodeCenter = useCallback(
+    (node: IXyFlowNode) => {
       // Center the node in the viewport
       const x = node.position.x + (node.measured?.width ?? 0) / 2;
       const y = node.position.y + (node.measured?.height ?? 0) / 2;
@@ -86,6 +87,14 @@ const FlowContent = () => {
       const zoom = currentZoom > 0.8 ? currentZoom : 1;
 
       setCenter(x, y, { zoom, duration: 400 });
+    },
+    [getZoom, setCenter],
+  );
+
+  const handleNodeClick = useCallback(
+    (_event: React.MouseEvent, node: IXyFlowNode) => {
+      // Center the node in the viewport
+      handleMoveNodeCenter(node);
 
       // Select the corresponding text in the editor
       if (editorInstance && content) {
@@ -108,7 +117,44 @@ const FlowContent = () => {
         }
       }
     },
-    [setCenter, getZoom, editorInstance, content],
+    [handleMoveNodeCenter, editorInstance, content],
+  );
+
+  const handleEdgeClick = useCallback(
+    (_event: React.MouseEvent, edge: Edge) => {
+      // Use the child node's id as the JSONPath to find the position
+      const edgeData = edge.data as IXyFlowEdge['data'] | undefined;
+      const targetPath = edgeData?.child?.id;
+
+      if (targetPath == null || editorInstance == null || content == null) {
+        return;
+      }
+
+      const targetNode = nodeMap[targetPath];
+
+      if (targetNode != null) {
+        handleMoveNodeCenter(targetNode);
+      }
+
+      const position = findTextPositionByJsonPath(content, targetPath);
+
+      if (position) {
+        // Set selection in the editor
+        editorInstance.setSelection({
+          startLineNumber: position.startLine,
+          startColumn: position.startColumn,
+          endLineNumber: position.endLine,
+          endColumn: position.endColumn,
+        });
+
+        // Reveal the selection in the editor viewport
+        editorInstance.revealLineInCenter(position.startLine);
+
+        // Focus the editor
+        editorInstance.focus();
+      }
+    },
+    [editorInstance, content, nodeMap, handleMoveNodeCenter],
   );
 
   return (
@@ -117,6 +163,8 @@ const FlowContent = () => {
       edges={edges}
       nodes={nodes}
       proOptions={{ hideAttribution: true }}
+      // eslint-disable-next-line react/jsx-sort-props
+      onEdgeClick={handleEdgeClick}
       // eslint-disable-next-line react/jsx-sort-props
       onNodeClick={handleNodeClick}
       // eslint-disable-next-line react/jsx-sort-props

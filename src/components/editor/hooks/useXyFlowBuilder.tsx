@@ -20,20 +20,20 @@ export function useXyFlowBuilder(): {
   buildXyFlow: (value: JsonValue | Error) => IXyFlowNode[];
   updateFromContent: (content: string) => void;
 } {
-  const { direction, setNodesAndEdges } = useXyFlowStore();
+  const { direction, setNodesAndEdgesAndMap } = useXyFlowStore();
   const { setFuse } = useFuseStore();
 
   const buildXyFlow = useCallback(
     (value: ReturnType<typeof safeYamlParse>): IXyFlowNode[] => {
       if (!(value instanceof Error)) {
         const { nodes, edges } = createXyFlowNodesWithEdges(value, direction);
-        setNodesAndEdges(nodes, edges);
+        setNodesAndEdgesAndMap(nodes, edges);
         return nodes;
       }
 
       return [];
     },
-    [direction, setNodesAndEdges],
+    [direction, setNodesAndEdgesAndMap],
   );
 
   const updateFromContent = useCallback(
