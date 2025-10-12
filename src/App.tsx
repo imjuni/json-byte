@@ -65,14 +65,13 @@ export const App = () => {
       </main>
 
       <footer className="h-6 px-4 bg-card border-t flex items-center justify-between text-xs text-muted-foreground">
-        <div>© 2025 JSON Byte</div>
+        <div>JSON</div>
         <div className="flex gap-4">
-          {/* <a className="hover:text-foreground transition-colors" href="https://github.com">
-            GitHub
-          </a> */}
-          <button className="hover:text-foreground transition-colors" type="button">
-            Rovinj Soft Co.
-          </button>
+          <span>© 2025 JSON Byte</span>
+
+          <a className="hover:text-foreground transition-colors" href="https://rovinjsoft.com/" target="_blink">
+            <span className="font-bold">Rovinj Soft Co.</span>
+          </a>
         </div>
       </footer>
     </div>
