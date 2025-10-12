@@ -2,6 +2,7 @@ import '@xyflow/react/dist/style.css';
 import { BrowserView, MobileView } from 'react-device-detect';
 
 import { Editor } from '#/components/editor/Editor';
+import { FooterEditorStatus } from '#/components/layout/FooterEditorStatus';
 import { Resizer } from '#/components/layout/Resizer';
 import { Nav } from '#/components/nav/Nav';
 import { Notification } from '#/components/nav/Notification';
@@ -65,7 +66,7 @@ export const App = () => {
       </main>
 
       <footer className="h-6 px-4 bg-card border-t flex items-center justify-between text-xs text-muted-foreground">
-        <div>JSON</div>
+        <FooterEditorStatus />
         <div className="flex gap-4">
           <span>© 2025 JSON Byte</span>
 
