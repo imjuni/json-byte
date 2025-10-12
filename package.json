@@ -36,6 +36,7 @@
     "my-easy-fp": "^0.22.0",
     "nanoid": "^5.1.6",
     "react": "^19.1.1",
+    "react-device-detect": "^2.2.3",
     "react-dom": "^19.1.1",
     "react-hook-form": "^7.65.0",
     "react-intl": "^7.1.14",

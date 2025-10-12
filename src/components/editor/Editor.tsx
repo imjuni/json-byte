@@ -1,77 +1,25 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import '@xyflow/react/dist/style.css';
+import { Settings } from 'lucide-react';
 
-import MonacoEditor from '@monaco-editor/react';
-import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, filter, tap } from 'rxjs/operators';
+import { ExportDialog } from '#/components/editor/ExportDialog';
+import { ImportDialog } from '#/components/editor/ImportDialog';
+import { JsonByteEditor } from '#/components/editor/JsonByteEditor';
+import { Button } from '#/components/ui/button';
 
-import { useXyFlowBuilder } from '#/components/editor/hooks/useXyFlowBuilder';
-import { getOrDefault } from '#/lib/getOrDefault';
-import { useEditorStore } from '#/stores/editorStore';
+export const Editor = () => (
+  <div className="flex flex-col h-full w-full">
+    <div className="h-10 px-4 bg-card flex justify-end items-center space-x-1">
+      <ImportDialog />
 
-import type { BeforeMount, OnMount } from '@monaco-editor/react';
+      <ExportDialog />
 
-export const Editor = () => {
-  const { content, language, setContent, setEditorInstance } = useEditorStore();
-  const { updateFromContent } = useXyFlowBuilder();
+      <Button size="sm" variant="outline">
+        <Settings />
+      </Button>
+    </div>
 
-  // Create Subject once using useMemo
-  const content$ = useMemo(() => new Subject<string | undefined | null>(), []);
-
-  const handleEditorWillMount: BeforeMount = useCallback(
-    (monaco) => {
-      if (language === 'jsonc') {
-        // Configure JSON language to allow comments and trailing commas
-        monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
-          validate: true,
-          allowComments: true,
-          trailingCommas: 'ignore',
-          schemas: [],
-          enableSchemaRequest: false,
-        });
-      }
-
-      updateFromContent(content);
-    },
-    [language, content, updateFromContent],
-  );
-
-  const handleEditorMount: OnMount = useCallback(
-    (editor) => {
-      setEditorInstance(editor);
-    },
-    [setEditorInstance],
-  );
-
-  // Setup RxJS pipe with operators
-  useEffect(() => {
-    const subscription = content$
-      .pipe(
-        distinctUntilChanged(), // Only emit when value changes
-        filter((value) => value != null),
-        debounceTime(500), // Wait 0.5 second after last input
-        tap((editorContent) => {
-          updateFromContent(editorContent);
-        }), // Side effect: perform search
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [content$, updateFromContent]);
-
-  return (
-    <MonacoEditor
-      beforeMount={handleEditorWillMount}
-      height="100%"
-      language={language === 'jsonc' ? 'json' : language}
-      onMount={handleEditorMount}
-      value={content}
-      width="100%"
-      onChange={(value) => {
-        setContent(getOrDefault(value, '{}'));
-        content$.next(value);
-      }}
-    />
-  );
-};
+    <div className="flex-1 overflow-hidden">
+      <JsonByteEditor />
+    </div>
+  </div>
+);

@@ -1,9 +1,9 @@
 import { getOrDefault } from '#/lib/getOrDefault';
 import { safeParse } from '#/lib/json/safeParse';
 
-import type { IThemeStore } from '#/contracts/theme/IThemeStore';
+import type { TThemeStore } from '#/contracts/theme/IThemeStore';
 
-export function getInitialLocale(): IThemeStore['locale'] {
+export function getInitialLocale(): TThemeStore['locale'] {
   try {
     const theme = getOrDefault(localStorage.getItem('json-byte-theme'), '{}');
     const parsed = safeParse(theme);
@@ -12,7 +12,7 @@ export function getInitialLocale(): IThemeStore['locale'] {
       return 'en';
     }
 
-    const { locale } = parsed as unknown as IThemeStore;
+    const { locale } = parsed as unknown as TThemeStore;
 
     if (locale != null && (locale === 'en' || locale === 'ko')) {
       return locale;

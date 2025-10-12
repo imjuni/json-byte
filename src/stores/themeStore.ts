@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import type { IThemeStore } from '#/contracts/theme/IThemeStore';
+import type { TThemeStore } from '#/contracts/theme/IThemeStore';
 import type { TTheme } from '#/contracts/theme/TTheme';
 
 const applyTheme = (theme: TTheme) => {
@@ -12,11 +12,11 @@ const applyTheme = (theme: TTheme) => {
   }
 };
 
-const applyLocale = (locale: IThemeStore['locale']) => {
+const applyLocale = (locale: TThemeStore['locale']) => {
   document.documentElement.setAttribute('lang', locale);
 };
 
-export const useThemeStore = create<IThemeStore>()(
+export const useThemeStore = create<TThemeStore>()(
   persist(
     (set, get) => ({
       theme: 'light',
