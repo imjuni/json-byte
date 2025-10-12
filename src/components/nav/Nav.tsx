@@ -10,7 +10,12 @@ export const Nav = () => {
 
   return (
     <nav className="absolute top-0 left-0 m-0 w-full h-12 shadow-sm bg-card border-b border-border flex items-center justify-between px-4">
-      <div className="flex text-foreground font-bold">JSON Byte</div>
+      <div className="flex text-foreground font-bold justify-center items-center gap-2">
+        <img alt="JSON Byte Logo" className="w-8 h-8" src="/json-byte-favicon.png" />
+        <div className="flex">
+          <a href="https://json-byte.pages.dev/">JSON Byte</a>
+        </div>
+      </div>
 
       <div className="flex flex-1"> </div>
 

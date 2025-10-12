@@ -140,6 +140,7 @@ tslint-to-eslint-config.log
 .swc/
 
 # script
+_image-working
 git-short.sh
 **/CLAUDE_LOCAL.md
 **/CLAUDE.local.md
