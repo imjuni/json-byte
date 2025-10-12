@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { CE_EDITOR_URL } from '#/contracts/editors/CE_EDITOR_URL';
+import { safeParse } from '#/lib/json/safeParse';
 import { decode } from '#/lib/messagepack/decode';
 import { fromBase64 } from '#/lib/messagepack/fromBase64';
 
@@ -59,7 +60,13 @@ const loadFromQueryString = (): JsonValue | Error => {
       return decoded;
     }
 
-    return decoded;
+    const jsonValue = safeParse(decoded as string);
+
+    if (jsonValue instanceof Error) {
+      return jsonValue;
+    }
+
+    return jsonValue;
   } catch {
     return null;
   }

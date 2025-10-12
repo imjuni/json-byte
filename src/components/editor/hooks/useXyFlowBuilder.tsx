@@ -10,6 +10,8 @@ import type { JsonValue } from 'type-fest';
 
 import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
 
+const ENABLE_QUERYSTRING = false;
+
 /**
  * Custom hook for building and updating XyFlow graph visualization
  * Handles parsing content, creating nodes/edges, and updating stores
@@ -40,9 +42,11 @@ export function useXyFlowBuilder(): {
       const nodes = buildXyFlow(document);
       setFuse(createFuse(nodes));
 
-      setTimeout(() => {
-        replaceHref(document);
-      }, 10);
+      if (ENABLE_QUERYSTRING) {
+        setTimeout(() => replaceHref(document), 10);
+      } else {
+        window.history.replaceState(null, '', '/');
+      }
     },
     [buildXyFlow, setFuse],
   );

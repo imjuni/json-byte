@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import Clipboard from 'clipboard';
 import { Link as IconLink } from 'lucide-react';
@@ -17,11 +17,17 @@ import {
 } from '#/components/ui/dialog';
 import { Label } from '#/components/ui/label';
 import { Textarea } from '#/components/ui/textarea';
+import { CE_EDITOR_URL } from '#/contracts/editors/CE_EDITOR_URL';
+import { encode } from '#/lib/messagepack/encode';
+import { toBase64 } from '#/lib/messagepack/toBase64';
+import { useEditorStore } from '#/stores/editorStore';
 
 export const ExportDialog = () => {
   const intl = useIntl();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const copyButtonRef = useRef<HTMLButtonElement>(null);
+  const [querystring, setQuerystring] = useState<string>();
+  const { content } = useEditorStore();
 
   const handleOpenChange = (open: boolean) => {
     if (open) {
@@ -33,9 +39,20 @@ export const ExportDialog = () => {
   };
 
   useEffect(() => {
+    const encoded = encode(content);
+
+    if (encoded instanceof Error) {
+      return;
+    }
+
+    const base64ed = toBase64(encoded);
+    setQuerystring(base64ed);
+  }, [content, setQuerystring]);
+
+  useEffect(() => {
     if (copyButtonRef.current) {
       const clipboard = new Clipboard(copyButtonRef.current, {
-        text: () => window.location.href,
+        text: () => `${window.location.host}?${CE_EDITOR_URL.CONTENT}=${querystring}`,
       });
 
       return () => {
@@ -44,7 +61,7 @@ export const ExportDialog = () => {
     }
 
     return undefined;
-  }, []);
+  }, [querystring]);
 
   return (
     <Dialog onOpenChange={handleOpenChange}>
@@ -72,7 +89,7 @@ export const ExportDialog = () => {
               className="min-h-[120px] max-h-[120px] resize-none"
               id="link"
               rows={5}
-              value={window.location.href}
+              value={`${window.location.host}?${CE_EDITOR_URL.CONTENT}=${querystring}`}
             />
           </div>
         </div>
