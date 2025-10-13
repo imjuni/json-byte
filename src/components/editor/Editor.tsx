@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { BrowserView, MobileView } from 'react-device-detect';
+import { useIntl } from 'react-intl';
 
 import { EditorConfigDialog } from '#/components/editor/EditorConfigDialog';
 import { ExportDialog } from '#/components/editor/ExportDialog';
@@ -14,6 +15,7 @@ import { safeStringify } from '#/lib/json/safeStringify';
 import { useEditorStore } from '#/stores/editorStore';
 
 export const Editor = () => {
+  const intl = useIntl();
   const { language, content, indent, setContent } = useEditorStore();
   const { updateFromContent } = useXyFlowBuilder();
 
@@ -59,11 +61,11 @@ export const Editor = () => {
     <div className="flex flex-col h-full w-full">
       <BrowserView className="h-10 px-4 bg-card flex justify-end items-center space-x-1">
         <Button disabled={language === 'yaml'} onClick={handlePretty} size="sm" variant="outline">
-          <Maximize2 /> Pretty
+          <Maximize2 /> {intl.$t({ id: 'editor.pretty' })}
         </Button>
 
         <Button disabled={language === 'yaml'} onClick={handleCompact} size="sm" variant="outline">
-          <Minimize2 /> Compact
+          <Minimize2 /> {intl.$t({ id: 'editor.compact' })}
         </Button>
 
         <ImportDialog />

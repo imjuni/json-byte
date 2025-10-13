@@ -4,6 +4,10 @@
   "export": "Export",
   "format": "Format",
   "minify": "Minify",
+  "editor": {
+    "pretty": "Pretty",
+    "compact": "Compact"
+  },
   "graph": {
     "editor-config-dialog": {
       "title": "Editor Settings",
@@ -15,9 +19,10 @@
       "action-close": "Close"
     },
     "export-dialog": {
+      "trigger": "Export",
       "title": "Export",
       "description": "Anyone who has this link will be able to view this. It has already been copied. If you want to copy it again, please copy the link below.",
-      "sr-textarea-label":"Export Link",
+      "sr-textarea-label": "Export Link",
       "action-close": "Close"
     },
     "import-dialog": {

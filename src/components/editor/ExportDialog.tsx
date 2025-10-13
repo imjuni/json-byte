@@ -67,7 +67,7 @@ export const ExportDialog = () => {
     <Dialog onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button ref={copyButtonRef} size="sm" variant="outline">
-          <IconLink /> Export
+          <IconLink /> {intl.$t({ id: 'graph.export-dialog.trigger' })}
         </Button>
       </DialogTrigger>
 

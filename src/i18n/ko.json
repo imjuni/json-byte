@@ -4,6 +4,10 @@
   "export": "Export",
   "format": "Format",
   "minify": "Minify",
+  "editor": {
+    "pretty": "Pretty",
+    "compact": "Compact"
+  },
   "graph": {
     "editor-config-dialog": {
       "title": "에디터 설정",
@@ -15,9 +19,10 @@
       "action-close": "닫기"
     },
     "export-dialog": {
+      "trigger": "공유",
       "title": "공유",
       "description": "다른 사람에게 이 링크를 전달하면 동일한 화면을 볼 수 있습니다. 이미 복사되어 있습니다. 다시 복사 하고 싶으면 아래 링크를 복사하세요.",
-      "sr-textarea-label":"공유 링크",
+      "sr-textarea-label": "공유 링크",
       "action-close": "닫기"
     },
     "import-dialog": {
@@ -53,5 +58,4 @@
       "action-close": "닫기"
     }
   }
-  
 }
