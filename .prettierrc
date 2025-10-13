@@ -12,6 +12,12 @@
       }
     },
     {
+      "files": "*.json",
+      "options": {
+        "parser": "json"
+      }
+    },
+    {
       "files": [
         ".vscode/launch.json",
         ".vscode/settings.json"

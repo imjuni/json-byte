@@ -1,0 +1,267 @@
+{
+  "logger": "api",
+  "pid": 17916,
+  "id": "db-connection",
+  "status": 200,
+  "duration": 28,
+  "tid": "61df39d2-fb48-4daa-904e-f7aaa6c159ad",
+  "body": {
+    "type": "mysql",
+    "host": "localhost",
+    "port": 9301,
+    "database": "pet_store",
+    "username": "root",
+    "password": "testadmin",
+    "poolSize": 10,
+    "queue": 10,
+    "bigNumberStrings": true,
+    "supportBigNumberssupportBigNumbers": true,
+    "synchronize": false,
+    "logger": {
+      "options": "all"
+    },
+    "entities": [
+      {
+        "options": {
+          "name": "category",
+          "tableName": "tbl_category",
+          "columns": {
+            "id": {
+              "name": "id",
+              "type": "bigint",
+              "primary": true,
+              "generated": "increment",
+              "comment": "primary key with auto increment"
+            },
+            "name": {
+              "name": "name",
+              "type": "varchar",
+              "length": 200,
+              "nullable": false,
+              "comment": "category name"
+            }
+          },
+          "relations": {
+            "pet": {
+              "target": "pet",
+              "type": "many-to-many",
+              "joinTable": {
+                "name": "tbl_pet_category_mtm",
+                "joinColumn": {
+                  "name": "category_id",
+                  "referencedColumnName": "id"
+                },
+                "inverseJoinColumn": {
+                  "name": "pet_id",
+                  "referencedColumnName": "id"
+                },
+                "synchronize": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "options": {
+          "name": "tag",
+          "tableName": "tbl_tag",
+          "columns": {
+            "id": {
+              "name": "id",
+              "type": "bigint",
+              "primary": true,
+              "generated": "increment",
+              "comment": "primary key with auto increment"
+            },
+            "name": {
+              "name": "name",
+              "type": "varchar",
+              "length": 200,
+              "nullable": false,
+              "comment": "tag name"
+            }
+          },
+          "relations": {
+            "pet": {
+              "target": "pet",
+              "type": "many-to-many",
+              "joinTable": {
+                "name": "tbl_pet_tag_mtm",
+                "joinColumn": {
+                  "name": "tag_id",
+                  "referencedColumnName": "id"
+                },
+                "inverseJoinColumn": {
+                  "name": "pet_id",
+                  "referencedColumnName": "id"
+                },
+                "synchronize": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "options": {
+          "name": "pet",
+          "tableName": "tbl_pet",
+          "columns": {
+            "id": {
+              "name": "id",
+              "type": "bigint",
+              "primary": true,
+              "generated": "increment",
+              "comment": "primary key with auto increment"
+            },
+            "name": {
+              "name": "name",
+              "type": "varchar",
+              "length": 200,
+              "nullable": false,
+              "comment": "pet name"
+            },
+            "status": {
+              "name": "status",
+              "type": "char",
+              "length": 10,
+              "nullable": false,
+              "comment": "pet status"
+            }
+          },
+          "relations": {
+            "category": {
+              "target": "category",
+              "type": "many-to-many",
+              "createForeignKeyConstraints": false,
+              "joinTable": {
+                "name": "tbl_pet_category_mtm",
+                "joinColumn": {
+                  "name": "pet_id",
+                  "referencedColumnName": "id"
+                },
+                "inverseJoinColumn": {
+                  "name": "category_id",
+                  "referencedColumnName": "id"
+                },
+                "synchronize": false
+              }
+            },
+            "tag": {
+              "target": "tag",
+              "type": "many-to-many",
+              "joinTable": {
+                "name": "tbl_pet_tag_mtm",
+                "joinColumn": {
+                  "name": "pet_id",
+                  "referencedColumnName": "id"
+                },
+                "inverseJoinColumn": {
+                  "name": "tag_id",
+                  "referencedColumnName": "id"
+                },
+                "synchronize": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "options": {
+          "name": "pet_category_mtm",
+          "tableName": "tbl_pet_category_mtm",
+          "columns": {
+            "petId": {
+              "name": "pet_id",
+              "type": "bigint",
+              "primary": true,
+              "comment": "primary key with auto increment"
+            },
+            "categoryId": {
+              "name": "category_id",
+              "type": "bigint",
+              "primary": true,
+              "comment": "primary key with auto increment"
+            }
+          }
+        }
+      },
+      {
+        "options": {
+          "name": "pet_tag_mtm",
+          "tableName": "tbl_pet_tag_mtm",
+          "columns": {
+            "petId": {
+              "name": "pet_id",
+              "type": "bigint",
+              "primary": true,
+              "comment": "primary key with auto increment"
+            },
+            "tagId": {
+              "name": "tag_id",
+              "type": "bigint",
+              "primary": true,
+              "comment": "primary key with auto increment"
+            }
+          }
+        }
+      },
+      {
+        "options": {
+          "name": "image",
+          "tableName": "tbl_image",
+          "columns": {
+            "id": {
+              "name": "id",
+              "type": "bigint",
+              "primary": true,
+              "generated": "increment",
+              "comment": "primary key with auto increment"
+            },
+            "refId": {
+              "name": "ref_id",
+              "type": "bigint",
+              "primary": true,
+              "comment": "image reference entity id"
+            },
+            "entity": {
+              "name": "entity",
+              "type": "int",
+              "comment": "image reference entity"
+            },
+            "metadata": {
+              "name": "metadata",
+              "type": "text",
+              "nullable": true,
+              "comment": "additional metadata for entity"
+            },
+            "hash": {
+              "name": "hash",
+              "type": "varchar",
+              "length": 512,
+              "comment": "hash filename to prevent duplicate filenames"
+            },
+            "source": {
+              "name": "source",
+              "type": "varchar",
+              "length": 1000,
+              "comment": "the filename at the time of upload"
+            },
+            "createdAt": {
+              "name": "created_at",
+              "type": "datetime",
+              "comment": "created at the time for entity"
+            },
+            "updatedAt": {
+              "name": "updated_at",
+              "type": "datetime",
+              "comment": "updated at the time for entity"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "filename": "getPetStoreMysql",
+  "level": "info",
+  "timestamp": "2024-04-12T12:44:08.601Z"
+}

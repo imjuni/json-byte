@@ -11,11 +11,11 @@ import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
 
 const variants = tv({
   slots: {
-    node: 'shadow-md h-fit w-[240px] rounded-md bg-card border-2 border-border dark:hover:border-blue-900 hover:border-blue-400',
+    node: 'shadow-md h-fit w-[280px] rounded-md bg-card border-2 border-border dark:hover:border-blue-900 hover:border-blue-400',
     heading: 'text-foreground px-4 font-bold mb-2 truncate',
     container: 'text-sm space-y-1',
     line: 'flex px-4 gap-2 min-w-0',
-    fieldHeading: 'font-medium text-muted-foreground flex-shrink-0',
+    fieldHeading: 'font-medium text-muted-foreground flex-shrink-0 max-w-[120px] truncate',
     fieldValue: 'truncate min-w-0',
   },
 });
@@ -57,7 +57,9 @@ const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
               <React.Fragment key={field.key}>
                 <div className={line()}>
                   <TypeDisc type={field.type} />
-                  <span className={fieldHeading()}>{field.key}:</span>
+                  <div className={fieldHeading()}>
+                    <span>{field.key}:</span>
+                  </div>
                   <div className={fieldValue()}>
                     <FieldValue type={field.type} value={field.value} />
                   </div>

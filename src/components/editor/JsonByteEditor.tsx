@@ -21,20 +21,18 @@ export const JsonByteEditor = () => {
     (monaco) => {
       setMonacoInstance(monaco);
 
-      if (language === 'jsonc') {
-        // Configure JSON language to allow comments and trailing commas
-        monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
-          validate: true,
-          allowComments: true,
-          trailingCommas: 'ignore',
-          schemas: [],
-          enableSchemaRequest: false,
-        });
-      }
+      // Configure JSON language to allow comments and trailing commas
+      monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+        validate: true,
+        allowComments: true,
+        trailingCommas: 'ignore',
+        schemas: [],
+        enableSchemaRequest: false,
+      });
 
       updateFromContent(content);
     },
-    [language, content, updateFromContent, setMonacoInstance],
+    [content, updateFromContent, setMonacoInstance],
   );
 
   const handleEditorMount: OnMount = useCallback(

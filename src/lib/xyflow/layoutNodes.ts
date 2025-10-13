@@ -3,7 +3,7 @@ import dagre from 'dagre';
 import type { IXyFlowEdge } from '#/lib/xyflow/interfaces/IXyFlowEdge';
 import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
 
-const DEFAULT_NODE_WIDTH = 240;
+const DEFAULT_NODE_WIDTH = 280;
 const DEFAULT_NODE_HEIGHT = 100;
 
 export type TLayoutDirection = 'TB' | 'LR' | 'RL' | 'BT';
