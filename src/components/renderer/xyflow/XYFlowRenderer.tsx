@@ -13,7 +13,6 @@ import { useEditorStore } from '#/stores/editorStore';
 import { useXyFlowStore } from '#/stores/xyflowStore';
 
 import type { Edge, NodeChange } from '@xyflow/react';
-// import type { Edge } from '@xyflow/react';
 
 import type { IXyFlowEdge } from '#/lib/xyflow/interfaces/IXyFlowEdge';
 import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
@@ -27,7 +26,7 @@ const FlowContent = () => {
   const { fitView, setCenter, getZoom } = useReactFlow();
   const relayout$ = useMemo(() => new Subject<void>(), []);
 
-  const relayouting = useCallback(() => {
+  const handleReLayout = useCallback(() => {
     // Check if nodes have been measured
     const allMeasured = nodes.every((node) => node.measured);
 
@@ -48,14 +47,14 @@ const FlowContent = () => {
     const subscription = relayout$
       .pipe(
         debounceTime(200),
-        tap(() => relayouting()),
+        tap(() => handleReLayout()),
       )
       .subscribe();
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [relayout$, relayouting]);
+  }, [relayout$, handleReLayout]);
 
   // Trigger re-layout when nodes are measured
   useEffect(() => {
@@ -64,37 +63,40 @@ const FlowContent = () => {
     }
   }, [nodesInitialized, nodes, relayout$]);
 
-  // Reset re-layout flag when edges change (new document loaded)
-  useEffect(() => {
-    hasRelayoutedRef.current = false;
-  }, [edges.length]);
-
   const handleNodesChange = useCallback(
     (changes: NodeChange<IXyFlowNode>[]) => {
       // Handle node changes from React Flow
-      const updatedNodes = nodes.map((node) => {
-        const finded = changes.find((change: NodeChange<IXyFlowNode>) => {
-          if ('id' in change) {
-            return change.id === node.id;
+      const dimensionChangeMap = changes.reduce<Record<string, NodeChange<IXyFlowNode>>>((aggregated, change) => {
+        if ('id' in change && change.type === 'dimensions') {
+          return { ...aggregated, [change.id]: change };
+        }
+        return aggregated;
+      }, {});
+
+      const updatedTargetNodes = nodes.filter((node) => dimensionChangeMap[node.id] != null);
+      const updatedNodes = updatedTargetNodes
+        .map((node) => {
+          const change = dimensionChangeMap[node.id];
+
+          if (change.type === 'dimensions' && change.dimensions != null) {
+            return {
+              ...node,
+              measured: {
+                width: change.dimensions.width,
+                height: change.dimensions.height,
+              },
+            } as IXyFlowNode;
           }
 
-          return false;
-        });
+          return undefined;
+        })
+        .filter((node): node is IXyFlowNode => node != null);
 
-        if (finded?.type === 'dimensions' && finded.dimensions) {
-          return {
-            ...node,
-            measured: {
-              width: finded.dimensions.width,
-              height: finded.dimensions.height,
-            },
-          };
-        }
-        return node;
-      });
-
-      setNodes(updatedNodes);
-      hasRelayoutedRef.current = false;
+      if (updatedNodes.length > 0) {
+        // Reset relayout flag when dimensions change to trigger re-layout
+        setNodes(updatedNodes);
+        hasRelayoutedRef.current = false;
+      }
     },
     [nodes, setNodes],
   );
