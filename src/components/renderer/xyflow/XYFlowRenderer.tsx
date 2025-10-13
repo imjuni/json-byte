@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { Controls, MiniMap, ReactFlow, ReactFlowProvider, useNodesInitialized, useReactFlow } from '@xyflow/react';
+import { Subject } from 'rxjs';
+import { debounceTime, tap } from 'rxjs/operators';
 
 import { ObjectNode } from '#/components/renderer/xyflow/ObjectNode';
 import { SearchPanel } from '#/components/renderer/xyflow/SearchPanel';
@@ -11,6 +13,7 @@ import { useEditorStore } from '#/stores/editorStore';
 import { useXyFlowStore } from '#/stores/xyflowStore';
 
 import type { Edge, NodeChange } from '@xyflow/react';
+// import type { Edge } from '@xyflow/react';
 
 import type { IXyFlowEdge } from '#/lib/xyflow/interfaces/IXyFlowEdge';
 import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
@@ -22,26 +25,44 @@ const FlowContent = () => {
   const nodesInitialized = useNodesInitialized();
   const hasRelayoutedRef = useRef(false);
   const { fitView, setCenter, getZoom } = useReactFlow();
+  const relayout$ = useMemo(() => new Subject<void>(), []);
+
+  const relayouting = useCallback(() => {
+    // Check if nodes have been measured
+    const allMeasured = nodes.every((node) => node.measured);
+
+    if (allMeasured) {
+      // Re-layout with measured dimensions
+      const layoutedNodes = layoutNodes(nodes, edges, direction);
+      setNodes(layoutedNodes);
+      hasRelayoutedRef.current = true;
+
+      // Call fitView after re-layout
+      setTimeout(() => {
+        fitView({ padding: 0.2, duration: 200 });
+      }, 10);
+    }
+  }, [nodes, edges, direction, setNodes, fitView]);
+
+  useEffect(() => {
+    const subscription = relayout$
+      .pipe(
+        debounceTime(200),
+        tap(() => relayouting()),
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [relayout$, relayouting]);
 
   // Trigger re-layout when nodes are measured
   useEffect(() => {
     if (nodesInitialized && !hasRelayoutedRef.current && nodes.length > 0) {
-      // Check if nodes have been measured
-      const allMeasured = nodes.every((node) => node.measured);
-
-      if (allMeasured) {
-        // Re-layout with measured dimensions
-        const layoutedNodes = layoutNodes(nodes, edges, direction);
-        setNodes(layoutedNodes);
-        hasRelayoutedRef.current = true;
-
-        // Call fitView after re-layout
-        setTimeout(() => {
-          fitView({ padding: 0.2, duration: 200 });
-        }, 0);
-      }
+      relayout$.next();
     }
-  }, [nodesInitialized, nodes, edges, direction, setNodes, fitView]);
+  }, [nodesInitialized, nodes, relayout$]);
 
   // Reset re-layout flag when edges change (new document loaded)
   useEffect(() => {
@@ -73,6 +94,7 @@ const FlowContent = () => {
       });
 
       setNodes(updatedNodes);
+      hasRelayoutedRef.current = false;
     },
     [nodes, setNodes],
   );
