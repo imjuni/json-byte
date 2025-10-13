@@ -37,11 +37,19 @@
       "file-upload": "Upload",
       "file-uploading": "Uploading...",
       "file-uploaded": "Upload Complete",
+      "file-success": {
+        "title": "Success",
+        "description": "File has been loaded."
+      },
       "file-error": {
         "title": "Error",
         "raise-error": "An error occurred{message}",
         "fail-parse": "Failed to parse file. The file is not in JSON or YAML format{message}",
         "fail-format": "Failed to format the file for better readability{message}"
+      },
+      "api-fetch-success": {
+        "title": "Success",
+        "description": "Data has been fetched from the API."
       },
       "api-fetch": "Fetch",
       "api-fetching": "Fetching...",

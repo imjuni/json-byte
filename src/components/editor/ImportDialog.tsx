@@ -166,6 +166,14 @@ export const ImportDialog = () => {
         fileInputRef.current.value = '';
       }
 
+      setNotification({
+        open: true,
+        kind: 'success',
+        autoClose: 3000,
+        title: intl.$t({ id: 'graph.import-dialog.file-success.title' }),
+        description: intl.$t({ id: 'graph.import-dialog.file-success.description' }),
+      });
+
       setTimeout(() => {
         handleOpenChange(false);
       }, 100);
@@ -226,6 +234,14 @@ export const ImportDialog = () => {
           setContent(formattedJson);
           updateFromContent(formattedJson);
 
+          setNotification({
+            open: true,
+            kind: 'success',
+            autoClose: 3000,
+            title: intl.$t({ id: 'graph.import-dialog.api-fetch-success.title' }),
+            description: intl.$t({ id: 'graph.import-dialog.api-fetch-success.description' }),
+          });
+
           handleFetchProgress('fetch-complete');
         } else {
           setNotification({
@@ -257,7 +273,7 @@ export const ImportDialog = () => {
 
       setTimeout(() => {
         handleOpenChange(false);
-      }, 100);
+      }, 10);
     },
     [intl, setContent, setNotification, hanldeJsonParse, handleFetchProgress, updateFromContent, handleOpenChange],
   );
