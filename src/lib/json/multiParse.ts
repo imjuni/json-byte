@@ -1,3 +1,4 @@
+import { safeEscapeParse } from '#/lib/json/safeEscapeParse';
 import { safeJsoncParse } from '#/lib/json/safeJsoncParse';
 import { safeParse } from '#/lib/json/safeParse';
 import { safeYamlParse } from '#/lib/json/safeYamlParse';
@@ -17,6 +18,12 @@ export function multiParse(value?: string | null): { language: TEditorLanguage; 
 
   if (!(jsoncParsed instanceof Error)) {
     return { language: 'json', data: jsoncParsed };
+  }
+
+  const escapedJsonParsed = safeEscapeParse(value);
+
+  if (!(escapedJsonParsed instanceof Error)) {
+    return { language: 'json', data: escapedJsonParsed };
   }
 
   const yamlParsed = safeYamlParse(value);

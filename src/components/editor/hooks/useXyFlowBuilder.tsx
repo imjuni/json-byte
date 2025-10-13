@@ -1,12 +1,10 @@
 import { useCallback } from 'react';
 
-import { safeYamlParse } from '#/lib/json/safeYamlParse';
+import { multiParse } from '#/lib/json/multiParse';
 import { replaceHref } from '#/lib/replaceHref';
 import { createXyFlowNodesWithEdges } from '#/lib/xyflow/createXyFlowNodesWithEdges';
 import { createFuse, useFuseStore } from '#/stores/fuseStore';
 import { useXyFlowStore } from '#/stores/xyflowStore';
-
-import type { JsonValue } from 'type-fest';
 
 import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
 
@@ -17,16 +15,16 @@ const ENABLE_QUERYSTRING = false;
  * Handles parsing content, creating nodes/edges, and updating stores
  */
 export function useXyFlowBuilder(): {
-  buildXyFlow: (value: JsonValue | Error) => IXyFlowNode[];
+  buildXyFlow: (value: ReturnType<typeof multiParse>) => IXyFlowNode[];
   updateFromContent: (content: string) => void;
 } {
   const { direction, setNodesAndEdgesAndMap } = useXyFlowStore();
   const { setFuse } = useFuseStore();
 
   const buildXyFlow = useCallback(
-    (value: ReturnType<typeof safeYamlParse>): IXyFlowNode[] => {
+    (value: ReturnType<typeof multiParse>): IXyFlowNode[] => {
       if (!(value instanceof Error)) {
-        const { nodes, edges } = createXyFlowNodesWithEdges(value, direction);
+        const { nodes, edges } = createXyFlowNodesWithEdges(value.data, direction);
         setNodesAndEdgesAndMap(nodes, edges);
         return nodes;
       }
@@ -38,7 +36,7 @@ export function useXyFlowBuilder(): {
 
   const updateFromContent = useCallback(
     (content: string) => {
-      const document = safeYamlParse(content);
+      const document = multiParse(content);
       const nodes = buildXyFlow(document);
       setFuse(createFuse(nodes));
 
