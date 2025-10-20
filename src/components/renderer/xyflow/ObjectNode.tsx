@@ -24,6 +24,10 @@ const handleVariants = tv({
   base: '!w-3 !h-3',
   variants: {
     type: {
+      string: '!bg-amber-500 dark:!bg-amber-400',
+      boolean: '!bg-amber-500 dark:!bg-amber-400',
+      number: '!bg-amber-500 dark:!bg-amber-400',
+      null: '!bg-amber-500 dark:!bg-amber-400',
       object: '!bg-amber-500 dark:!bg-amber-400',
       array: '!bg-red-500 dark:!bg-red-400',
     },

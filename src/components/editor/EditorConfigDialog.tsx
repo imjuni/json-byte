@@ -7,8 +7,8 @@ import { Controller, useForm } from 'react-hook-form';
 import { useIntl } from 'react-intl';
 
 import { useEditorConfiger } from '#/components/editor/hooks/useEditorConfiger';
-import { useLanguageConvertor } from '#/components/editor/hooks/useLanguageConvertor';
 import { useGraphBuilder } from '#/components/editor/hooks/useGraphBuilder';
+import { useLanguageConvertor } from '#/components/editor/hooks/useLanguageConvertor';
 import { editorConfigFormSchema, indents, languages, themes } from '#/components/editor/schemas/editorConfigFormSchema';
 import { Button } from '#/components/ui/button';
 import {

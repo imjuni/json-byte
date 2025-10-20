@@ -200,6 +200,11 @@ const FlowContent = () => {
       }}
       nodeTypes={{
         [CE_GRAPH_NODE_TYPE.PLAIN_OBJECT_NODE]: ObjectNode,
+        [CE_GRAPH_NODE_TYPE.PLAIN_ARRAY_NODE]: ObjectNode,
+        [CE_GRAPH_NODE_TYPE.PLAIN_STRING_NODE]: ObjectNode,
+        [CE_GRAPH_NODE_TYPE.PLAIN_NULL_NODE]: ObjectNode,
+        [CE_GRAPH_NODE_TYPE.PLAIN_NUMBER_NODE]: ObjectNode,
+        [CE_GRAPH_NODE_TYPE.PLAIN_BOOLEAN_NODE]: ObjectNode,
       }}
     >
       <Controls

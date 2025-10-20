@@ -2,6 +2,7 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-underscore-dangle */
 import { parseTree } from 'jsonc-parser';
+import { JSONPath } from 'jsonpath-plus';
 import { atOrThrow } from 'my-easy-fp';
 
 import { createGraphNode } from '#/lib/graph/createGraphNode';
@@ -139,10 +140,10 @@ export function buildNodeByJson({ origin, document, config, lineStarts }: IBuild
       const currentGraphNode = nodeMap.get(path);
 
       for (let j = node.children.length - 1; j >= 0; j -= 1) {
-        const prop = node.children[j];
+        const property = node.children[j];
 
-        const keyNode = atOrThrow(prop.children, 0);
-        const valueNode = atOrThrow(prop.children, 1);
+        const keyNode = atOrThrow(property.children, 0);
+        const valueNode = atOrThrow(property.children, 1);
         const valueKind = jsonKindOf(valueNode);
 
         // valueKind가 primitive면 graphNode에 primitiveFields 에 추가
@@ -160,10 +161,9 @@ export function buildNodeByJson({ origin, document, config, lineStarts }: IBuild
           }
         } else {
           const childNodePath = childPath(path, `${keyNode.value}`);
-          const size =
-            valueKind === 'object'
-              ? (() => valueNode.children?.length ?? 0)()
-              : (() => (Array.isArray(valueNode.value) ? valueNode.value.length : 0))();
+          const valueResult = JSONPath({ path: childNodePath, json: document });
+          const value: JsonValue = Array.isArray(valueResult) && valueResult.length > 0 ? valueResult[0] : valueResult;
+          const size = valueNode.children?.length ?? 0;
 
           const field: IComplexField = {
             key: keyNode.value,
@@ -179,7 +179,7 @@ export function buildNodeByJson({ origin, document, config, lineStarts }: IBuild
           taskStack.push({
             node: valueNode,
             key: keyNode.value,
-            value: valueNode.value,
+            value,
             path: childNodePath,
             parent: currentGraphNode,
           });
@@ -206,13 +206,12 @@ export function buildNodeByJson({ origin, document, config, lineStarts }: IBuild
             currentGraphNode.data.primitiveFields = [field, ...currentGraphNode.data.primitiveFields];
           }
         } else {
-          const size =
-            valueKind === 'object'
-              ? (() => (valueNode.value != null ? Object.keys(valueNode.value).length : 0))()
-              : (() => (Array.isArray(valueNode.value) ? valueNode.value.length : 0))();
+          const valueResult = JSONPath({ path: childNodePath, json: document });
+          const value: JsonValue = Array.isArray(valueResult) && valueResult.length > 0 ? valueResult[0] : valueResult;
+          const size = valueNode.children?.length ?? 0;
 
           const field: IComplexField = {
-            key: `${j}`,
+            key: childKey,
             size,
             type: valueKind,
             nodeId: childNodePath,
@@ -225,7 +224,7 @@ export function buildNodeByJson({ origin, document, config, lineStarts }: IBuild
           taskStack.push({
             node: valueNode,
             key: childKey,
-            value: valueNode.value,
+            value,
             path: childNodePath,
             parent: currentGraphNode,
           });

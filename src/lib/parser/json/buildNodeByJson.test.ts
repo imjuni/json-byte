@@ -41,6 +41,7 @@ describe('buildNodeByJson', () => {
         params: {
           id: '1',
         },
+        array: ['string', true, 0, null, { object: 'name' }],
       },
       reply: {
         headers:
@@ -72,6 +73,7 @@ describe('buildNodeByJson', () => {
         params: {
           id: '1',
         },
+        array: ['string', true, 0, null, { object: 'name' }],
       },
       reply: {
         headers:
@@ -137,7 +139,7 @@ describe('buildNodeByJson', () => {
     },
   ];
 
-  it('plain object', () => {
+  it.only('plain object', () => {
     const document = structuredClone(simple);
     const origin = JSON.stringify(document, undefined, 2);
     const lineStarts = buildLineStarts(origin);
