@@ -1,9 +1,11 @@
 import { layoutNodes } from '#/lib/graph/layoutNodes';
 import { buildLineStarts } from '#/lib/parser/json/buildLineStarts';
 import { buildNodeByJson } from '#/lib/parser/json/buildNodeByJson';
+import { buildNodeByYaml } from '#/lib/parser/yaml/buildNodeByYaml';
 
 import type { JsonValue } from 'type-fest';
 
+import type { TEditorLanguage } from '#/contracts/editors/IEditorStore';
 import type { IGraphEdge } from '#/lib/graph/interfaces/IGraphEdge';
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 import type { TLayoutDirection } from '#/lib/graph/layoutNodes';
@@ -19,19 +21,39 @@ interface ICreateGraphNodesParams {
   /** 파싱 설정 */
   config: ParserConfig;
 
+  /**
+   * 언어
+   *
+   * - json
+   * - yaml
+   */
+  language: TEditorLanguage;
+
   direction?: TLayoutDirection;
 }
 
-export function createGraphNodesWithEdges({ origin, document, config, direction }: ICreateGraphNodesParams): {
+export function createGraphNodesWithEdges({ origin, document, config, language, direction }: ICreateGraphNodesParams): {
   nodes: IGraphNode[];
   edges: IGraphEdge[];
 } {
-  const lineStarts = buildLineStarts(origin);
-  const { nodes, edges } = buildNodeByJson({
+  if (language === 'json') {
+    const lineStarts = buildLineStarts(origin);
+    const { nodes, edges } = buildNodeByJson({
+      origin,
+      document,
+      config,
+      lineStarts,
+    });
+
+    const layoutedNodes = layoutNodes(nodes, edges, direction);
+
+    return { nodes: layoutedNodes, edges };
+  }
+
+  const { nodes, edges } = buildNodeByYaml({
     origin,
     document,
     config,
-    lineStarts,
   });
 
   const layoutedNodes = layoutNodes(nodes, edges, direction);

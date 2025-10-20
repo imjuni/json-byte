@@ -1,17 +1,24 @@
 /* eslint-disable no-continue */
 /* eslint-disable no-restricted-syntax */
+/* eslint-disable no-underscore-dangle */
 
+import { JSONPath } from 'jsonpath-plus';
 import { atOrThrow } from 'my-easy-fp';
 import { isMap, isScalar, isSeq, LineCounter, parseDocument } from 'yaml';
 
+import { createGraphNode } from '#/lib/graph/createGraphNode';
 import { childPath } from '#/lib/parser/yaml/childPath';
 import { kindOfYamlNode } from '#/lib/parser/yaml/kindOfYamlNode';
 import { toRange } from '#/lib/parser/yaml/toRange';
 import { valueOffsets } from '#/lib/parser/yaml/valueOffsets';
 
 import type { JsonValue } from 'type-fest';
-import type { Node as YamlNode, Pair, YAMLMap, YAMLSeq, Scalar } from 'yaml';
+import type { Node as YamlNode } from 'yaml';
 
+import type { IComplexField } from '#/lib/graph/interfaces/IComplexField';
+import type { IGraphEdge } from '#/lib/graph/interfaces/IGraphEdge';
+import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
+import type { IPrimitiveField } from '#/lib/graph/interfaces/IPrimitiveField';
 import type { ParserConfig } from '#/lib/parser/common/ParserConfig';
 import type { IPathLoCEntry } from '#/lib/parser/interfaces/IPathLoCEntry';
 import type { IPathLoCIndexMap } from '#/lib/parser/interfaces/IPathLoCIndexMap';
@@ -28,7 +35,11 @@ interface IBuildNodeByYamlParams {
   config: ParserConfig;
 }
 
-export function buildNodeByYaml({ document, origin, config }: IBuildNodeByYamlParams): IPathLoCIndexMap {
+export function buildNodeByYaml({ document, origin, config }: IBuildNodeByYamlParams): {
+  map: IPathLoCIndexMap;
+  nodes: IGraphNode[];
+  edges: IGraphEdge[];
+} {
   const lc = new LineCounter();
   const doc = parseDocument(origin, { lineCounter: lc });
 
@@ -49,11 +60,14 @@ export function buildNodeByYaml({ document, origin, config }: IBuildNodeByYamlPa
 
   // if (root == null || root?.range == null) {
   if (root?.range == null) {
-    return { $: { kind: 'null', loc: toRange(lc, 0, 0) } };
+    return { map: { $: { kind: 'null', loc: toRange(lc, 0, 0) } }, nodes: [], edges: [] };
   }
 
-  const index: IPathLoCIndexMap = {};
-  const taskStack: { node: YamlNode; path: string; key: string; value: JsonValue }[] = [
+  const map: IPathLoCIndexMap = {};
+  const nodes: IGraphNode[] = [];
+  const edges: IGraphEdge[] = [];
+  const nodeMap = new Map<string, IGraphNode>();
+  const taskStack: { node: YamlNode; path: string; key: string; value: JsonValue; parent?: IGraphNode }[] = [
     { node: root, path: '$', key: 'root', value: document },
   ];
 
@@ -64,7 +78,7 @@ export function buildNodeByYaml({ document, origin, config }: IBuildNodeByYamlPa
       continue;
     }
 
-    const { node, path } = task;
+    const { node, path, parent } = task;
 
     const { start, end } = valueOffsets(node);
     const kind = kindOfYamlNode(node);
@@ -89,61 +103,165 @@ export function buildNodeByYaml({ document, origin, config }: IBuildNodeByYamlPa
       entry.primitive = prim;
     }
 
-    index[path] = entry;
+    map[path] = entry;
+
+    // Create graphNode for complex types (object or array)
+    if (kind === 'object' || kind === 'array') {
+      const graphNode = createGraphNode({
+        id: path,
+        label: task.key,
+        type: kind,
+        value: task.value,
+      });
+
+      // Set parent relationship
+      if (parent != null) {
+        graphNode.data._parent = parent;
+        parent.data._children.push(graphNode);
+
+        // Create edge from parent to current node
+        const edge: IGraphEdge = {
+          id: `${parent.id}-${graphNode.id}`,
+          label: task.key,
+          source: parent.id,
+          sourceHandle: `source-${task.key}`,
+          target: graphNode.id,
+          targetHandle: 'target-top',
+          data: {
+            parent,
+            child: graphNode,
+          },
+        };
+
+        edges.push(edge);
+      }
+
+      nodes.push(graphNode);
+      nodeMap.set(path, graphNode);
+    }
 
     if (isMap(node)) {
-      const map = node as YAMLMap<
-        {
-          range: Range;
-          source: string;
-          type: Scalar.Type;
-          value?: YamlNode | null;
-          toJSON?: () => string;
-        },
-        {
-          range: Range;
-          source: string;
-          type: Scalar.Type;
-          value?: YamlNode | null;
-          toJSON?: () => string;
-        }
-      >;
+      const currentGraphNode = nodeMap.get(path);
+      const yamlMap = node;
 
-      for (let j = map.items.length - 1; j >= 0; j -= 1) {
-        const p = map.items[j];
-        // const { key, value } = p;
+      for (let j = yamlMap.items.length - 1; j >= 0; j -= 1) {
+        const p = yamlMap.items[j];
         const { key, value } = p;
 
         if (value == null) {
           continue;
         }
 
-        const keyStr = isScalar(key) ? `${key.value}` : (key.toJSON?.() ?? '');
-        const child = childPath(path, keyStr);
+        const keyStr = isScalar(key) ? String(key.value) : String((key as YamlNode)?.toJSON?.() ?? '');
+        const valueKind = kindOfYamlNode(value as YamlNode);
+        const childNodePath = childPath(path, keyStr);
 
-        taskStack.push({
-          node: value as unknown as YamlNode,
-          path: child,
-          key: child,
-          value: value.value as JsonValue,
-        });
+        // valueKind가 primitive면 graphNode에 primitiveFields 에 추가
+        // valueKind가 complex면 graphNode에 complexFields 에 추가
+        if (valueKind !== 'object' && valueKind !== 'array') {
+          const primitiveValue = isScalar(value) ? value.value : ((value as YamlNode)?.toJSON?.() ?? null);
+          const field: IPrimitiveField = {
+            key: keyStr,
+            value: primitiveValue,
+            type: valueKind,
+          };
+
+          if (currentGraphNode != null) {
+            currentGraphNode.data.primitiveFields = [field, ...currentGraphNode.data.primitiveFields];
+          }
+        } else {
+          const valueResult = JSONPath({ path: childNodePath, json: document });
+          const jsonValue: JsonValue =
+            Array.isArray(valueResult) && valueResult.length > 0 ? valueResult[0] : valueResult;
+
+          let size = 0;
+          if (isMap(value)) {
+            size = value.items.length;
+          } else if (isSeq(value)) {
+            size = value.items.length;
+          }
+
+          const field: IComplexField = {
+            key: keyStr,
+            size,
+            type: valueKind,
+            nodeId: childNodePath,
+          };
+
+          if (currentGraphNode != null) {
+            currentGraphNode.data.complexFields = [field, ...currentGraphNode.data.complexFields];
+          }
+
+          taskStack.push({
+            node: value as YamlNode,
+            path: childNodePath,
+            key: keyStr,
+            value: jsonValue,
+            parent: currentGraphNode,
+          });
+        }
       }
     } else if (isSeq(node)) {
+      const currentGraphNode = nodeMap.get(path);
       const seq = node;
-      for (let j = seq.items.length - 1; j >= 0; j -= 1) {
-        const childNode = seq.items[j] as YamlNode | undefined;
 
-        if (childNode) {
+      for (let j = seq.items.length - 1; j >= 0; j -= 1) {
+        const valueNode = seq.items[j] as YamlNode | undefined;
+
+        if (valueNode == null) {
+          continue;
+        }
+
+        const valueKind = kindOfYamlNode(valueNode);
+        const childNodePath = childPath(path, j);
+        const childKey = `${task.key}[${j}]`;
+
+        // array의 각 요소에 대한 필드 정보 추가
+        if (valueKind !== 'object' && valueKind !== 'array') {
+          const primitiveValue = isScalar(valueNode) ? valueNode.value : (valueNode?.toJSON?.() ?? null);
+          const field: IPrimitiveField = {
+            key: `${j}`,
+            value: primitiveValue,
+            type: valueKind,
+          };
+
+          if (currentGraphNode != null) {
+            currentGraphNode.data.primitiveFields = [field, ...currentGraphNode.data.primitiveFields];
+          }
+        } else {
+          const valueResult = JSONPath({ path: childNodePath, json: document });
+          const jsonValue: JsonValue =
+            Array.isArray(valueResult) && valueResult.length > 0 ? valueResult[0] : valueResult;
+
+          let size = 0;
+          if (isMap(valueNode)) {
+            size = valueNode.items.length;
+          } else if (isSeq(valueNode)) {
+            size = valueNode.items.length;
+          }
+
+          const field: IComplexField = {
+            key: childKey,
+            size,
+            type: valueKind,
+            nodeId: childNodePath,
+          };
+
+          if (currentGraphNode != null) {
+            currentGraphNode.data.complexFields = [field, ...currentGraphNode.data.complexFields];
+          }
+
           taskStack.push({
-            node: childNode,
-            path: childPath(path, j),
-            key: '',
-            value: {},
+            node: valueNode,
+            path: childNodePath,
+            key: childKey,
+            value: jsonValue,
+            parent: currentGraphNode,
           });
         }
       }
     }
   }
 
-  return index;
+  return { map, nodes, edges };
 }

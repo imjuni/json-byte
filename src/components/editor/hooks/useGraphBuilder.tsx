@@ -27,6 +27,7 @@ export function useGraphBuilder(): {
       if (!(value instanceof Error)) {
         const { nodes, edges } = createGraphNodesWithEdges({
           document: value.data,
+          language: value.language,
           origin,
           direction,
           config: new ParserConfig({ guard: 1_000_000 }),

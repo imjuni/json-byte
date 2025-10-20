@@ -1,8 +1,8 @@
 import { describe, it } from 'vitest';
+import { stringify as yamlStringify } from 'yaml';
 
 import { ParserConfig } from '#/lib/parser/common/ParserConfig';
 import { buildNodeByYaml } from '#/lib/parser/yaml/buildNodeByYaml';
-import { stringify as yamlStringify } from 'yaml';
 
 describe('buildNodeByYaml', () => {
   const complex = {
