@@ -1,34 +1,34 @@
 /* eslint-disable no-restricted-syntax */
 
 import { getOrDefault } from '#/lib/getOrDefault';
-import { CE_XYFLOW_NODE_TYPE } from '#/lib/xyflow/const-enum/CE_XYFLOW_NODE_TYPE';
-import { getNodeFieldsAndStack } from '#/lib/xyflow/getNodeFieldsAndStack';
-import { layoutNodes } from '#/lib/xyflow/layoutNodes';
+import { CE_GRAPH_NODE_TYPE } from '#/lib/graph/const-enum/CE_GRAPH_NODE_TYPE';
+import { getNodeFieldsAndStack } from '#/lib/graph/getNodeFieldsAndStack';
+import { layoutNodes } from '#/lib/graph/layoutNodes';
 
 import type { JsonValue } from 'type-fest';
 
 import type { TComplexTypeString } from '#/contracts/json/TComplexTypeString';
-import type { IBuildTask } from '#/lib/xyflow/interfaces/IBuildTask';
-import type { IComplexField } from '#/lib/xyflow/interfaces/IComplexField';
-import type { IPrimitiveField } from '#/lib/xyflow/interfaces/IPrimitiveField';
-import type { IXyFlowEdge } from '#/lib/xyflow/interfaces/IXyFlowEdge';
-import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
-import type { TLayoutDirection } from '#/lib/xyflow/layoutNodes';
+import type { IBuildTask } from '#/lib/graph/interfaces/IBuildTask';
+import type { IComplexField } from '#/lib/graph/interfaces/IComplexField';
+import type { IGraphEdge } from '#/lib/graph/interfaces/IGraphEdge';
+import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
+import type { IPrimitiveField } from '#/lib/graph/interfaces/IPrimitiveField';
+import type { TLayoutDirection } from '#/lib/graph/layoutNodes';
 
-const MAX_ITERATIONS = 1000000;
+const MAX_ITERATIONS = 1_000_000;
 
-export function buildXyFlowNodes(
+export function buildGraphNodes(
   document: JsonValue,
   direction: TLayoutDirection = 'TB',
-  _maxIterations?: number,
-): { nodes: IXyFlowNode[]; edges: IXyFlowEdge[] } {
+  _guard?: number,
+): { nodes: IGraphNode[]; edges: IGraphEdge[] } {
   if (typeof document !== 'object' || document === null) {
     return { nodes: [], edges: [] };
   }
 
-  const maxIterations = getOrDefault(_maxIterations, MAX_ITERATIONS);
-  const nodes: IXyFlowNode[] = [];
-  const edges: IXyFlowEdge[] = [];
+  const guard = getOrDefault(_guard, MAX_ITERATIONS);
+  const nodes: IGraphNode[] = [];
+  const edges: IGraphEdge[] = [];
   const stack: IBuildTask[] = [];
 
   // Determine root type
@@ -38,11 +38,11 @@ export function buildXyFlowNodes(
     : Object.entries(document).map(([key, value]) => ({ key, value }));
 
   // Create root node
-  const rootNode: IXyFlowNode = {
+  const rootNode: IGraphNode = {
     id: '$',
     draggable: false,
     position: { x: 0, y: 0 },
-    type: CE_XYFLOW_NODE_TYPE.PLAIN_OBJECT_NODE,
+    type: rootType,
     data: {
       label: 'root',
       origin: document,
@@ -74,7 +74,7 @@ export function buildXyFlowNodes(
   // Process queue iteratively (FIFO to maintain correct order)
   let iterations = 0;
 
-  for (; stack.length > 0 && iterations < maxIterations; iterations += 1) {
+  for (; stack.length > 0 && iterations < guard; iterations += 1) {
     // The for loop only executes when stack.length > 0, so shift() result cannot be undefined
     // Use shift() instead of pop() for FIFO order
     const task = stack.shift() as IBuildTask;
@@ -94,11 +94,11 @@ export function buildXyFlowNodes(
     const primitiveFields: IPrimitiveField[] = [];
     const complexFields: IComplexField[] = [];
 
-    const currentNode: IXyFlowNode = {
+    const currentNode: IGraphNode = {
       id: currentPath,
       draggable: false,
       position: { x: 0, y: 0 },
-      type: CE_XYFLOW_NODE_TYPE.PLAIN_OBJECT_NODE,
+      type: CE_GRAPH_NODE_TYPE.PLAIN_OBJECT_NODE,
       data: {
         label,
         origin: value,
@@ -134,7 +134,7 @@ export function buildXyFlowNodes(
     // For array children, format label as "parentLabel[index]" for better readability
     const edgeLabel = isArrayIndex ? `${parent.data.label}[${key}]` : key;
 
-    const edge: IXyFlowEdge = {
+    const edge: IGraphEdge = {
       id: `${parent.id}-${currentNode.id}`,
       label: edgeLabel,
       source: parent.id,

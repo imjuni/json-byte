@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 
-import type { TXyFlowStore } from '#/contracts/xyflow/IXyFlowStore';
-import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
+import type { TGraphStore } from '#/contracts/graph/TGraphStore';
+import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 
-export const useXyFlowStore = create<TXyFlowStore>((set) => ({
+export const useGraphStore = create<TGraphStore>((set) => ({
   // Initial state
   nodes: [],
   edges: [],
@@ -28,7 +28,7 @@ export const useXyFlowStore = create<TXyFlowStore>((set) => ({
   setNodesAndEdges: (nodes, edges) => set({ nodes, edges }),
   setNodesAndEdgesAndMap: (nodes, edges) =>
     set(() => {
-      const nodeMap = nodes.reduce<Record<string, IXyFlowNode>>(
+      const nodeMap = nodes.reduce<Record<string, IGraphNode>>(
         (aggregated, node) => ({ ...aggregated, [node.id]: node }),
         {},
       );

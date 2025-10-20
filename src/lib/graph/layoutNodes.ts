@@ -1,7 +1,7 @@
 import dagre from 'dagre';
 
-import type { IXyFlowEdge } from '#/lib/xyflow/interfaces/IXyFlowEdge';
-import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
+import type { IGraphEdge } from '#/lib/graph/interfaces/IGraphEdge';
+import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 
 const DEFAULT_NODE_WIDTH = 280;
 const DEFAULT_NODE_HEIGHT = 100;
@@ -11,7 +11,7 @@ export type TLayoutDirection = 'TB' | 'LR' | 'RL' | 'BT';
 /**
  * Get node size from measured dimensions or defaults
  */
-function getNodeSize(node: IXyFlowNode): { width: number; height: number } {
+function getNodeSize(node: IGraphNode): { width: number; height: number } {
   // Use measured dimensions if available (after React Flow renders the node)
   const width = node.measured?.width ?? node.width ?? DEFAULT_NODE_WIDTH;
   const height = node.measured?.height ?? node.height ?? DEFAULT_NODE_HEIGHT;
@@ -20,10 +20,10 @@ function getNodeSize(node: IXyFlowNode): { width: number; height: number } {
 }
 
 export function layoutNodes(
-  nodes: IXyFlowNode[],
-  edges: IXyFlowEdge[],
+  nodes: IGraphNode[],
+  edges: IGraphEdge[],
   direction: TLayoutDirection = 'LR',
-): IXyFlowNode[] {
+): IGraphNode[] {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
 

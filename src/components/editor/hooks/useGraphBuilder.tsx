@@ -1,12 +1,13 @@
 import { useCallback } from 'react';
 
+import { createGraphNodesWithEdges } from '#/lib/graph/createGraphNodesWithEdges';
 import { multiParse } from '#/lib/json/multiParse';
+import { ParserConfig } from '#/lib/parser/common/ParserConfig';
 import { replaceHref } from '#/lib/replaceHref';
-import { createXyFlowNodesWithEdges } from '#/lib/xyflow/createXyFlowNodesWithEdges';
 import { createFuse, useFuseStore } from '#/stores/fuseStore';
-import { useXyFlowStore } from '#/stores/xyflowStore';
+import { useGraphStore } from '#/stores/graphStore';
 
-import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
+import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 
 const ENABLE_QUERYSTRING = false;
 
@@ -14,18 +15,25 @@ const ENABLE_QUERYSTRING = false;
  * Custom hook for building and updating XyFlow graph visualization
  * Handles parsing content, creating nodes/edges, and updating stores
  */
-export function useXyFlowBuilder(): {
-  buildXyFlow: (value: ReturnType<typeof multiParse>) => IXyFlowNode[];
+export function useGraphBuilder(): {
+  buildGraph: (origin: string, value: ReturnType<typeof multiParse>) => IGraphNode[];
   updateFromContent: (content: string) => void;
 } {
-  const { direction, setNodesAndEdgesAndMap } = useXyFlowStore();
+  const { direction, setNodesAndEdgesAndMap } = useGraphStore();
   const { setFuse } = useFuseStore();
 
-  const buildXyFlow = useCallback(
-    (value: ReturnType<typeof multiParse>): IXyFlowNode[] => {
+  const buildGraph = useCallback(
+    (origin: string, value: ReturnType<typeof multiParse>): IGraphNode[] => {
       if (!(value instanceof Error)) {
-        const { nodes, edges } = createXyFlowNodesWithEdges(value.data, direction);
+        const { nodes, edges } = createGraphNodesWithEdges({
+          document: value.data,
+          origin,
+          direction,
+          config: new ParserConfig({ guard: 1_000_000 }),
+        });
+
         setNodesAndEdgesAndMap(nodes, edges);
+
         return nodes;
       }
 
@@ -37,7 +45,7 @@ export function useXyFlowBuilder(): {
   const updateFromContent = useCallback(
     (content: string) => {
       const document = multiParse(content);
-      const nodes = buildXyFlow(document);
+      const nodes = buildGraph(content, document);
       setFuse(createFuse(nodes));
 
       if (ENABLE_QUERYSTRING) {
@@ -46,11 +54,11 @@ export function useXyFlowBuilder(): {
         window.history.replaceState(null, '', '/');
       }
     },
-    [buildXyFlow, setFuse],
+    [buildGraph, setFuse],
   );
 
   return {
-    buildXyFlow,
+    buildGraph,
     updateFromContent,
   };
 }

@@ -7,7 +7,7 @@ import { FieldValue } from '#/components/renderer/xyflow/FieldValue';
 import { TypeDisc } from '#/components/renderer/xyflow/TypeDisc';
 import { getOrDefault } from '#/lib/getOrDefault';
 
-import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
+import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 
 const variants = tv({
   slots: {
@@ -39,7 +39,7 @@ const handleVariants = tv({
 
 const { container, line, fieldHeading, fieldValue, heading, node } = variants();
 
-const RawObjectNode = ({ data }: Omit<IXyFlowNode, 'position'>) => {
+const RawObjectNode = ({ data }: Omit<IGraphNode, 'position'>) => {
   const label = getOrDefault(data?.label, '');
   const primitiveFields = getOrDefault(data?.primitiveFields, []);
   const complexFields = getOrDefault(data?.complexFields, []);

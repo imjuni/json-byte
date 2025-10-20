@@ -4,7 +4,7 @@ import MonacoEditor from '@monaco-editor/react';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, filter, tap } from 'rxjs/operators';
 
-import { useXyFlowBuilder } from '#/components/editor/hooks/useXyFlowBuilder';
+import { useGraphBuilder } from '#/components/editor/hooks/useGraphBuilder';
 import { getOrDefault } from '#/lib/getOrDefault';
 import { useEditorStore } from '#/stores/editorStore';
 
@@ -12,7 +12,7 @@ import type { BeforeMount, OnMount } from '@monaco-editor/react';
 
 export const JsonByteEditor = () => {
   const { content, language, theme, indent, setContent, setEditorInstance, setMonacoInstance } = useEditorStore();
-  const { updateFromContent } = useXyFlowBuilder();
+  const { updateFromContent } = useGraphBuilder();
 
   // Create Subject once using useMemo
   const content$ = useMemo(() => new Subject<string | undefined | null>(), []);

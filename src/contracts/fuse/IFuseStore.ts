@@ -1,9 +1,9 @@
 import type Fuse from 'fuse.js';
 
-import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
+import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 
 export interface IFuseStore {
-  fuse: Fuse<IXyFlowNode>;
+  fuse: Fuse<IGraphNode>;
 
-  setFuse: (fuse: Fuse<IXyFlowNode>) => void;
+  setFuse: (fuse: Fuse<IGraphNode>) => void;
 }

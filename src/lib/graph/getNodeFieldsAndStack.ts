@@ -5,10 +5,10 @@ import { isPrimitive } from '#/lib/tools/isPrimitive';
 import type { JsonValue } from 'type-fest';
 
 import type { TComplexTypeString } from '#/contracts/json/TComplexTypeString';
-import type { IBuildTask } from '#/lib/xyflow/interfaces/IBuildTask';
-import type { IComplexField } from '#/lib/xyflow/interfaces/IComplexField';
-import type { IPrimitiveField } from '#/lib/xyflow/interfaces/IPrimitiveField';
-import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
+import type { IBuildTask } from '#/lib/graph/interfaces/IBuildTask';
+import type { IComplexField } from '#/lib/graph/interfaces/IComplexField';
+import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
+import type { IPrimitiveField } from '#/lib/graph/interfaces/IPrimitiveField';
 
 export function getNodeFieldsAndStack({
   entries,
@@ -17,7 +17,7 @@ export function getNodeFieldsAndStack({
   depth,
 }: {
   entries: { key: string; value: JsonValue }[];
-  currentNode: IXyFlowNode;
+  currentNode: IGraphNode;
   currentPath: string;
   depth: number;
 }): {

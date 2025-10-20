@@ -15,7 +15,7 @@ import { FetchImportHeaderAppendable } from '#/components/editor/features/FetchI
 import { FetchImportMethodDropdown } from '#/components/editor/features/FetchImportMethodDropdown';
 import { useEditorConfiger } from '#/components/editor/hooks/useEditorConfiger';
 import { useImportProgressHookBuilder } from '#/components/editor/hooks/useImportProgressHookBuilder';
-import { useXyFlowBuilder } from '#/components/editor/hooks/useXyFlowBuilder';
+import { useGraphBuilder } from '#/components/editor/hooks/useGraphBuilder';
 import { apiFetchFormSchema } from '#/components/editor/schemas/apiFetchFormSchema';
 import { Button } from '#/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '#/components/ui/card';
@@ -52,7 +52,7 @@ export const ImportDialog = () => {
   const { language, setLanguage, setContent } = useEditorStore();
   const { setNotification } = useNotificationStore();
   const { handleChangeEditorLanguage } = useEditorConfiger();
-  const { updateFromContent } = useXyFlowBuilder();
+  const { updateFromContent } = useGraphBuilder();
   const { file, open, error, isUploading, isFetching, setError, setFile, setOpen, reset } = useImportStore();
   const apiFetchForm = useForm<TApiFetchFormSchema>({
     mode: 'onChange',

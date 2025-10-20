@@ -1,0 +1,129 @@
+// path-loc-index.yaml.ts
+import {
+  parseDocument,
+  LineCounter,
+  isMap,
+  isSeq,
+  isScalar,
+  YAMLMap,
+  YAMLSeq,
+  Pair,
+  type Node as YamlNode,
+} from 'yaml';
+import type { ICodePosition, ICodeRange, JsonLikeKind, IPrimitiveLoC, IPathLoCEntry, IPathLoCIndexMap } from './types';
+
+function toRange(lc: LineCounter, startOffset: number, endOffset: number): ICodeRange {
+  const s = lc.linePos(startOffset);
+  const e = lc.linePos(endOffset);
+  return {
+    start: { line: s.line, column: s.col },
+    end: { line: e.line, column: e.col },
+    offset: startOffset,
+    length: endOffset - startOffset,
+  };
+}
+// node.range: [nodeStart, valueEnd, nodeEnd]
+function valueOffsets(n: YamlNode): { start: number; end: number } {
+  const s = n.range![0];
+  const e = n.range![1] ?? n.range![2]! ?? n.range![0];
+  return { start: s, end: e };
+}
+
+function kindOfYamlNode(doc: any, node: YamlNode): JsonLikeKind {
+  if (isMap(node)) return 'object';
+  if (isSeq(node)) return 'array';
+  if (isScalar(node)) {
+    const v = (node as any).toJSON ? (node as any).toJSON() : (node as any).value;
+    if (v === null) return 'null';
+    switch (typeof v) {
+      case 'string':
+        return 'string';
+      case 'number':
+        return 'number';
+      case 'boolean':
+        return 'boolean';
+      default:
+        return 'string'; // 기타는 문자열 취급(앵커/태그 등은 일반화)
+    }
+  }
+  return 'null';
+}
+
+function childPath(base: string, seg: string | number): string {
+  if (typeof seg === 'number') return `${base}[${seg}]`;
+  // 항상 bracket notation
+  return `${base}['${String(seg).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}']`;
+}
+
+export function buildYamlPathLocIndex(text: string): IPathLoCIndexMap {
+  const lc = new LineCounter();
+  const doc = parseDocument(text, { lineCounter: lc });
+  if (doc.errors.length) {
+    const e = doc.errors[0];
+    const where =
+      e.pos?.[0] != null
+        ? (() => {
+            const p = lc.linePos(e.pos![0]);
+            return ` at ${p.line}:${p.col}`;
+          })()
+        : '';
+    throw new Error(`YAML parse error${where}: ${e.message}`);
+  }
+
+  const root = doc.contents as YamlNode | null;
+  if (!root || !root.range) return { $: { kind: 'null', loc: toRange(lc, 0, 0) } };
+
+  const index: IPathLoCIndexMap = {};
+  const stack: Array<{ node: YamlNode; path: string }> = [{ node: root, path: '$' }];
+
+  while (stack.length) {
+    const { node, path } = stack.pop()!;
+    if (!node || !node.range) continue;
+
+    const { start, end } = valueOffsets(node);
+    const kind = kindOfYamlNode(doc, node);
+    const loc = toRange(lc, start, end);
+
+    const entry: IPathLoCEntry = { kind, loc };
+
+    if (kind !== 'object' && kind !== 'array' && isScalar(node)) {
+      const prim: IPrimitiveLoC = { kind: kind as IPrimitiveLoC['kind'], valueLoc: loc };
+      // 문자열일 때 따옴표 내부만 contentLoc으로 시도
+      if (kind === 'string') {
+        const open = text[start];
+        const close = text[end - 1];
+        // 큰따옴표/작은따옴표로 둘러싸인 인라인 스칼라만 내부 컨텐츠 범위 제공
+        if ((open === '"' && close === '"') || (open === "'" && close === "'")) {
+          prim.contentLoc = toRange(lc, start + 1, end - 1);
+        } else {
+          // 비인용/블록 스칼라는 토큰 전체를 content로 간주(취향에 따라 빼도 됨)
+          prim.contentLoc = loc;
+        }
+      }
+      entry.primitive = prim;
+    }
+
+    index[path] = entry;
+
+    if (isMap(node)) {
+      const map = node as YAMLMap;
+      for (let i = map.items.length - 1; i >= 0; i--) {
+        const p = map.items[i] as Pair;
+        const key = p.key;
+        const val = p.value as YamlNode | undefined;
+        if (!val) continue;
+        const keyStr = isScalar(key) ? String((key as any).value) : String((key as any).toJSON?.() ?? '');
+        const child = childPath(path, keyStr);
+        stack.push({ node: val, path: child });
+      }
+    } else if (isSeq(node)) {
+      const seq = node as YAMLSeq;
+      for (let i = seq.items.length - 1; i >= 0; i--) {
+        const childNode = seq.items[i] as YamlNode | undefined;
+        if (childNode) stack.push({ node: childNode, path: childPath(path, i) });
+      }
+    }
+  }
+
+  return index;
+}

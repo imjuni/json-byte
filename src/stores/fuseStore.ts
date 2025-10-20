@@ -2,9 +2,9 @@ import Fuse from 'fuse.js';
 import { create } from 'zustand';
 
 import type { IFuseStore } from '#/contracts/fuse/IFuseStore';
-import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
+import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 
-export const createFuse = (nodes: IXyFlowNode[]): Fuse<IXyFlowNode> =>
+export const createFuse = (nodes: IGraphNode[]): Fuse<IGraphNode> =>
   new Fuse(nodes, {
     keys: ['id', 'data.label'],
     threshold: 0.8,

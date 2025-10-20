@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildXyFlowNodes } from '#/lib/xyflow/buildXyFlowNodes';
+import { buildGraphNodes } from '#/lib/graph/buildGraphNodes';
 
 import type { JsonValue } from 'type-fest';
 
-describe('buildXyFlowNodes', () => {
+describe('buildGraphNodes', () => {
   it('should return empty nodes and edges when pass null', () => {
-    const result = buildXyFlowNodes(null);
+    const result = buildGraphNodes(null);
 
     expect(result).toEqual({ nodes: [], edges: [] });
   });
 
   it('should return empty nodes and edges when pass primitive value', () => {
-    const result = buildXyFlowNodes('string' as JsonValue);
+    const result = buildGraphNodes('string' as JsonValue);
 
     expect(result).toEqual({ nodes: [], edges: [] });
   });
@@ -26,7 +26,7 @@ describe('buildXyFlowNodes', () => {
       },
     };
 
-    const result = buildXyFlowNodes(document);
+    const result = buildGraphNodes(document);
 
     expect(result.nodes).toHaveLength(2); // root + address
     expect(result.edges).toHaveLength(1);
@@ -40,7 +40,7 @@ describe('buildXyFlowNodes', () => {
   it('should create root node with array type when pass array', () => {
     const document: JsonValue = [{ name: 'item1' }, { name: 'item2' }];
 
-    const result = buildXyFlowNodes(document);
+    const result = buildGraphNodes(document);
 
     expect(result.nodes[0].data.nodeType).toBe('array');
     expect(result.nodes).toHaveLength(3); // root + 2 items
@@ -63,7 +63,7 @@ describe('buildXyFlowNodes', () => {
       ],
     };
 
-    const result = buildXyFlowNodes(document);
+    const result = buildGraphNodes(document);
 
     expect(result.nodes).toHaveLength(4); // root + phoneNumbers + 2 items
     expect(result.edges).toHaveLength(3);
@@ -83,7 +83,7 @@ describe('buildXyFlowNodes', () => {
       },
     };
 
-    const result = buildXyFlowNodes(document);
+    const result = buildGraphNodes(document);
 
     expect(result.nodes[0].data.primitiveFields).toHaveLength(2); // name, age
     expect(result.nodes[0].data.complexFields).toHaveLength(1); // address
@@ -97,7 +97,7 @@ describe('buildXyFlowNodes', () => {
       address: { city: 'Nara' },
     };
 
-    const result = buildXyFlowNodes(document, 'TB');
+    const result = buildGraphNodes(document, 'TB');
 
     expect(result.nodes).toHaveLength(2);
     expect(result.nodes[0].position).toBeDefined();
@@ -109,7 +109,7 @@ describe('buildXyFlowNodes', () => {
       address: { city: 'Nara' },
     };
 
-    const result = buildXyFlowNodes(document, 'LR');
+    const result = buildGraphNodes(document, 'LR');
 
     expect(result.nodes).toHaveLength(2);
     expect(result.nodes[0].position).toBeDefined();
@@ -123,7 +123,7 @@ describe('buildXyFlowNodes', () => {
       },
     };
 
-    const result = buildXyFlowNodes(document);
+    const result = buildGraphNodes(document);
 
     expect(result.edges).toHaveLength(1);
     expect(result.edges[0].source).toBe('$');

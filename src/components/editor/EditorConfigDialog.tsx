@@ -8,7 +8,7 @@ import { useIntl } from 'react-intl';
 
 import { useEditorConfiger } from '#/components/editor/hooks/useEditorConfiger';
 import { useLanguageConvertor } from '#/components/editor/hooks/useLanguageConvertor';
-import { useXyFlowBuilder } from '#/components/editor/hooks/useXyFlowBuilder';
+import { useGraphBuilder } from '#/components/editor/hooks/useGraphBuilder';
 import { editorConfigFormSchema, indents, languages, themes } from '#/components/editor/schemas/editorConfigFormSchema';
 import { Button } from '#/components/ui/button';
 import {
@@ -33,7 +33,7 @@ export const EditorConfigDialog = () => {
   const [open, setOpen] = useState<boolean>(false);
   const { convertToYaml, convertToJson, convertIndent } = useLanguageConvertor();
   const { handleChangeEditorLanguage } = useEditorConfiger();
-  const { updateFromContent } = useXyFlowBuilder();
+  const { updateFromContent } = useGraphBuilder();
   const { content, language, indent, theme, setEditorConfig, setContent, editorInstance, monacoInstance } =
     useEditorStore();
 

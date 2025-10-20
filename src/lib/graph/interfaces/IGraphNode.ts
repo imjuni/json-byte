@@ -1,21 +1,25 @@
 import type { JsonValue } from 'type-fest';
 
 import type { TComplexTypeString } from '#/contracts/json/TComplexTypeString';
-import type { IComplexField } from '#/lib/xyflow/interfaces/IComplexField';
-import type { IPrimitiveField } from '#/lib/xyflow/interfaces/IPrimitiveField';
+import type { TPrimitiveTypeString } from '#/contracts/json/TPrimitiveTypeString';
+import type { IComplexField } from '#/lib/graph/interfaces/IComplexField';
+import type { IPrimitiveField } from '#/lib/graph/interfaces/IPrimitiveField';
 
-export interface IXyFlowNode {
+export interface IGraphNode {
   /** JSONPath를 사용한 id 값 */
   id: string;
 
   /** 노드 타입 */
-  type?: string;
+  type?: TComplexTypeString | TPrimitiveTypeString;
 
   /** 드래그 가능 여부. false로 기본 설정된다 */
   draggable: boolean;
 
   /** XYFlow position */
   position: { x: number; y: number };
+
+  /** 코드에서 위치, 시작 지점과 종료 지점 */
+  // codePositions: { start: ICodePosition; end: ICodePosition };
 
   /** Optional width (can be set manually or by measured) */
   width?: number;
@@ -37,7 +41,7 @@ export interface IXyFlowNode {
     origin: JsonValue;
 
     /** 노드의 데이터 타입 (object 또는 array만) */
-    nodeType: TComplexTypeString;
+    nodeType: TComplexTypeString | TPrimitiveTypeString;
 
     /** Primitive 타입 필드들 (노드 내부에 표시) */
     primitiveFields: IPrimitiveField[];
@@ -46,10 +50,10 @@ export interface IXyFlowNode {
     complexFields: IComplexField[];
 
     /** 자식 객체 */
-    _children: IXyFlowNode[];
+    _children: IGraphNode[];
 
     /** 부모 객체 */
-    _parent: IXyFlowNode | undefined;
+    _parent: IGraphNode | undefined;
   };
 }
 

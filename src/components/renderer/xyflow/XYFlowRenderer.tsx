@@ -7,19 +7,19 @@ import { debounceTime, tap } from 'rxjs/operators';
 import { ObjectNode } from '#/components/renderer/xyflow/ObjectNode';
 import { SearchPanel } from '#/components/renderer/xyflow/SearchPanel';
 import { findTextPositionByJsonPath } from '#/lib/editor/findTextPositionByJsonPath';
-import { CE_XYFLOW_NODE_TYPE } from '#/lib/xyflow/const-enum/CE_XYFLOW_NODE_TYPE';
-import { layoutNodes } from '#/lib/xyflow/layoutNodes';
+import { CE_GRAPH_NODE_TYPE } from '#/lib/graph/const-enum/CE_GRAPH_NODE_TYPE';
+import { layoutNodes } from '#/lib/graph/layoutNodes';
 import { useEditorStore } from '#/stores/editorStore';
-import { useXyFlowStore } from '#/stores/xyflowStore';
+import { useGraphStore } from '#/stores/graphStore';
 
 import type { Edge, NodeChange } from '@xyflow/react';
 
-import type { IXyFlowEdge } from '#/lib/xyflow/interfaces/IXyFlowEdge';
-import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
+import type { IGraphEdge } from '#/lib/graph/interfaces/IGraphEdge';
+import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 
 // Inner component that uses React Flow hooks
 const FlowContent = () => {
-  const { nodes, edges, nodeMap, direction, setNodes } = useXyFlowStore();
+  const { nodes, edges, nodeMap, direction, setNodes } = useGraphStore();
   const { content, editorInstance } = useEditorStore();
   const nodesInitialized = useNodesInitialized();
   const hasRelayoutedRef = useRef(false);
@@ -64,9 +64,9 @@ const FlowContent = () => {
   }, [nodesInitialized, nodes, relayout$]);
 
   const handleNodesChange = useCallback(
-    (changes: NodeChange<IXyFlowNode>[]) => {
+    (changes: NodeChange<IGraphNode>[]) => {
       // Handle node changes from React Flow
-      const dimensionChangeMap = changes.reduce<Record<string, NodeChange<IXyFlowNode>>>((aggregated, change) => {
+      const dimensionChangeMap = changes.reduce<Record<string, NodeChange<IGraphNode>>>((aggregated, change) => {
         if ('id' in change && change.type === 'dimensions') {
           return { ...aggregated, [change.id]: change };
         }
@@ -85,12 +85,12 @@ const FlowContent = () => {
                 width: change.dimensions.width,
                 height: change.dimensions.height,
               },
-            } as IXyFlowNode;
+            } as IGraphNode;
           }
 
           return undefined;
         })
-        .filter((node): node is IXyFlowNode => node != null);
+        .filter((node): node is IGraphNode => node != null);
 
       if (updatedNodes.length > 0) {
         // Reset relayout flag when dimensions change to trigger re-layout
@@ -102,7 +102,7 @@ const FlowContent = () => {
   );
 
   const handleMoveNodeCenter = useCallback(
-    (node: IXyFlowNode) => {
+    (node: IGraphNode) => {
       // Center the node in the viewport
       const x = node.position.x + (node.measured?.width ?? 0) / 2;
       const y = node.position.y + (node.measured?.height ?? 0) / 2;
@@ -116,7 +116,7 @@ const FlowContent = () => {
   );
 
   const handleNodeClick = useCallback(
-    (_event: React.MouseEvent, node: IXyFlowNode) => {
+    (_event: React.MouseEvent, node: IGraphNode) => {
       // Center the node in the viewport
       handleMoveNodeCenter(node);
 
@@ -147,7 +147,7 @@ const FlowContent = () => {
   const handleEdgeClick = useCallback(
     (_event: React.MouseEvent, edge: Edge) => {
       // Use the child node's id as the JSONPath to find the position
-      const edgeData = edge.data as IXyFlowEdge['data'] | undefined;
+      const edgeData = edge.data as IGraphEdge['data'] | undefined;
       const targetPath = edgeData?.child?.id;
 
       if (targetPath == null || editorInstance == null || content == null) {
@@ -199,7 +199,7 @@ const FlowContent = () => {
         labelBgBorderRadius: 4,
       }}
       nodeTypes={{
-        [CE_XYFLOW_NODE_TYPE.PLAIN_OBJECT_NODE]: ObjectNode,
+        [CE_GRAPH_NODE_TYPE.PLAIN_OBJECT_NODE]: ObjectNode,
       }}
     >
       <Controls

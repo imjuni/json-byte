@@ -1,6 +1,6 @@
-import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
+import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 
-export interface IXyFlowEdge {
+export interface IGraphEdge {
   /** Edge 각 정점의 id 값을 hypen으로 연결한 edge id */
   id: string;
 
@@ -22,9 +22,9 @@ export interface IXyFlowEdge {
   /** 데이터 */
   data: {
     /** Edge 정점 중에 parent */
-    parent: IXyFlowNode;
+    parent: IGraphNode;
 
     /** Edge 정점 중에 child */
-    child: IXyFlowNode;
+    child: IGraphNode;
   };
 }

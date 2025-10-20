@@ -6,7 +6,7 @@ import { useIntl } from 'react-intl';
 
 import { EditorConfigDialog } from '#/components/editor/EditorConfigDialog';
 import { ExportDialog } from '#/components/editor/ExportDialog';
-import { useXyFlowBuilder } from '#/components/editor/hooks/useXyFlowBuilder';
+import { useGraphBuilder } from '#/components/editor/hooks/useGraphBuilder';
 import { ImportDialog } from '#/components/editor/ImportDialog';
 import { JsonByteEditor } from '#/components/editor/JsonByteEditor';
 import { Button } from '#/components/ui/button';
@@ -17,7 +17,7 @@ import { useEditorStore } from '#/stores/editorStore';
 export const Editor = () => {
   const intl = useIntl();
   const { language, content, indent, setContent } = useEditorStore();
-  const { updateFromContent } = useXyFlowBuilder();
+  const { updateFromContent } = useGraphBuilder();
 
   const handlePretty = useCallback(() => {
     const parsed = multiParse(content);

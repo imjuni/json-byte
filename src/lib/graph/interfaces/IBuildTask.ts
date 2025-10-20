@@ -1,12 +1,12 @@
 import type { JsonValue } from 'type-fest';
 
-import type { IXyFlowNode } from '#/lib/xyflow/interfaces/IXyFlowNode';
+import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 
 export interface IBuildTask {
   key: string;
   value: JsonValue;
   parentPath: string;
-  parent: IXyFlowNode;
-  node: IXyFlowNode;
+  parent: IGraphNode;
+  node: IGraphNode;
   depth: number;
 }
