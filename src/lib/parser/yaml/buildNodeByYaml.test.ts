@@ -1,10 +1,10 @@
 import { describe, it } from 'vitest';
 
 import { ParserConfig } from '#/lib/parser/common/ParserConfig';
-import { buildLineStarts } from '#/lib/parser/json/buildLineStarts';
-import { buildNodeByJson } from '#/lib/parser/json/buildNodeByJson';
+import { buildNodeByYaml } from '#/lib/parser/yaml/buildNodeByYaml';
+import { stringify as yamlStringify } from 'yaml';
 
-describe('buildNodeByJson', () => {
+describe('buildNodeByYaml', () => {
   const complex = {
     logger: 'api',
     pid: 76735,
@@ -139,31 +139,28 @@ describe('buildNodeByJson', () => {
     },
   ];
 
-  it('plain object', () => {
+  it.only('plain object', () => {
     const document = structuredClone(simple);
-    const origin = JSON.stringify(document, undefined, 2);
-    const lineStarts = buildLineStarts(origin);
+    const origin = yamlStringify(document, undefined, 2);
     const config = new ParserConfig({ guard: 1_000_000 });
 
-    const result = buildNodeByJson({ origin, document: simple, lineStarts, config });
+    const result = buildNodeByYaml({ origin, document: simple, config });
     console.log(result);
   });
 
   it('plain string', () => {
     const document = 'helloworld';
-    const origin = JSON.stringify(document, undefined, 2);
-    const lineStarts = buildLineStarts(origin);
+    const origin = yamlStringify(document, undefined, 2);
     const config = new ParserConfig({ guard: 1_000_000 });
 
-    buildNodeByJson({ origin, document, lineStarts, config });
+    buildNodeByYaml({ origin, document, config });
   });
 
   it('plain array', () => {
     const document = structuredClone(array);
-    const origin = JSON.stringify(document, undefined, 2);
-    const lineStarts = buildLineStarts(origin);
+    const origin = yamlStringify(document, undefined, 2);
     const config = new ParserConfig({ guard: 1_000_000 });
 
-    buildNodeByJson({ origin, document, lineStarts, config });
+    buildNodeByYaml({ origin, document, config });
   });
 });
