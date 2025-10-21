@@ -100,7 +100,6 @@ export function buildNodeByYaml({ document, origin, config }: IBuildNodeByYamlPa
           prim.contentLoc = loc;
         }
       }
-      entry.primitive = prim;
     }
 
     map[path] = entry;
