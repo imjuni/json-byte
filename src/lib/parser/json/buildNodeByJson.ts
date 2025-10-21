@@ -21,7 +21,6 @@ import type { IPrimitiveField } from '#/lib/graph/interfaces/IPrimitiveField';
 import type { ParserConfig } from '#/lib/parser/common/ParserConfig';
 import type { IPathLoCEntry } from '#/lib/parser/interfaces/IPathLoCEntry';
 import type { IPathLoCIndexMap } from '#/lib/parser/interfaces/IPathLoCIndexMap';
-import type { IPrimitiveLoC } from '#/lib/parser/interfaces/IPrimitiveLoC';
 
 interface IBuildNodeByJsonParams {
   /** 원본 JSON 문자열 */
@@ -71,28 +70,8 @@ export function buildNodeByJson({ origin, document, config, lineStarts }: IBuild
     const { node, path, parent } = task;
 
     const kind = jsonKindOf(node);
-    const loc = toRange(node.offset, node.length, lineStarts);
+    const loc = toRange(node.offset, node.length, lineStarts, config);
     const entry: IPathLoCEntry = { kind, loc };
-
-    if (isPrimitiveKind(kind)) {
-      const primitiveLoC: IPrimitiveLoC = { kind, valueLoc: loc };
-
-      if (kind === 'string') {
-        // 문자열 컨텐츠 내부 범위(따옴표 제외)를 정확히 계산
-        const start = node.offset;
-        const end = node.offset + node.length;
-        const open = origin[start];
-        const close = origin[end - 1];
-
-        if ((open === '"' && close === '"') || (open === "'" && close === "'")) {
-          const innerOffset = start + 1;
-          const innerLen = Math.max(0, end - 1 - innerOffset);
-          primitiveLoC.contentLoc = toRange(innerOffset, innerLen, lineStarts);
-        }
-      }
-
-      entry.primitive = primitiveLoC;
-    }
 
     map[path] = entry;
 
@@ -150,6 +129,11 @@ export function buildNodeByJson({ origin, document, config, lineStarts }: IBuild
         // valueKind가 complex면 graphNode에 complexFields 에 추가
 
         if (isPrimitiveKind(valueKind)) {
+          const propertyLoc = toRange(property.offset, property.length, lineStarts, config);
+          const childNodePath = childPath(path, `${keyNode.value}`);
+
+          map[childNodePath] = { kind: valueKind, loc: propertyLoc };
+
           const field: IPrimitiveField = {
             key: keyNode.value,
             value: valueNode.value,
@@ -196,6 +180,10 @@ export function buildNodeByJson({ origin, document, config, lineStarts }: IBuild
 
         // array의 각 요소에 대한 필드 정보 추가
         if (isPrimitiveKind(valueKind)) {
+          const propertyLoc = toRange(valueNode.offset, valueNode.length, lineStarts, config);
+
+          map[childNodePath] = { kind: valueKind, loc: propertyLoc };
+
           const field: IPrimitiveField = {
             key: `${j}`,
             value: valueNode.value,

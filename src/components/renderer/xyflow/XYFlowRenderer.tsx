@@ -19,7 +19,7 @@ import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 
 // Inner component that uses React Flow hooks
 const FlowContent = () => {
-  const { nodes, edges, nodeMap, direction, setNodes } = useGraphStore();
+  const { nodes, edges, nodeMap, direction, locMap, setNodes } = useGraphStore();
   const { content, editorInstance } = useEditorStore();
   const nodesInitialized = useNodesInitialized();
   const hasRelayoutedRef = useRef(false);
@@ -121,27 +121,41 @@ const FlowContent = () => {
       handleMoveNodeCenter(node);
 
       // Select the corresponding text in the editor
-      if (editorInstance && content) {
-        const position = findTextPositionByJsonPath(content, node.id);
+      if (editorInstance != null && content != null) {
+        const locEntry = locMap[node.id];
 
-        if (position) {
+        if (node.id === '$') {
           // Set selection in the editor
           editorInstance.setSelection({
-            startLineNumber: position.startLine,
-            startColumn: position.startColumn,
-            endLineNumber: position.endLine,
-            endColumn: position.endColumn,
+            startLineNumber: 1,
+            startColumn: 1,
+            endLineNumber: 1,
+            endColumn: 1,
           });
 
           // Reveal the selection in the editor viewport
-          editorInstance.revealLineInCenter(position.startLine);
+          editorInstance.revealLineInCenter(1);
+
+          // Focus the editor
+          editorInstance.focus();
+        } else if (node.id !== '$' && locEntry != null) {
+          // Set selection in the editor
+          editorInstance.setSelection({
+            startLineNumber: locEntry.loc.start.line,
+            startColumn: locEntry.loc.start.column,
+            endLineNumber: locEntry.loc.end.line,
+            endColumn: locEntry.loc.end.column,
+          });
+
+          // Reveal the selection in the editor viewport
+          editorInstance.revealLineInCenter(locEntry.loc.start.line);
 
           // Focus the editor
           editorInstance.focus();
         }
       }
     },
-    [handleMoveNodeCenter, editorInstance, content],
+    [handleMoveNodeCenter, editorInstance, content, locMap],
   );
 
   const handleEdgeClick = useCallback(

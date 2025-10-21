@@ -10,6 +10,7 @@ import type { IGraphEdge } from '#/lib/graph/interfaces/IGraphEdge';
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 import type { TLayoutDirection } from '#/lib/graph/layoutNodes';
 import type { ParserConfig } from '#/lib/parser/common/ParserConfig';
+import type { IPathLoCIndexMap } from '#/lib/parser/interfaces/IPathLoCIndexMap';
 
 interface ICreateGraphNodesParams {
   /** 원본 JSON 문자열 */
@@ -32,13 +33,20 @@ interface ICreateGraphNodesParams {
   direction?: TLayoutDirection;
 }
 
-export function createGraphNodesWithEdges({ origin, document, config, language, direction }: ICreateGraphNodesParams): {
+export function createGraphNodesAndEdgesAndLocMap({
+  origin,
+  document,
+  config,
+  language,
+  direction,
+}: ICreateGraphNodesParams): {
   nodes: IGraphNode[];
   edges: IGraphEdge[];
+  locMap: IPathLoCIndexMap;
 } {
   if (language === 'json') {
     const lineStarts = buildLineStarts(origin);
-    const { nodes, edges } = buildNodeByJson({
+    const { nodes, edges, map } = buildNodeByJson({
       origin,
       document,
       config,
@@ -47,10 +55,10 @@ export function createGraphNodesWithEdges({ origin, document, config, language, 
 
     const layoutedNodes = layoutNodes(nodes, edges, direction);
 
-    return { nodes: layoutedNodes, edges };
+    return { nodes: layoutedNodes, edges, locMap: map };
   }
 
-  const { nodes, edges } = buildNodeByYaml({
+  const { nodes, edges, map } = buildNodeByYaml({
     origin,
     document,
     config,
@@ -58,5 +66,5 @@ export function createGraphNodesWithEdges({ origin, document, config, language, 
 
   const layoutedNodes = layoutNodes(nodes, edges, direction);
 
-  return { nodes: layoutedNodes, edges };
+  return { nodes: layoutedNodes, edges, locMap: map };
 }

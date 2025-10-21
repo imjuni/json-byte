@@ -8,6 +8,7 @@ export const useGraphStore = create<TGraphStore>((set) => ({
   nodes: [],
   edges: [],
   nodeMap: {},
+  locMap: {},
   direction: 'LR',
 
   // Actions
@@ -33,6 +34,14 @@ export const useGraphStore = create<TGraphStore>((set) => ({
         {},
       );
       return { nodes, edges, nodeMap };
+    }),
+  setNodesAndEdgesAndLocMapAndMap: (nodes, edges, locMap) =>
+    set(() => {
+      const nodeMap = nodes.reduce<Record<string, IGraphNode>>(
+        (aggregated, node) => ({ ...aggregated, [node.id]: node }),
+        {},
+      );
+      return { nodes, edges, nodeMap, locMap };
     }),
   setDirection: (direction) => set({ direction }),
   reset: () => set({ nodes: [], edges: [], direction: 'LR' }),

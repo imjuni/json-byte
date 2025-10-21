@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import { createGraphNodesWithEdges } from '#/lib/graph/createGraphNodesWithEdges';
+import { createGraphNodesAndEdgesAndLocMap } from '#/lib/graph/createGraphNodesAndEdgesAndLocMap';
 import { multiParse } from '#/lib/json/multiParse';
 import { ParserConfig } from '#/lib/parser/common/ParserConfig';
 import { replaceHref } from '#/lib/replaceHref';
@@ -19,13 +19,13 @@ export function useGraphBuilder(): {
   buildGraph: (origin: string, value: ReturnType<typeof multiParse>) => IGraphNode[];
   updateFromContent: (content: string) => void;
 } {
-  const { direction, setNodesAndEdgesAndMap } = useGraphStore();
+  const { direction, setNodesAndEdgesAndLocMapAndMap } = useGraphStore();
   const { setFuse } = useFuseStore();
 
   const buildGraph = useCallback(
     (origin: string, value: ReturnType<typeof multiParse>): IGraphNode[] => {
       if (!(value instanceof Error)) {
-        const { nodes, edges } = createGraphNodesWithEdges({
+        const { nodes, edges, locMap } = createGraphNodesAndEdgesAndLocMap({
           document: value.data,
           language: value.language,
           origin,
@@ -33,14 +33,14 @@ export function useGraphBuilder(): {
           config: new ParserConfig({ guard: 1_000_000 }),
         });
 
-        setNodesAndEdgesAndMap(nodes, edges);
+        setNodesAndEdgesAndLocMapAndMap(nodes, edges, locMap);
 
         return nodes;
       }
 
       return [];
     },
-    [direction, setNodesAndEdgesAndMap],
+    [direction, setNodesAndEdgesAndLocMapAndMap],
   );
 
   const updateFromContent = useCallback(

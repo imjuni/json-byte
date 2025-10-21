@@ -139,7 +139,17 @@ describe('buildNodeByJson', () => {
     },
   ];
 
-  it('plain object', () => {
+  it('plain complex object', () => {
+    const document = structuredClone(complex);
+    const origin = JSON.stringify(document, undefined, 2);
+    const lineStarts = buildLineStarts(origin);
+    const config = new ParserConfig({ guard: 1_000_000 });
+
+    const result = buildNodeByJson({ origin, document: simple, lineStarts, config });
+    console.log(result);
+  });
+
+  it('plain simple object', () => {
     const document = structuredClone(simple);
     const origin = JSON.stringify(document, undefined, 2);
     const lineStarts = buildLineStarts(origin);

@@ -2,13 +2,13 @@ import type { ICodePosition } from '#/lib/parser/interfaces/ICodePosition';
 
 export function offsetToLineCol(offset: number, lineStarts: number[], _guard?: number): ICodePosition {
   // 가독성을 위해 명시적 floor 사용
-  const guard = 1_000_000;
+  const guard = _guard ?? 1_000_000;
   let i = 0;
   let low = 0;
   let high = lineStarts.length - 1;
 
   // eslint-disable-next-line no-restricted-syntax
-  while (low <= high && guard <= i) {
+  while (low <= high && guard > i) {
     i += 1;
 
     const mid = Math.floor((low + high) / 2);
