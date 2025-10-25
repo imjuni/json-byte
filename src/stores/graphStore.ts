@@ -12,6 +12,30 @@ export const useGraphStore = create<TGraphStore>((set) => ({
   direction: 'LR',
 
   // Actions
+  setSearcheds: (ids) =>
+    set((state) => {
+      const { nodes } = state;
+
+      if (ids.length <= 0) {
+        const nexts = nodes.map((node) => {
+          const next = { ...node, data: { ...node.data } };
+          next.data.searched = false;
+          return next;
+        });
+
+        return { nodes: nexts };
+      }
+
+      const map = ids.reduce<Record<string, boolean>>((aggregated, id) => ({ ...aggregated, [id]: true }), {});
+
+      const nexts = nodes.map((node) => {
+        const next = { ...node, data: { ...node.data } };
+        next.data.searched = map[node.id] != null;
+        return next;
+      });
+
+      return { nodes: nexts };
+    }),
   setNodes: (nodes) => set({ nodes }),
   setEdges: (edges) => set({ edges }),
   replaceNodeInMap: (nodeMap) => set({ nodeMap }),

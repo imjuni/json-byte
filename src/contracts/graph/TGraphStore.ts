@@ -14,6 +14,7 @@ export interface IGraphStoreState {
 
 export interface IGraphStoreAction {
   // Actions
+  setSearcheds: (ids: string[]) => void;
   setNodes: (nodes: IGraphNode[]) => void;
   setEdges: (edges: IGraphEdge[]) => void;
   replaceNodeInMap: (map: Record<string, IGraphNode>) => void;

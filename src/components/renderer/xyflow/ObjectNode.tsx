@@ -18,6 +18,20 @@ const variants = tv({
     fieldHeading: 'font-medium text-muted-foreground flex-shrink-0 max-w-[120px] truncate',
     fieldValue: 'truncate min-w-0',
   },
+  variants: {
+    searched: {
+      true: {
+        node: [
+          'dark:bg-[oklch(0.32_0.07_152)]',
+          'dark:border-green-600',
+          'dark:hover:bg-green-900',
+          'dark:hover:border-green-500',
+          'hover:border-green-400',
+        ].join(' '),
+      },
+      false: {},
+    },
+  },
 });
 
 const handleVariants = tv({
@@ -41,12 +55,12 @@ const handleVariants = tv({
   },
 });
 
-const { container, line, fieldHeading, fieldValue, heading, node } = variants();
-
 const RawObjectNode = ({ data }: Omit<IGraphNode, 'position'>) => {
   const label = getOrDefault(data?.label, '');
   const primitiveFields = getOrDefault(data?.primitiveFields, []);
   const complexFields = getOrDefault(data?.complexFields, []);
+
+  const { container, line, fieldHeading, fieldValue, heading, node } = variants({ searched: data.searched });
 
   return (
     <div className={node()}>
@@ -124,4 +138,12 @@ const RawObjectNode = ({ data }: Omit<IGraphNode, 'position'>) => {
   );
 };
 
-export const ObjectNode = memo(RawObjectNode);
+// Return true if props are equal (should NOT re-render)
+// Return false if props are different (should re-render)
+
+// Only compare data.searched - ignore all other props
+// Re-render ONLY when data.searched changes
+export const ObjectNode = memo(
+  RawObjectNode,
+  (prevProps, nextProps) => prevProps.data.searched === nextProps.data.searched,
+);
