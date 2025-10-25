@@ -46,6 +46,8 @@ export function buildGraphNodes(
     data: {
       label: 'root',
       origin: document,
+      searched: false,
+      stringify: origin,
       nodeType: rootType,
       primitiveFields: [],
       complexFields: [],
@@ -101,6 +103,8 @@ export function buildGraphNodes(
       type: CE_GRAPH_NODE_TYPE.PLAIN_OBJECT_NODE,
       data: {
         label,
+        searched: false,
+        stringify: JSON.stringify(value),
         origin: value,
         nodeType,
         primitiveFields,

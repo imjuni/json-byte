@@ -1,3 +1,5 @@
+import { getPrimitiveValueStringify } from '#/lib/graph/getPrimitiveValueStringify';
+
 import type { JsonValue } from 'type-fest';
 
 import type { TComplexTypeString } from '#/contracts/json/TComplexTypeString';
@@ -25,7 +27,9 @@ export function createGraphNode({ id, label, type, value }: ICreateNodeParams): 
     data: {
       label,
       origin: value,
+      stringify: getPrimitiveValueStringify(value),
       nodeType: type,
+      searched: false,
       primitiveFields: [],
       complexFields: [],
       _children: [],

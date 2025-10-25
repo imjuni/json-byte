@@ -44,16 +44,16 @@ export function buildNodeByYaml({ document, origin, config }: IBuildNodeByYamlPa
   const doc = parseDocument(origin, { lineCounter: lc });
 
   if (doc.errors.length) {
-    const e = doc.errors[0];
+    const error = doc.errors[0];
     const where =
-      e.pos?.[0] != null
+      error.pos?.[0] != null
         ? (() => {
-            const p = lc.linePos(atOrThrow(e.pos, 0));
-            return ` at ${p.line}:${p.col}`;
+            const path = lc.linePos(atOrThrow(error.pos, 0));
+            return ` at ${path.line}:${path.col}`;
           })()
         : '';
 
-    throw new Error(`YAML parse error${where}: ${e.message}`);
+    throw new Error(`YAML parse error${where}: ${error.message}`);
   }
 
   const root = doc.contents as YamlNode | null;
@@ -88,10 +88,12 @@ export function buildNodeByYaml({ document, origin, config }: IBuildNodeByYamlPa
 
     if (kind !== 'object' && kind !== 'array' && isScalar(node)) {
       const prim: IPrimitiveLoC = { kind: kind as IPrimitiveLoC['kind'], valueLoc: loc };
+
       // 문자열일 때 따옴표 내부만 contentLoc으로 시도
       if (kind === 'string') {
         const open = origin[start];
         const close = origin[end - 1];
+
         // 큰따옴표/작은따옴표로 둘러싸인 인라인 스칼라만 내부 컨텐츠 범위 제공
         if ((open === '"' && close === '"') || (open === "'" && close === "'")) {
           prim.contentLoc = toRange(lc, start + 1, end - 1);

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Settings } from 'lucide-react';
@@ -46,6 +46,17 @@ export const EditorConfigDialog = () => {
       language,
     },
   });
+
+  // Update form values when dialog opens or store values change
+  useEffect(() => {
+    if (open) {
+      editorConfigForm.reset({
+        indent: `${indent}`,
+        theme,
+        language,
+      });
+    }
+  }, [open, indent, theme, language, editorConfigForm]);
 
   const onHandleSubmit = useCallback(
     (data: TEditorConfigFormSchema) => {

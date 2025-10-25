@@ -37,6 +37,12 @@ export interface IGraphNode {
     /** 현재 key 값, XyFlow에서 이름이 된다 */
     label: string;
 
+    /** 검색어 포함 여부. false로 기본 설정된다 */
+    searched: boolean;
+
+    /** 필드의 실제 값 */
+    stringify: string;
+
     /** 원본 데이터 값 */
     origin: JsonValue;
 
@@ -56,5 +62,3 @@ export interface IGraphNode {
     _parent: IGraphNode | undefined;
   };
 }
-
-// export type IXyFlowNode = NodeTypes;

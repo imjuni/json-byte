@@ -4,6 +4,7 @@ import { createGraphNodesAndEdgesAndLocMap } from '#/lib/graph/createGraphNodesA
 import { multiParse } from '#/lib/json/multiParse';
 import { ParserConfig } from '#/lib/parser/common/ParserConfig';
 import { replaceHref } from '#/lib/replaceHref';
+import { useEditorStore } from '#/stores/editorStore';
 import { createFuse, useFuseStore } from '#/stores/fuseStore';
 import { useGraphStore } from '#/stores/graphStore';
 
@@ -21,6 +22,7 @@ export function useGraphBuilder(): {
 } {
   const { direction, setNodesAndEdgesAndLocMapAndMap } = useGraphStore();
   const { setFuse } = useFuseStore();
+  const { setLanguage } = useEditorStore();
 
   const buildGraph = useCallback(
     (origin: string, value: ReturnType<typeof multiParse>): IGraphNode[] => {
@@ -33,6 +35,7 @@ export function useGraphBuilder(): {
           config: new ParserConfig({ guard: 1_000_000 }),
         });
 
+        setLanguage(value.language);
         setNodesAndEdgesAndLocMapAndMap(nodes, edges, locMap);
 
         return nodes;
@@ -40,7 +43,7 @@ export function useGraphBuilder(): {
 
       return [];
     },
-    [direction, setNodesAndEdgesAndLocMapAndMap],
+    [direction, setLanguage, setNodesAndEdgesAndLocMapAndMap],
   );
 
   const updateFromContent = useCallback(
