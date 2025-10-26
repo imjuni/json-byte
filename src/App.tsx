@@ -6,7 +6,8 @@ import { FooterEditorStatus } from '#/components/layout/FooterEditorStatus';
 import { Resizer } from '#/components/layout/Resizer';
 import { Nav } from '#/components/nav/Nav';
 import { Notification } from '#/components/nav/Notification';
-import { XYFlowRenderer } from '#/components/renderer/xyflow/XYFlowRenderer';
+import { PixiGraphRenderer } from '#/components/renderer/pixi';
+// import { XYFlowRenderer } from '#/components/renderer/xyflow/XYFlowRenderer';
 import { useAppStore } from '#/stores/appStore';
 
 import './App.css';
@@ -38,7 +39,7 @@ export const App = () => {
             id="graph-tree-control-container"
             style={{ width: `${100 - editorWidthPercent}%` }}
           >
-            <XYFlowRenderer />
+            <PixiGraphRenderer />
           </div>
         </BrowserView>
 
@@ -60,7 +61,7 @@ export const App = () => {
             id="graph-tree-control-container"
             style={{ height: `${100 - editorHeightPercent}%` }}
           >
-            <XYFlowRenderer />
+            <PixiGraphRenderer />
           </div>
         </MobileView>
       </main>
