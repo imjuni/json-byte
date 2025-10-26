@@ -4,19 +4,26 @@ interface IPixiStoreValue {
    * 타입 별 색상 팔레트
    */
   colors: {
-    node: {
-      background: string;
-      border: string;
-    };
-    type: {
-      string: string;
-      boolean: string;
-      number: string;
-      null: string;
-      object: string;
-      array: string;
-    };
+    theme: Record<
+      string,
+      {
+        node: {
+          background: string;
+          border: string;
+          seperator: string;
+        };
+        type: {
+          string: string;
+          boolean: string;
+          number: string;
+          null: string;
+          object: string;
+          array: string;
+        };
+      }
+    >;
   };
+
   size: {
     /** height는 동적 계산에 의해서 적용 */
     node: {

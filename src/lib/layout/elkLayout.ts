@@ -14,15 +14,16 @@ export async function applyElkLayout(
   const elkNodes = nodes.map((node) => {
     const totalFields = node.data.primitiveFields.length + node.data.complexFields.length;
     const headerHeight = 40;
-    const lineHeight = 20;
-    const padding = 10;
-    const height = headerHeight + totalFields * lineHeight + padding;
+    const lineHeight = 26; // Match PixiGraphRenderer
+    const paddingTop = 10;
+    const paddingBottom = 10;
+    const height = headerHeight + totalFields * lineHeight + paddingTop + paddingBottom;
     const width = 280;
 
     // Create ports for each complex field - at the right edge
     const ports = node.data.complexFields.map((field, index) => {
       const primitiveFieldsCount = node.data.primitiveFields.length;
-      const fieldYOffset = headerHeight + primitiveFieldsCount * lineHeight + index * lineHeight;
+      const fieldYOffset = headerHeight + paddingTop + primitiveFieldsCount * lineHeight + index * lineHeight;
 
       return {
         id: `${node.id}-port-${field.key}`,
@@ -33,7 +34,7 @@ export async function applyElkLayout(
         width: 10,
         height: 10,
         x: width, // At the right edge, matching the handle position
-        y: fieldYOffset + 8,
+        y: fieldYOffset + 11, // Match handle position in PixiGraphRenderer (+3 text offset + 8)
       };
     });
 
