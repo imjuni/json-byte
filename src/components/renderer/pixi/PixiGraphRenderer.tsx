@@ -338,7 +338,7 @@ function createNodeGraphics(node: IGraphNode): Container {
     text: node.data.label,
     style: {
       fontFamily: 'Arial',
-      fontSize: 16,
+      fontSize: 18, // Increased from 16 to 18 (2px larger)
       fill: 0xffffff,
       fontWeight: 'bold',
     },
@@ -370,7 +370,7 @@ function createNodeGraphics(node: IGraphNode): Container {
       text: `${field.key}: ${String(field.value).substring(0, 20)}`,
       style: {
         fontFamily: 'Arial',
-        fontSize: 12,
+        fontSize: 13, // Increased from 12 to 13 (1px larger)
         fill: 0xcccccc,
       },
     });
@@ -386,7 +386,7 @@ function createNodeGraphics(node: IGraphNode): Container {
       text: `${field.key}: ${field.type === 'array' ? `[${field.size}]` : `{${field.size}}`}`,
       style: {
         fontFamily: 'Arial',
-        fontSize: 12,
+        fontSize: 13, // Increased from 12 to 13 (1px larger)
         fill: 0x88ccff,
       },
     });
