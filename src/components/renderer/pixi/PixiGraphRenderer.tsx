@@ -347,6 +347,22 @@ function createNodeGraphics(node: IGraphNode): Container {
   label.y = 10;
   nodeContainer.addChild(label);
 
+  // Draw target handle on the left side (only if node has a parent)
+  // eslint-disable-next-line no-underscore-dangle
+  if (node.data._parent != null) {
+    const targetHandle = new Graphics();
+    targetHandle.circle(0, 10, 5); // Left edge, near the top
+
+    // Use parent's type to determine color
+    // array: orange (0xffaa00), object: blue (0x88ccff)
+    // eslint-disable-next-line no-underscore-dangle
+    const parentType = node.data._parent.data.nodeType;
+    const handleColor = parentType === 'array' ? 0xffaa00 : 0x88ccff;
+
+    targetHandle.fill({ color: handleColor });
+    nodeContainer.addChild(targetHandle);
+  }
+
   // Draw primitive fields
   let yOffset = headerHeight;
   for (const field of node.data.primitiveFields) {
