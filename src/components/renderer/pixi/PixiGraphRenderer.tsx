@@ -378,9 +378,9 @@ function createNodeGraphics(node: IGraphNode): Container {
     fieldText.y = yOffset;
     nodeContainer.addChild(fieldText);
 
-    // Draw connection point (handle)
+    // Draw connection point (handle) - outside the node border
     const handle = new Graphics();
-    handle.circle(width - 10, yOffset + 8, 5);
+    handle.circle(width, yOffset + 8, 5); // At the right edge, not inside
     handle.fill({ color: 0xffaa00 });
     nodeContainer.addChild(handle);
 
@@ -425,7 +425,8 @@ function renderEdges(container: Container, edges: IGraphEdge[], nodes: IGraphNod
       sourceY = sourceNode.position.y + 75;
     }
 
-    const sourceX = sourceNode.position.x + width; // Right edge of source node
+    // Handle is at the right edge of the node (width)
+    const sourceX = sourceNode.position.x + width; // Handle position at right edge
     const targetX = targetNode.position.x; // Left edge of target node
     const targetY = targetNode.position.y + 10; // Top of target node with small offset
 

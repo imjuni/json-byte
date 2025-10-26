@@ -19,7 +19,7 @@ export async function applyElkLayout(
     const height = headerHeight + totalFields * lineHeight + padding;
     const width = 280;
 
-    // Create ports for each complex field
+    // Create ports for each complex field - at the right edge
     const ports = node.data.complexFields.map((field, index) => {
       const primitiveFieldsCount = node.data.primitiveFields.length;
       const fieldYOffset = headerHeight + primitiveFieldsCount * lineHeight + index * lineHeight;
@@ -32,7 +32,7 @@ export async function applyElkLayout(
         },
         width: 10,
         height: 10,
-        x: width - 10,
+        x: width, // At the right edge, matching the handle position
         y: fieldYOffset + 8,
       };
     });
