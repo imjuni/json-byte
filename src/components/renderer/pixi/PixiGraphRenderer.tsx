@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { Viewport } from 'pixi-viewport';
 import { Application, Container, Graphics } from 'pixi.js';
 
 import { PixiJsonField } from '#/components/renderer/pixi/components/node/PixiJsonField';
@@ -13,7 +14,7 @@ export const PixiGraphRenderer = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const isInitializedRef = useRef(false);
-  const viewportRef = useRef<Container | null>(null);
+  const viewportRef = useRef<Viewport | null>(null);
   const { nodes, edges, direction, setDirection } = useGraphStore();
   const [layoutedNodes, setLayoutedNodes] = useState<IGraphNode[]>([]);
   const [isLayouting, setIsLayouting] = useState(false);
@@ -28,7 +29,7 @@ export const PixiGraphRenderer = () => {
     }
 
     // Limit: If too many nodes, skip rendering to prevent browser freeze
-    const MAX_NODES = 10000;
+    const MAX_NODES = 20000;
 
     if (nodes.length > MAX_NODES) {
       // eslint-disable-next-line no-console
@@ -38,18 +39,39 @@ export const PixiGraphRenderer = () => {
       return;
     }
 
+    // eslint-disable-next-line no-console
+    console.log('[PERF] Starting layout process', {
+      nodeCount: nodes.length,
+      edgeCount: edges.length,
+      timestamp: new Date().toISOString(),
+    });
+
     setIsLayouting(true);
 
     // Use setTimeout to allow loading UI to render first
     setTimeout(() => {
+      const layoutStartTime = performance.now();
+      console.log('[LAYOUT] Started layout calculation', {
+        nodeCount: nodes.length,
+        edgeCount: edges.length,
+        direction,
+      });
+
       try {
         const layoutApplied = layoutNodes(nodes, edges, direction);
+
+        const layoutEndTime = performance.now();
+        const layoutDuration = layoutEndTime - layoutStartTime;
+        console.log('[LAYOUT] Layout calculation completed', {
+          duration: `${layoutDuration.toFixed(2)}ms`,
+          nodesProcessed: layoutApplied.length,
+        });
 
         setLayoutedNodes(layoutApplied);
         setIsLayouting(false);
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error('Dagre layout failed:', error);
+        console.error('[LAYOUT] Layout calculation failed:', error);
         // Fallback to original nodes if layout fails
         setLayoutedNodes(nodes);
         setIsLayouting(false);
@@ -61,12 +83,6 @@ export const PixiGraphRenderer = () => {
     if (canvasRef.current == null) return;
 
     let mounted = true;
-    let wheelHandler: ((event: WheelEvent) => void) | null = null;
-    let isDragging = false;
-    let dragStartX = 0;
-    let dragStartY = 0;
-    let viewportStartX = 0;
-    let viewportStartY = 0;
 
     // Create PixiJS Application
     const app = new Application();
@@ -93,130 +109,47 @@ export const PixiGraphRenderer = () => {
         appRef.current = app;
         isInitializedRef.current = true;
 
-        // Create viewport container for zoom and pan
-        const viewport = new Container();
-        viewport.x = 0;
-        viewport.y = 0;
-        viewport.scale.set(1);
+        // Create viewport with pixi-viewport
+        const viewport = new Viewport({
+          screenWidth: canvasRef.current.clientWidth || 800,
+          screenHeight: canvasRef.current.clientHeight || 600,
+          worldWidth: 10000,
+          worldHeight: 10000,
+          events: app.renderer.events,
+        });
+
+        // Add viewport to stage
         app.stage.addChild(viewport);
         viewportRef.current = viewport;
 
-        // Create containers for graph (edges first, then nodes for proper layering)
-        const edgeContainer = new Container();
-        const nodeContainer = new Container();
-        viewport.addChild(edgeContainer);
-        viewport.addChild(nodeContainer);
+        // Enable drag, pinch, wheel plugins
+        // Note: decelerate disabled for large graphs to reduce CPU usage
+        viewport
+          .drag({
+            mouseButtons: 'left',
+          })
+          .pinch()
+          .wheel({
+            smooth: 3,
+            percent: 0.1,
+          })
+          .clamp({
+            left: -5000,
+            right: 15000,
+            top: -5000,
+            bottom: 15000,
+          })
+          .clampZoom({
+            minScale: 0.1,
+            maxScale: 5,
+          });
 
-        // DO NOT render here - let the second useEffect handle initial rendering
-        // This prevents duplicate rendering on mount
+        // Disable culling for now - it's causing 100% CPU usage on large graphs
+        // The culling calculation for 16k+ nodes is too expensive
+        // TODO: Implement more efficient culling or virtual rendering
 
-        // Start the ticker to continuously render
-        app.ticker.add(() => {
-          // This will render every frame
-          // PixiJS will automatically handle this, but we ensure it's running
-        });
-
-        // Add mouse wheel zoom functionality
-        const { canvas } = app;
-        wheelHandler = (event: WheelEvent) => {
-          // Check if this is a pinch gesture (trackpad pinch on macOS)
-          if (event.ctrlKey) {
-            event.preventDefault();
-
-            // Get mouse position relative to canvas
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = event.clientX - rect.left;
-            const mouseY = event.clientY - rect.top;
-
-            // For pinch gesture, deltaY is the zoom amount
-            // Negative deltaY = zoom in, Positive deltaY = zoom out
-            // Increase sensitivity with higher multiplier
-            const zoomFactor = 1 - event.deltaY * 0.02;
-            const oldScale = viewport.scale.x;
-            const newScale = oldScale * zoomFactor;
-
-            console.log('Pinch zoom:', { oldScale, zoomFactor, newScale, deltaY: event.deltaY });
-
-            // Limit zoom range (0.1x to 5x)
-            if (newScale < 0.1 || newScale > 5) {
-              console.log('Zoom limit reached:', newScale);
-              return;
-            }
-
-            // Calculate new position to zoom towards mouse cursor
-            const worldPosX = (mouseX - viewport.x) / viewport.scale.x;
-            const worldPosY = (mouseY - viewport.y) / viewport.scale.y;
-
-            viewport.scale.set(newScale);
-
-            viewport.x = mouseX - worldPosX * newScale;
-            viewport.y = mouseY - worldPosY * newScale;
-
-            console.log('Viewport updated:', { scale: viewport.scale.x, x: viewport.x, y: viewport.y });
-          } else {
-            // Regular mouse wheel scroll - zoom
-            event.preventDefault();
-
-            // Get mouse position relative to canvas
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = event.clientX - rect.left;
-            const mouseY = event.clientY - rect.top;
-
-            // Calculate zoom factor
-            const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
-            const newScale = viewport.scale.x * zoomFactor;
-
-            // Limit zoom range (0.1x to 5x)
-            if (newScale < 0.1 || newScale > 5) return;
-
-            // Calculate new position to zoom towards mouse cursor
-            const worldPosX = (mouseX - viewport.x) / viewport.scale.x;
-            const worldPosY = (mouseY - viewport.y) / viewport.scale.y;
-
-            viewport.scale.set(newScale);
-
-            viewport.x = mouseX - worldPosX * newScale;
-            viewport.y = mouseY - worldPosY * newScale;
-          }
-        };
-
-        canvas.addEventListener('wheel', wheelHandler, { passive: false });
-
-        // Add mouse pan functionality
-        const mouseDownHandler = (event: MouseEvent) => {
-          isDragging = true;
-          dragStartX = event.clientX;
-          dragStartY = event.clientY;
-          viewportStartX = viewport.x;
-          viewportStartY = viewport.y;
-          canvas.style.cursor = 'grabbing';
-        };
-
-        const mouseMoveHandler = (event: MouseEvent) => {
-          if (!isDragging) return;
-
-          const deltaX = event.clientX - dragStartX;
-          const deltaY = event.clientY - dragStartY;
-
-          viewport.x = viewportStartX + deltaX;
-          viewport.y = viewportStartY + deltaY;
-        };
-
-        const mouseUpHandler = () => {
-          isDragging = false;
-          canvas.style.cursor = 'grab';
-        };
-
-        const mouseLeaveHandler = () => {
-          isDragging = false;
-          canvas.style.cursor = 'grab';
-        };
-
-        canvas.style.cursor = 'grab';
-        canvas.addEventListener('mousedown', mouseDownHandler);
-        canvas.addEventListener('mousemove', mouseMoveHandler);
-        canvas.addEventListener('mouseup', mouseUpHandler);
-        canvas.addEventListener('mouseleave', mouseLeaveHandler);
+        // eslint-disable-next-line no-console
+        console.log('[VIEWPORT] pixi-viewport initialized (culling disabled for performance)');
       })
       .catch((error) => {
         // eslint-disable-next-line no-console
@@ -228,18 +161,15 @@ export const PixiGraphRenderer = () => {
       mounted = false;
       isInitializedRef.current = false;
       if (appRef.current) {
-        const { canvas } = appRef.current;
-        // Remove all event listeners
-        if (wheelHandler) {
-          canvas.removeEventListener('wheel', wheelHandler);
-        }
-        // Note: mousedown, mousemove, mouseup, mouseleave will be cleaned up
-        // automatically when canvas is destroyed
+        // pixi-viewport automatically cleans up its event listeners
         appRef.current.destroy(true, { children: true, texture: true });
         appRef.current = null;
       }
+      if (viewportRef.current) {
+        viewportRef.current.destroy();
+        viewportRef.current = null;
+      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Re-render when layouted nodes change
@@ -250,64 +180,85 @@ export const PixiGraphRenderer = () => {
     // Start rendering
     setIsRendering(true);
 
+    const renderStartTime = performance.now();
+    console.log('[RENDER] Started rendering process', {
+      nodeCount: layoutedNodes.length,
+      edgeCount: edges.length,
+    });
+
     try {
+      const clearStartTime = performance.now();
       // Clear viewport's children only, not the viewport itself
       viewportRef.current.removeChildren();
+      console.log('[RENDER] Cleared viewport', {
+        duration: `${(performance.now() - clearStartTime).toFixed(2)}ms`,
+      });
 
+      const containerStartTime = performance.now();
       // Recreate containers inside viewport
       const edgeContainer = new Container();
       const nodeContainer = new Container();
       viewportRef.current.addChild(edgeContainer);
       viewportRef.current.addChild(nodeContainer);
+      console.log('[RENDER] Created containers', {
+        duration: `${(performance.now() - containerStartTime).toFixed(2)}ms`,
+      });
 
       // Re-render edges and nodes with layouted positions
       const edgeDirection = direction === 'LR' || direction === 'RL' ? 'LR' : 'TB';
 
-      console.log('Rendering graph:', {
-        nodeCount: layoutedNodes.length,
+      const edgeRenderStartTime = performance.now();
+      renderEdges(edgeContainer, edges, layoutedNodes, edgeDirection);
+      const edgeRenderDuration = performance.now() - edgeRenderStartTime;
+      console.log('[RENDER] Edges rendered', {
+        duration: `${edgeRenderDuration.toFixed(2)}ms`,
         edgeCount: edges.length,
-        direction: edgeDirection,
       });
 
-      renderEdges(edgeContainer, edges, layoutedNodes, edgeDirection);
+      const nodeRenderStartTime = performance.now();
       renderNodes(nodeContainer, layoutedNodes);
+      const nodeRenderDuration = performance.now() - nodeRenderStartTime;
+      console.log('[RENDER] Nodes rendered', {
+        duration: `${nodeRenderDuration.toFixed(2)}ms`,
+        nodeCount: layoutedNodes.length,
+      });
 
-      console.log('Rendering completed');
+      const totalRenderDuration = performance.now() - renderStartTime;
+      console.log('[RENDER] Rendering completed', {
+        totalDuration: `${totalRenderDuration.toFixed(2)}ms`,
+        edgeDuration: `${edgeRenderDuration.toFixed(2)}ms`,
+        nodeDuration: `${nodeRenderDuration.toFixed(2)}ms`,
+      });
 
       // Position viewport to show root node at 20%, 20% of screen
       // Find root node (id === '$')
       const rootNode = layoutedNodes.find((node) => node.id === '$');
 
       if (rootNode && appRef.current && viewportRef.current) {
-        const canvasWidth = appRef.current.canvas.width;
-        const canvasHeight = appRef.current.canvas.height;
-
         // Calculate zoom based on node count
         // Many nodes (1000+): 80%, Few nodes: 100%
         const initialZoom = layoutedNodes.length > 1000 ? 0.8 : 1.0;
 
-        // Position root node at 20% from top-left
-        const targetScreenX = canvasWidth * 0.2;
-        const targetScreenY = canvasHeight * 0.2;
+        // Use pixi-viewport's methods to position and zoom
+        viewportRef.current.setZoom(initialZoom, true);
+        viewportRef.current.moveCenter(rootNode.position.x, rootNode.position.y);
 
-        // Calculate viewport position
-        // viewport.x + (rootNode.x * zoom) = targetScreenX
-        // viewport.x = targetScreenX - (rootNode.x * zoom)
-        viewportRef.current.scale.set(initialZoom);
-        viewportRef.current.x = targetScreenX - rootNode.position.x * initialZoom;
-        viewportRef.current.y = targetScreenY - rootNode.position.y * initialZoom;
-
-        console.log('Initial viewport positioned:', {
+        // eslint-disable-next-line no-console
+        console.log('[VIEWPORT] Initial viewport positioned:', {
           zoom: initialZoom,
           rootNodePos: rootNode.position,
-          viewportPos: { x: viewportRef.current.x, y: viewportRef.current.y },
+          center: viewportRef.current.center,
         });
       }
 
       // Wait for next frame to ensure PixiJS has rendered everything
       requestAnimationFrame(() => {
+        const frameCompleteTime = performance.now();
+        const totalTime = frameCompleteTime - renderStartTime;
         setIsRendering(false);
-        console.log('PixiJS rendering complete - UI ready');
+        console.log('[RENDER] PixiJS frame rendered - UI ready', {
+          totalTimeWithFrame: `${totalTime.toFixed(2)}ms`,
+        });
       });
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -392,7 +343,7 @@ export const PixiGraphRenderer = () => {
       )}
 
       {/* Warning message for too many nodes */}
-      {nodes.length > 5000 && !isLayouting && (
+      {nodes.length > 20000 && !isLayouting && (
         <div
           style={{
             position: 'absolute',
@@ -449,20 +400,62 @@ export const PixiGraphRenderer = () => {
   );
 };
 
-// Render nodes using PixiJS Graphics
+// Render nodes using PixiJS Graphics with chunking for large datasets
 function renderNodes(container: Container, nodes: IGraphNode[]) {
-  console.time('renderNodes');
+  const startTime = performance.now();
+  console.log('[RENDER:NODES] Starting node rendering', { nodeCount: nodes.length });
 
   // Batch add children for better performance
+  // Use smaller chunks and add them incrementally to avoid blocking
+  const CHUNK_SIZE = 50;
   const nodeGraphics: Container[] = [];
-  for (const node of nodes) {
+  const createStartTime = performance.now();
+
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
     nodeGraphics.push(createNodeGraphics(node));
+
+    // Log progress for every 100 nodes
+    if ((i + 1) % 100 === 0) {
+      const elapsed = performance.now() - createStartTime;
+      const avgTime = elapsed / (i + 1);
+      const remaining = (nodes.length - i - 1) * avgTime;
+      console.log('[RENDER:NODES] Progress', {
+        completed: i + 1,
+        total: nodes.length,
+        avgTimePerNode: `${avgTime.toFixed(2)}ms`,
+        estimatedRemaining: `${remaining.toFixed(0)}ms`,
+      });
+    }
+
+    // Add in chunks to avoid call stack overflow
+    if (nodeGraphics.length >= CHUNK_SIZE) {
+      container.addChild(...nodeGraphics.splice(0, CHUNK_SIZE));
+    }
   }
 
-  container.addChild(...nodeGraphics);
+  const createEndTime = performance.now();
+  const createDuration = createEndTime - createStartTime;
+  console.log('[RENDER:NODES] Node graphics created', {
+    duration: `${createDuration.toFixed(2)}ms`,
+    avgPerNode: `${(createDuration / nodes.length).toFixed(2)}ms`,
+  });
 
-  console.timeEnd('renderNodes');
-  console.log(`Rendered ${nodes.length} nodes`);
+  // Add remaining nodes
+  const addStartTime = performance.now();
+  if (nodeGraphics.length > 0) {
+    container.addChild(...nodeGraphics);
+  }
+  const addDuration = performance.now() - addStartTime;
+  console.log('[RENDER:NODES] Added to container', {
+    duration: `${addDuration.toFixed(2)}ms`,
+  });
+
+  const totalDuration = performance.now() - startTime;
+  console.log('[RENDER:NODES] Node rendering complete', {
+    totalDuration: `${totalDuration.toFixed(2)}ms`,
+    nodeCount: nodes.length,
+  });
 }
 
 // Create a single node with Graphics
@@ -524,18 +517,27 @@ function getNodeHeight(node: IGraphNode): number {
 
 // Render edges using PixiJS Graphics with smooth bezier curves
 function renderEdges(container: Container, edges: IGraphEdge[], nodes: IGraphNode[], direction: 'LR' | 'TB' = 'TB') {
-  console.time('renderEdges');
+  const startTime = performance.now();
+  console.log('[RENDER:EDGES] Starting edge rendering', { edgeCount: edges.length, nodeCount: nodes.length });
 
   // Create a map for quick node lookup
+  const mapStartTime = performance.now();
   const nodeMap = new Map<string, IGraphNode>();
   for (const node of nodes) {
     nodeMap.set(node.id, node);
   }
+  const mapDuration = performance.now() - mapStartTime;
+  console.log('[RENDER:EDGES] Node map created', {
+    duration: `${mapDuration.toFixed(2)}ms`,
+    nodes: nodeMap.size,
+  });
 
   // Use a single Graphics object for all edges (much faster!)
   const edgeGraphics = new Graphics();
 
-  for (const edge of edges) {
+  const drawStartTime = performance.now();
+  for (let i = 0; i < edges.length; i++) {
+    const edge = edges[i];
     const sourceNode = nodeMap.get(edge.source);
     const targetNode = nodeMap.get(edge.target);
 
@@ -603,10 +605,36 @@ function renderEdges(container: Container, edges: IGraphEdge[], nodes: IGraphNod
     edgeGraphics.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, targetX, targetY);
   }
 
-  // Apply stroke to all edges at once
-  edgeGraphics.stroke({ color: 0x666666, width: 2 });
-  container.addChild(edgeGraphics);
+  const drawDuration = performance.now() - drawStartTime;
+  console.log('[RENDER:EDGES] Edge paths calculated', {
+    duration: `${drawDuration.toFixed(2)}ms`,
+    avgPerEdge: `${(drawDuration / edges.length).toFixed(2)}ms`,
+  });
 
-  console.timeEnd('renderEdges');
-  console.log(`Rendered ${edges.length} edges`);
+  // Apply stroke to all edges at once
+  const strokeStartTime = performance.now();
+  edgeGraphics.stroke({ color: 0x666666, width: 2 });
+  const strokeDuration = performance.now() - strokeStartTime;
+  console.log('[RENDER:EDGES] Stroke applied', {
+    duration: `${strokeDuration.toFixed(2)}ms`,
+  });
+
+  const addStartTime = performance.now();
+  container.addChild(edgeGraphics);
+  const addDuration = performance.now() - addStartTime;
+  console.log('[RENDER:EDGES] Added to container', {
+    duration: `${addDuration.toFixed(2)}ms`,
+  });
+
+  const totalDuration = performance.now() - startTime;
+  console.log('[RENDER:EDGES] Edge rendering complete', {
+    totalDuration: `${totalDuration.toFixed(2)}ms`,
+    edgeCount: edges.length,
+    breakdown: {
+      nodeMap: `${mapDuration.toFixed(2)}ms`,
+      drawing: `${drawDuration.toFixed(2)}ms`,
+      stroke: `${strokeDuration.toFixed(2)}ms`,
+      addToContainer: `${addDuration.toFixed(2)}ms`,
+    },
+  });
 }

@@ -1,6 +1,6 @@
-import { Text, TextStyle } from 'pixi.js';
+import { Text } from 'pixi.js';
 
-import { FontColor } from '#/components/renderer/pixi/components/design/palette';
+import { JsonNodeTextStyles } from '#/components/renderer/pixi/components/node/TextStyles';
 
 import type { TextStyleFontWeight } from 'pixi.js';
 
@@ -13,17 +13,9 @@ export interface IPixiJsonFieldLabelParams {
 }
 
 export function PixiJsonFieldLabel(params: IPixiJsonFieldLabelParams) {
-  // Shared TextStyle objects - created once and reused (HUGE performance boost!)
-  const labelStyle = new TextStyle({
-    fontFamily: 'Arial',
-    fontSize: params.font.size,
-    fill: FontColor.label,
-    fontWeight: params.font.weight,
-  });
-
   const label = new Text({
     text: params.label,
-    style: labelStyle,
+    style: JsonNodeTextStyles.rootLabel,
     resolution: window.devicePixelRatio * 2 || 2,
   });
 

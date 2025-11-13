@@ -1,6 +1,6 @@
-import { Text, TextStyle } from 'pixi.js';
+import { Text } from 'pixi.js';
 
-import { TypeColor } from '#/components/renderer/pixi/components/design/palette';
+import { JsonNodeValueTextStyles } from '#/components/renderer/pixi/components/node/TextStyles';
 
 import type { TextStyleFontWeight } from 'pixi.js';
 
@@ -21,16 +21,9 @@ export interface IPixiJsonFieldKeyParams {
 }
 
 export function PixiJsonFieldValue(params: IPixiJsonFieldKeyParams): Text {
-  const style = new TextStyle({
-    fontFamily: params?.textStyle?.fontFamily ?? 'Arial',
-    fontSize: params?.textStyle?.fontSize ?? 13,
-    fill: params?.textStyle?.fill ?? TypeColor[params.type],
-    fontWeight: params?.textStyle?.fontWeight ?? 'normal',
-  });
-
   const fieldValue = new Text({
     text: params.text,
-    style,
+    style: JsonNodeValueTextStyles[params.type],
     resolution: window.devicePixelRatio * 2 || 2,
   });
 

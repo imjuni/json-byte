@@ -42,6 +42,7 @@
     "monaco-editor": "^0.54.0",
     "my-easy-fp": "^0.22.0",
     "nanoid": "^5.1.6",
+    "pixi-viewport": "^6.0.3",
     "pixi.js": "^8.14.0",
     "react": "^19.1.1",
     "react-device-detect": "^2.2.3",
