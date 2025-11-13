@@ -15,7 +15,7 @@
     "poolSize": 10,
     "queue": 10,
     "bigNumberStrings": true,
-    "supportBigNumberssupportBigNumbers": true,
+    "supportBigNumbersSupportBigNumbers": true,
     "synchronize": false,
     "logger": {
       "options": "all"

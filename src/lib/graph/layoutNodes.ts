@@ -28,11 +28,15 @@ export function layoutNodes(
   dagreGraph.setDefaultEdgeLabel(() => ({}));
 
   // Configure graph layout
+  // Node width is 280px, so 120% spacing = 336px
+  const nodeWidth = 280;
+  const nodeSpacing = Math.round(nodeWidth * 1.2); // 336px
+
   dagreGraph.setGraph({
     rankdir: direction, // TB: Top to Bottom, LR: Left to Right, RL: Right to Left, BT: Bottom to Top
     align: 'UL', // Upper Left alignment
-    nodesep: 120, // Spacing between nodes in the same rank
-    ranksep: 200, // Spacing between ranks (increased for better readability)
+    nodesep: nodeSpacing, // Spacing between nodes in the same rank (120% of node width)
+    ranksep: nodeSpacing, // Spacing between ranks (same as nodesep for consistency)
     marginx: 50,
     marginy: 50,
   });

@@ -31,6 +31,7 @@
     "class-variance-authority": "^0.7.1",
     "clipboard": "^2.0.11",
     "clsx": "^2.1.1",
+    "color": "^5.0.2",
     "dagre": "^0.8.5",
     "elkjs": "^0.11.0",
     "flat": "^6.0.1",

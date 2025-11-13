@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { Application, Container, Graphics } from 'pixi.js';
 
+import { PixiJsonField } from '#/components/renderer/pixi/components/node/PixiJsonField';
 import { layoutNodes } from '#/lib/graph/layoutNodes';
 import { useGraphStore } from '#/stores/graphStore';
 
@@ -16,6 +17,7 @@ export const PixiGraphRenderer = () => {
   const { nodes, edges, direction, setDirection } = useGraphStore();
   const [layoutedNodes, setLayoutedNodes] = useState<IGraphNode[]>([]);
   const [isLayouting, setIsLayouting] = useState(false);
+  const [isRendering, setIsRendering] = useState(false);
 
   // Apply ELK layout when nodes/edges/direction change
   useEffect(() => {
@@ -26,7 +28,8 @@ export const PixiGraphRenderer = () => {
     }
 
     // Limit: If too many nodes, skip rendering to prevent browser freeze
-    const MAX_NODES = 5000;
+    const MAX_NODES = 10000;
+
     if (nodes.length > MAX_NODES) {
       // eslint-disable-next-line no-console
       console.warn(`Too many nodes (${nodes.length}). Maximum is ${MAX_NODES}. Skipping graph render.`);
@@ -35,23 +38,14 @@ export const PixiGraphRenderer = () => {
       return;
     }
 
-    // Use Dagre layout (much faster than ELK for large graphs)
-    console.log('Using Dagre layout for', nodes.length, 'nodes...');
-
     setIsLayouting(true);
 
     // Use setTimeout to allow loading UI to render first
     setTimeout(() => {
-      const startTime = performance.now();
-
       try {
-        // Apply Dagre layout (synchronous, but fast!)
-        const layoutedNodes = layoutNodes(nodes, edges, direction);
+        const layoutApplied = layoutNodes(nodes, edges, direction);
 
-        const endTime = performance.now();
-        console.log(`Dagre layout completed in ${((endTime - startTime) / 1000).toFixed(2)}s`);
-
-        setLayoutedNodes(layoutedNodes);
+        setLayoutedNodes(layoutApplied);
         setIsLayouting(false);
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -253,6 +247,9 @@ export const PixiGraphRenderer = () => {
     if (!isInitializedRef.current || appRef.current == null || viewportRef.current == null) return;
     if (layoutedNodes.length === 0) return;
 
+    // Start rendering
+    setIsRendering(true);
+
     try {
       // Clear viewport's children only, not the viewport itself
       viewportRef.current.removeChildren();
@@ -266,15 +263,56 @@ export const PixiGraphRenderer = () => {
       // Re-render edges and nodes with layouted positions
       const edgeDirection = direction === 'LR' || direction === 'RL' ? 'LR' : 'TB';
 
-      console.log('Rendering graph:', { nodeCount: layoutedNodes.length, edgeCount: edges.length, direction: edgeDirection });
+      console.log('Rendering graph:', {
+        nodeCount: layoutedNodes.length,
+        edgeCount: edges.length,
+        direction: edgeDirection,
+      });
 
       renderEdges(edgeContainer, edges, layoutedNodes, edgeDirection);
       renderNodes(nodeContainer, layoutedNodes);
 
       console.log('Rendering completed');
+
+      // Position viewport to show root node at 20%, 20% of screen
+      // Find root node (id === '$')
+      const rootNode = layoutedNodes.find((node) => node.id === '$');
+
+      if (rootNode && appRef.current && viewportRef.current) {
+        const canvasWidth = appRef.current.canvas.width;
+        const canvasHeight = appRef.current.canvas.height;
+
+        // Calculate zoom based on node count
+        // Many nodes (1000+): 80%, Few nodes: 100%
+        const initialZoom = layoutedNodes.length > 1000 ? 0.8 : 1.0;
+
+        // Position root node at 20% from top-left
+        const targetScreenX = canvasWidth * 0.2;
+        const targetScreenY = canvasHeight * 0.2;
+
+        // Calculate viewport position
+        // viewport.x + (rootNode.x * zoom) = targetScreenX
+        // viewport.x = targetScreenX - (rootNode.x * zoom)
+        viewportRef.current.scale.set(initialZoom);
+        viewportRef.current.x = targetScreenX - rootNode.position.x * initialZoom;
+        viewportRef.current.y = targetScreenY - rootNode.position.y * initialZoom;
+
+        console.log('Initial viewport positioned:', {
+          zoom: initialZoom,
+          rootNodePos: rootNode.position,
+          viewportPos: { x: viewportRef.current.x, y: viewportRef.current.y },
+        });
+      }
+
+      // Wait for next frame to ensure PixiJS has rendered everything
+      requestAnimationFrame(() => {
+        setIsRendering(false);
+        console.log('PixiJS rendering complete - UI ready');
+      });
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Error rendering graph:', error);
+      setIsRendering(false);
     }
   }, [layoutedNodes, edges, direction]);
 
@@ -298,8 +336,8 @@ export const PixiGraphRenderer = () => {
         }}
       />
 
-      {/* Loading message during layout calculation */}
-      {isLayouting && (
+      {/* Loading message during layout calculation and rendering */}
+      {(isLayouting || isRendering) && (
         <div
           style={{
             position: 'absolute',
@@ -318,27 +356,30 @@ export const PixiGraphRenderer = () => {
           }}
         >
           <h3 style={{ margin: '0 0 15px 0', color: '#88ccff', fontSize: '20px' }}>
-            Calculating Graph Layout...
+            {isLayouting ? 'Calculating Graph Layout...' : 'Rendering Graph...'}
           </h3>
           <p style={{ margin: '0 0 10px 0', fontSize: '14px', lineHeight: '1.6' }}>
-            Processing <strong>{nodes.length}</strong> nodes and <strong>{edges.length}</strong> edges.
+            Processing <strong>{isLayouting ? nodes.length : layoutedNodes.length}</strong> nodes and{' '}
+            <strong>{edges.length}</strong> edges.
           </p>
           <p style={{ margin: '0', fontSize: '13px', color: '#aaa', lineHeight: '1.5' }}>
-            {nodes.length > 1000
+            {(isLayouting ? nodes.length : layoutedNodes.length) > 1000
               ? 'Large graphs may take 10-30 seconds. Please wait...'
               : 'This may take a few seconds...'}
           </p>
           {/* Simple loading spinner */}
-          <div style={{
-            marginTop: '20px',
-            display: 'inline-block',
-            width: '40px',
-            height: '40px',
-            border: '4px solid #333',
-            borderTop: '4px solid #88ccff',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-          }} />
+          <div
+            style={{
+              marginTop: '20px',
+              display: 'inline-block',
+              width: '40px',
+              height: '40px',
+              border: '4px solid #333',
+              borderTop: '4px solid #88ccff',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+            }}
+          />
           <style>
             {`
               @keyframes spin {
@@ -408,26 +449,6 @@ export const PixiGraphRenderer = () => {
   );
 };
 
-// Shared TextStyle objects - created once and reused (HUGE performance boost!)
-const labelStyle = new TextStyle({
-  fontFamily: 'Arial',
-  fontSize: 18,
-  fill: 0xffffff,
-  fontWeight: 'bold',
-});
-
-const fieldStyle = new TextStyle({
-  fontFamily: 'Arial',
-  fontSize: 13,
-  fill: 0xcccccc,
-});
-
-const complexFieldStyle = new TextStyle({
-  fontFamily: 'Arial',
-  fontSize: 13,
-  fill: 0x88ccff,
-});
-
 // Render nodes using PixiJS Graphics
 function renderNodes(container: Container, nodes: IGraphNode[]) {
   console.time('renderNodes');
@@ -455,109 +476,50 @@ function createNodeGraphics(node: IGraphNode): Container {
   const lineHeight = 26; // Increased from 20 to 26 for more breathing room
   const paddingTop = 10;
   const paddingBottom = 10;
+  const paddingLeft = 12;
+  const paddingRight = 12;
 
-  // Calculate dynamic height based on number of fields
+  const container = PixiJsonField({
+    node,
+    offset: {
+      y: 0,
+    },
+    size: {
+      width,
+      headerHeight,
+    },
+    font: {
+      size: 18,
+      weight: 'normal',
+      line: {
+        height: lineHeight,
+      },
+    },
+    padding: {
+      t: paddingTop,
+      b: paddingBottom,
+      l: paddingLeft,
+      r: paddingRight,
+    },
+
+    border: {
+      radious: 8,
+      width: 2,
+    },
+  });
+
+  return container;
+}
+
+// Helper function to calculate node height
+function getNodeHeight(node: IGraphNode): number {
+  const headerHeight = 40;
+  const lineHeight = 26;
+  const paddingTop = 10;
+  const paddingBottom = 10;
   const totalFields = node.data.primitiveFields.length + node.data.complexFields.length;
   const contentHeight = totalFields * lineHeight;
-  const height = headerHeight + contentHeight + paddingTop + paddingBottom;
-
-  // Draw node background
-  const bg = new Graphics();
-  bg.rect(0, 0, width, height);
-  bg.fill({ color: 0x2a2a2a });
-  bg.stroke({ color: 0x444444, width: 2 });
-  nodeContainer.addChild(bg);
-
-  // Draw node label - use shared style for better performance
-  const label = new Text({
-    text: node.data.label,
-    style: labelStyle,
-  });
-  label.position.set(10, 10);
-  nodeContainer.addChild(label);
-
-  // Draw target handle on the left side (only if node has a parent)
-  // eslint-disable-next-line no-underscore-dangle
-  if (node.data._parent != null) {
-    const targetHandle = new Graphics();
-    targetHandle.circle(0, 10, 5); // Left edge, near the top
-
-    // Use parent's type to determine color
-    // array: orange (0xffaa00), object: blue (0x88ccff)
-    // eslint-disable-next-line no-underscore-dangle
-    const parentType = node.data._parent.data.nodeType;
-    const handleColor = parentType === 'array' ? 0xffaa00 : 0x88ccff;
-
-    targetHandle.fill({ color: handleColor });
-    nodeContainer.addChild(targetHandle);
-  }
-
-  // Draw primitive fields
-  let yOffset = headerHeight + paddingTop; // Start with top padding
-  for (let i = 0; i < node.data.primitiveFields.length; i++) {
-    const field = node.data.primitiveFields[i];
-
-    // Draw bullet point (disc)
-    const disc = new Graphics();
-    disc.circle(8, yOffset + 9, 3); // Small disc on the left
-    disc.fill({ color: 0x666666 }); // Gray color
-    nodeContainer.addChild(disc);
-
-    const fieldText = new Text({
-      text: `${field.key}: ${String(field.value).substring(0, 20)}`,
-      style: fieldStyle,
-    });
-    fieldText.position.set(16, yOffset + 3);
-    nodeContainer.addChild(fieldText);
-    yOffset += lineHeight;
-
-    // Draw separator after each field (except the last one if no complex fields)
-    if (i < node.data.primitiveFields.length - 1 || node.data.complexFields.length > 0) {
-      const separator = new Graphics();
-      separator.moveTo(0, yOffset);
-      separator.lineTo(width, yOffset);
-      separator.stroke({ color: 0x333333, width: 1 });
-      nodeContainer.addChild(separator);
-    }
-  }
-
-  // Draw complex fields
-  for (let i = 0; i < node.data.complexFields.length; i++) {
-    const field = node.data.complexFields[i];
-
-    // Draw bullet point (disc) with field type color
-    const disc = new Graphics();
-    disc.circle(8, yOffset + 9, 3); // Small disc on the left
-    const discColor = field.type === 'array' ? 0xffaa00 : 0x88ccff; // Match field color
-    disc.fill({ color: discColor });
-    nodeContainer.addChild(disc);
-
-    const fieldText = new Text({
-      text: `${field.key}: ${field.type === 'array' ? `[${field.size}]` : `{${field.size}}`}`,
-      style: complexFieldStyle,
-    });
-    fieldText.position.set(16, yOffset + 3);
-    nodeContainer.addChild(fieldText);
-
-    // Draw connection point (handle) - outside the node border
-    const handle = new Graphics();
-    handle.circle(width, yOffset + 11, 5); // Adjusted for new text position (+3 + 8)
-    handle.fill({ color: 0xffaa00 });
-    nodeContainer.addChild(handle);
-
-    yOffset += lineHeight;
-
-    // Draw separator after each field (except the last one)
-    if (i < node.data.complexFields.length - 1) {
-      const separator = new Graphics();
-      separator.moveTo(0, yOffset);
-      separator.lineTo(width, yOffset);
-      separator.stroke({ color: 0x333333, width: 1 });
-      nodeContainer.addChild(separator);
-    }
-  }
-
-  return nodeContainer;
+  return headerHeight + contentHeight + paddingTop + paddingBottom;
 }
 
 // Render edges using PixiJS Graphics with smooth bezier curves
@@ -594,8 +556,9 @@ function renderEdges(container: Container, edges: IGraphEdge[], nodes: IGraphNod
     if (sourceFieldIndex >= 0) {
       // Calculate Y position of this specific complex field
       const primitiveFieldsCount = sourceNode.data.primitiveFields.length;
-      const fieldYOffset = headerHeight + paddingTop + primitiveFieldsCount * lineHeight + sourceFieldIndex * lineHeight;
-      sourceY = sourceNode.position.y + fieldYOffset + 11; // Match handle position (+3 text offset + 8)
+      const fieldYOffset =
+        headerHeight + paddingTop + primitiveFieldsCount * lineHeight + sourceFieldIndex * lineHeight;
+      sourceY = sourceNode.position.y + fieldYOffset + lineHeight / 2; // Match handle position (centered)
     } else {
       // Fallback to middle of node if field not found
       sourceY = sourceNode.position.y + 75;
@@ -604,7 +567,9 @@ function renderEdges(container: Container, edges: IGraphEdge[], nodes: IGraphNod
     // Handle is at the right edge of the node (width)
     const sourceX = sourceNode.position.x + width; // Handle position at right edge
     const targetX = targetNode.position.x; // Left edge of target node
-    const targetY = targetNode.position.y + 10; // Top of target node with small offset
+    // Target handle is at the vertical center of the target node
+    const targetNodeHeight = getNodeHeight(targetNode);
+    const targetY = targetNode.position.y + targetNodeHeight / 2;
 
     // Calculate control points for bezier curve
     const deltaX = targetX - sourceX;

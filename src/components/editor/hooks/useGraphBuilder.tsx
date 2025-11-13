@@ -25,12 +25,24 @@ export function useGraphBuilder(): {
   const buildGraph = useCallback(
     (origin: string, value: ReturnType<typeof multiParse>): IGraphNode[] => {
       if (!(value instanceof Error)) {
+        console.log('Building graph from:', {
+          dataType: Array.isArray(value.data) ? 'array' : typeof value.data,
+          arrayLength: Array.isArray(value.data) ? value.data.length : 'N/A',
+          language: value.language,
+        });
+
         const { nodes, edges, locMap } = createGraphNodesAndEdgesAndLocMap({
           document: value.data,
           language: value.language,
           origin,
           direction,
           config: new ParserConfig({ guard: 1_000_000 }),
+        });
+
+        console.log('Graph built:', {
+          nodesCount: nodes.length,
+          edgesCount: edges.length,
+          locMapSize: Object.keys(locMap).length,
         });
 
         setNodesAndEdgesAndLocMapAndMap(nodes, edges, locMap);
