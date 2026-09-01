@@ -22,17 +22,17 @@ export const getNodeHeight = (node: IGraphNode): number => {
 export const getSourcePortId = (nodeId: string, fieldKey: string): string => `${nodeId}-source-${fieldKey}`;
 export const getTargetPortId = (nodeId: string): string => `${nodeId}-target`;
 
-const getPortAnchor = (port: ElkPort): { x: number; y: number } => {
+const getPortAnchor = (port: ElkPort, node: ElkNode): { x: number; y: number } => {
   const x = port.x ?? 0;
   const y = port.y ?? 0;
   const width = port.width ?? 0;
   const height = port.height ?? 0;
   const side = port.layoutOptions?.['elk.port.side'];
 
-  if (side === 'EAST') return { x: x + width, y: y + height / 2 };
-  if (side === 'WEST') return { x, y: y + height / 2 };
-  if (side === 'SOUTH') return { x: x + width / 2, y: y + height };
-  return { x: x + width / 2, y };
+  if (side === 'EAST') return { x: node.width ?? x + width, y: y + height / 2 };
+  if (side === 'WEST') return { x: 0, y: y + height / 2 };
+  if (side === 'SOUTH') return { x: x + width / 2, y: node.height ?? y + height };
+  return { x: x + width / 2, y: 0 };
 };
 
 export function createElkGraph(nodes: IGraphNode[], edges: IGraphEdge[], direction: 'LR' | 'TB' = 'LR'): ElkNode {
@@ -117,17 +117,38 @@ export function mapElkResult(nodes: IGraphNode[], graph: ElkNode): IElkLayoutRes
       position: { x: layouted.x, y: layouted.y },
     };
   });
-  const layoutedEdges = (graph.edges ?? []).map<ILayoutEdge>((edge) => ({
-    id: edge.id,
-    sections: (edge.sections ?? []).map((section) => [
+  const layoutedPorts = (graph.children ?? []).flatMap<ILayoutPort>((node) =>
+    (node.ports ?? []).map((port) => ({ id: port.id, nodeId: node.id, position: getPortAnchor(port, node) })),
+  );
+  const nodesById = new Map((graph.children ?? []).map((node) => [node.id, node]));
+  const absolutePortPositions = new Map(
+    layoutedPorts.map((port) => {
+      const node = nodesById.get(port.nodeId);
+      return [
+        port.id,
+        {
+          x: (node?.x ?? 0) + port.position.x,
+          y: (node?.y ?? 0) + port.position.y,
+        },
+      ];
+    }),
+  );
+  const layoutedEdges = (graph.edges ?? []).map<ILayoutEdge>((edge) => {
+    const sections = (edge.sections ?? []).map((section) => [
       section.startPoint,
       ...(section.bendPoints ?? []),
       section.endPoint,
-    ]),
-  }));
-  const layoutedPorts = (graph.children ?? []).flatMap<ILayoutPort>((node) =>
-    (node.ports ?? []).map((port) => ({ id: port.id, nodeId: node.id, position: getPortAnchor(port) })),
-  );
+    ]);
+    const firstSection = sections[0];
+    const lastSection = sections.at(-1);
+    const sourcePosition = absolutePortPositions.get(edge.sources[0] ?? '');
+    const targetPosition = absolutePortPositions.get(edge.targets[0] ?? '');
+
+    if (firstSection != null && sourcePosition != null) firstSection[0] = sourcePosition;
+    if (lastSection != null && targetPosition != null) lastSection[lastSection.length - 1] = targetPosition;
+
+    return { id: edge.id, sections };
+  });
 
   return {
     nodes: layoutedNodes,
