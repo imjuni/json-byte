@@ -2,7 +2,6 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-underscore-dangle */
 import { parseTree } from 'jsonc-parser';
-import { JSONPath } from 'jsonpath-plus';
 import { atOrThrow } from 'my-easy-fp';
 
 import { createGraphNode } from '#/lib/graph/createGraphNode';
@@ -155,12 +154,12 @@ export function buildNodeByJson({ origin, document, config, lineStarts }: IBuild
           };
 
           if (currentGraphNode != null) {
-            currentGraphNode.data.primitiveFields = [field, ...currentGraphNode.data.primitiveFields];
+            currentGraphNode.data.primitiveFields.push(field);
           }
         } else {
           const childNodePath = childPath(path, `${keyNode.value}`);
-          const valueResult = JSONPath({ path: childNodePath, json: document });
-          const value: JsonValue = Array.isArray(valueResult) && valueResult.length > 0 ? valueResult[0] : valueResult;
+          const currentValue = task.value as Record<string, JsonValue>;
+          const value = currentValue[String(keyNode.value)] ?? null;
           const size = valueNode.children?.length ?? 0;
 
           const field: IComplexField = {
@@ -171,7 +170,7 @@ export function buildNodeByJson({ origin, document, config, lineStarts }: IBuild
           };
 
           if (currentGraphNode != null) {
-            currentGraphNode.data.complexFields = [field, ...currentGraphNode.data.complexFields];
+            currentGraphNode.data.complexFields.push(field);
           }
 
           taskStack.push({
@@ -205,11 +204,10 @@ export function buildNodeByJson({ origin, document, config, lineStarts }: IBuild
           };
 
           if (currentGraphNode != null) {
-            currentGraphNode.data.primitiveFields = [field, ...currentGraphNode.data.primitiveFields];
+            currentGraphNode.data.primitiveFields.push(field);
           }
         } else {
-          const valueResult = JSONPath({ path: childNodePath, json: document });
-          const value: JsonValue = Array.isArray(valueResult) && valueResult.length > 0 ? valueResult[0] : valueResult;
+          const value = Array.isArray(task.value) ? (task.value[j] ?? null) : null;
           const size = valueNode.children?.length ?? 0;
 
           const field: IComplexField = {
@@ -220,7 +218,7 @@ export function buildNodeByJson({ origin, document, config, lineStarts }: IBuild
           };
 
           if (currentGraphNode != null) {
-            currentGraphNode.data.complexFields = [field, ...currentGraphNode.data.complexFields];
+            currentGraphNode.data.complexFields.push(field);
           }
 
           taskStack.push({
@@ -233,6 +231,10 @@ export function buildNodeByJson({ origin, document, config, lineStarts }: IBuild
         }
       }
     }
+
+    const currentGraphNode = nodeMap.get(path);
+    currentGraphNode?.data.primitiveFields.reverse();
+    currentGraphNode?.data.complexFields.reverse();
   }
 
   return { map, nodes, edges };
