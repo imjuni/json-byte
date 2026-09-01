@@ -2,7 +2,6 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-underscore-dangle */
 
-import { JSONPath } from 'jsonpath-plus';
 import { atOrThrow } from 'my-easy-fp';
 import { isMap, isScalar, isSeq, LineCounter, parseDocument } from 'yaml';
 
@@ -182,12 +181,11 @@ export function buildNodeByYaml({ document, origin, config }: IBuildNodeByYamlPa
           };
 
           if (currentGraphNode != null) {
-            currentGraphNode.data.primitiveFields = [field, ...currentGraphNode.data.primitiveFields];
+            currentGraphNode.data.primitiveFields.push(field);
           }
         } else {
-          const valueResult = JSONPath({ path: childNodePath, json: document });
-          const jsonValue: JsonValue =
-            Array.isArray(valueResult) && valueResult.length > 0 ? valueResult[0] : valueResult;
+          const currentValue = task.value as Record<string, JsonValue>;
+          const jsonValue = currentValue[keyStr] ?? null;
 
           let size = 0;
           if (isMap(value)) {
@@ -204,7 +202,7 @@ export function buildNodeByYaml({ document, origin, config }: IBuildNodeByYamlPa
           };
 
           if (currentGraphNode != null) {
-            currentGraphNode.data.complexFields = [field, ...currentGraphNode.data.complexFields];
+            currentGraphNode.data.complexFields.push(field);
           }
 
           taskStack.push({
@@ -241,12 +239,10 @@ export function buildNodeByYaml({ document, origin, config }: IBuildNodeByYamlPa
           };
 
           if (currentGraphNode != null) {
-            currentGraphNode.data.primitiveFields = [field, ...currentGraphNode.data.primitiveFields];
+            currentGraphNode.data.primitiveFields.push(field);
           }
         } else {
-          const valueResult = JSONPath({ path: childNodePath, json: document });
-          const jsonValue: JsonValue =
-            Array.isArray(valueResult) && valueResult.length > 0 ? valueResult[0] : valueResult;
+          const jsonValue = Array.isArray(task.value) ? (task.value[j] ?? null) : null;
 
           let size = 0;
           if (isMap(valueNode)) {
@@ -263,7 +259,7 @@ export function buildNodeByYaml({ document, origin, config }: IBuildNodeByYamlPa
           };
 
           if (currentGraphNode != null) {
-            currentGraphNode.data.complexFields = [field, ...currentGraphNode.data.complexFields];
+            currentGraphNode.data.complexFields.push(field);
           }
 
           taskStack.push({
@@ -276,6 +272,10 @@ export function buildNodeByYaml({ document, origin, config }: IBuildNodeByYamlPa
         }
       }
     }
+
+    const currentGraphNode = nodeMap.get(path);
+    currentGraphNode?.data.primitiveFields.reverse();
+    currentGraphNode?.data.complexFields.reverse();
   }
 
   return { map, nodes, edges };

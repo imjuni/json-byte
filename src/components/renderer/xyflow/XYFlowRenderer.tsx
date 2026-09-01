@@ -6,7 +6,6 @@ import { debounceTime, tap } from 'rxjs/operators';
 
 import { ObjectNode } from '#/components/renderer/xyflow/ObjectNode';
 import { SearchPanel } from '#/components/renderer/xyflow/SearchPanel';
-import { findTextPositionByJsonPath } from '#/lib/editor/findTextPositionByJsonPath';
 import { applyNodeDimensionChanges } from '#/lib/graph/applyNodeDimensionChanges';
 import { CE_GRAPH_NODE_TYPE } from '#/lib/graph/const-enum/CE_GRAPH_NODE_TYPE';
 import { layoutNodes } from '#/lib/graph/layoutNodes';
@@ -15,7 +14,6 @@ import { useGraphStore } from '#/stores/graphStore';
 
 import type { Edge, NodeChange } from '@xyflow/react';
 
-import type { IGraphEdge } from '#/lib/graph/interfaces/IGraphEdge';
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 
 // Inner component that uses React Flow hooks
@@ -136,11 +134,10 @@ const FlowContent = () => {
 
   const handleEdgeClick = useCallback(
     (_event: React.MouseEvent, edge: Edge) => {
-      // Use the child node's id as the JSONPath to find the position
-      const edgeData = edge.data as IGraphEdge['data'] | undefined;
-      const targetPath = edgeData?.child?.id;
+      const targetPath = edge.target;
+      const locEntry = locMap[targetPath];
 
-      if (targetPath == null || editorInstance == null || content == null) {
+      if (editorInstance == null || locEntry == null) {
         return;
       }
 
@@ -150,25 +147,16 @@ const FlowContent = () => {
         handleMoveNodeCenter(targetNode);
       }
 
-      const position = findTextPositionByJsonPath(content, targetPath);
-
-      if (position) {
-        // Set selection in the editor
-        editorInstance.setSelection({
-          startLineNumber: position.startLine,
-          startColumn: position.startColumn,
-          endLineNumber: position.endLine,
-          endColumn: position.endColumn,
-        });
-
-        // Reveal the selection in the editor viewport
-        editorInstance.revealLineInCenter(position.startLine);
-
-        // Focus the editor
-        editorInstance.focus();
-      }
+      editorInstance.setSelection({
+        startLineNumber: locEntry.loc.start.line,
+        startColumn: locEntry.loc.start.column,
+        endLineNumber: locEntry.loc.end.line,
+        endColumn: locEntry.loc.end.column,
+      });
+      editorInstance.revealLineInCenter(locEntry.loc.start.line);
+      editorInstance.focus();
     },
-    [editorInstance, content, nodeMap, handleMoveNodeCenter],
+    [editorInstance, handleMoveNodeCenter, locMap, nodeMap],
   );
 
   return (
