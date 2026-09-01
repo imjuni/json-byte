@@ -108,6 +108,20 @@ export function buildNodeByJson({ origin, document, config, lineStarts }: IBuild
 
       nodes.push(graphNode);
       nodeMap.set(path, graphNode);
+    } else if (parent == null) {
+      const graphNode = createGraphNode({
+        id: path,
+        label: task.key,
+        type: kind,
+        value: task.value,
+      });
+
+      graphNode.data.primitiveFields.push({
+        key: 'value',
+        value: task.value,
+        type: kind,
+      });
+      nodes.push(graphNode);
     }
 
     // 자식 순회

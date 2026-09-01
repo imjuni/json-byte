@@ -4,6 +4,7 @@ export function getPrimitiveValueStringify(value: JsonValue): string {
   const typeOf = typeof value;
 
   if (
+    value == null ||
     typeOf === 'boolean' ||
     typeOf === 'function' ||
     typeOf === 'symbol' ||
