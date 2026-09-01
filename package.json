@@ -4,13 +4,19 @@
   "version": "1.1.0",
   "type": "module",
   "license": "Apache-2.0",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
-    "dev": "NODE_OPTIONS='--max-http-header-size=8192' vite",
-    "build": "tsc -b && vite build",
+    "dev": "NODE_OPTIONS='--max-http-header-size=8192' astro dev",
+    "build": "astro check && astro build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "astro preview",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@astrojs/react": "^6.0.5",
     "@hookform/resolvers": "^5.2.2",
     "@monaco-editor/react": "^4.7.0",
     "@msgpack/msgpack": "^3.1.2",
@@ -24,9 +30,10 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.13",
     "@std/jsonc": "jsr:^1.0.2",
-    "@tailwindcss/vite": "^4.1.14",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/dagre": "^0.7.53",
     "@xyflow/react": "^12.8.6",
+    "astro": "^7.2.10",
     "axios": "^1.12.2",
     "class-variance-authority": "^0.7.1",
     "clipboard": "^2.0.11",
@@ -51,22 +58,21 @@
     "rxjs": "^7.8.2",
     "tailwind-merge": "^3.3.1",
     "tailwind-variants": "^3.1.1",
-    "tailwindcss": "^4.1.14",
+    "tailwindcss": "^4.3.3",
     "type-fest": "^5.0.1",
     "yaml": "^2.8.1",
     "zod": "^4.1.12",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.10",
     "@eslint/compat": "^1.4.0",
     "@eslint/js": "^9.36.0",
     "@stylistic/eslint-plugin": "^3.1.0",
     "@types/node": "^24.6.0",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
-    "@vitejs/plugin-react": "^5.0.4",
     "@vitest/coverage-v8": "^3.2.4",
-    "babel-plugin-react-compiler": "^19.1.0-rc.3",
     "eslint": "^9.36.0",
     "eslint-config-airbnb-extended": "^2.3.1",
     "eslint-config-prettier": "^10.1.8",
@@ -82,8 +88,6 @@
     "tw-animate-css": "^1.4.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.45.0",
-    "vite": "^7.1.7",
-    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   }
 }

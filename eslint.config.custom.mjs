@@ -47,7 +47,7 @@ export const customOverrideImportXPlugin = [
     },
   },
   {
-    files: ['next.config.ts', 'vitest.config.{ts,mts}', 'postcss.config.mjs'],
+    files: ['astro.config.mjs', 'next.config.ts', 'vitest.config.{ts,mts}', 'postcss.config.mjs'],
     rules: {
       'import-x/prefer-default-export': ['error'],
       'import-x/no-default-export': ['off'],
@@ -170,6 +170,7 @@ export const customIgnore = [
   {
     ignores: [
       './.configs/**',
+      '.astro/**',
       '**/dist/**/*',
       'examples/*',
       'eslint.config.mjs',
