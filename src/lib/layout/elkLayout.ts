@@ -13,6 +13,7 @@ export const NODE_WIDTH = 280;
 export const HEADER_HEIGHT = 40;
 export const LINE_HEIGHT = 20;
 export const NODE_PADDING = 10;
+export const ELK_NODE_LIMIT = 2_000;
 
 export const getNodeHeight = (node: IGraphNode): number => {
   const fieldCount = node.data.primitiveFields.length + node.data.complexFields.length;
@@ -170,4 +171,21 @@ export function applyElkLayout(
     .finally(() => elk.terminateWorker());
 
   return { promise, cancel: () => elk.terminateWorker() };
+}
+
+export function applyGraphLayout(
+  nodes: IGraphNode[],
+  edges: IGraphEdge[],
+  direction: 'LR' | 'TB' = 'LR',
+): { promise: Promise<IElkLayoutResult>; cancel: () => void } {
+  if (nodes.length < ELK_NODE_LIMIT) return applyElkLayout(nodes, edges, direction);
+
+  const worker = new Worker(new URL('./treeLayout.worker.ts', import.meta.url), { type: 'module' });
+  const promise = new Promise<IElkLayoutResult>((resolve, reject) => {
+    worker.onmessage = (event: MessageEvent<ElkNode>) => resolve(mapElkResult(nodes, event.data));
+    worker.onerror = (event) => reject(new Error(event.message));
+    worker.postMessage({ graph: createElkGraph(nodes, edges, direction), direction });
+  }).finally(() => worker.terminate());
+
+  return { promise, cancel: () => worker.terminate() };
 }
