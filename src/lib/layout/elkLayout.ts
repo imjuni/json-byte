@@ -1,102 +1,128 @@
-import ELK, { type ElkNode } from 'elkjs/lib/elk.bundled.js';
+import ELK from 'elkjs/lib/elk-api.js';
+// Vite resolves the worker asset query during bundling.
+// eslint-disable-next-line import-x/no-unresolved
+import elkWorkerUrl from 'elkjs/lib/elk-worker.min.js?url';
+
+import type { ElkExtendedEdge, ElkNode, ElkPort } from 'elkjs/lib/elk-api.js';
 
 import type { IGraphEdge } from '#/lib/graph/interfaces/IGraphEdge';
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
+import type { IElkLayoutResult, ILayoutEdge } from '#/lib/layout/interfaces/IElkLayoutResult';
 
-const elk = new ELK();
+export const NODE_WIDTH = 280;
+export const HEADER_HEIGHT = 40;
+export const LINE_HEIGHT = 20;
+export const NODE_PADDING = 10;
 
-export async function applyElkLayout(
-  nodes: IGraphNode[],
-  edges: IGraphEdge[],
-  direction: 'LR' | 'TB' = 'TB',
-): Promise<IGraphNode[]> {
-  // Convert graph nodes to ELK format with ports
-  const elkNodes = nodes.map((node) => {
-    const totalFields = node.data.primitiveFields.length + node.data.complexFields.length;
-    const headerHeight = 40;
-    const lineHeight = 20;
-    const padding = 10;
-    const height = headerHeight + totalFields * lineHeight + padding;
-    const width = 280;
+export const getNodeHeight = (node: IGraphNode): number => {
+  const fieldCount = node.data.primitiveFields.length + node.data.complexFields.length;
+  return HEADER_HEIGHT + fieldCount * LINE_HEIGHT + NODE_PADDING;
+};
 
-    // Create ports for each complex field - at the right edge
-    const ports = node.data.complexFields.map((field, index) => {
-      const primitiveFieldsCount = node.data.primitiveFields.length;
-      const fieldYOffset = headerHeight + primitiveFieldsCount * lineHeight + index * lineHeight;
+const getSourcePortId = (nodeId: string, fieldKey: string): string => `${nodeId}-source-${fieldKey}`;
+const getTargetPortId = (nodeId: string): string => `${nodeId}-target`;
 
-      return {
-        id: `${node.id}-port-${field.key}`,
-        properties: {
-          'port.side': 'EAST', // Ports on the right side
-          'port.index': String(index), // Order of ports
-        },
-        width: 10,
-        height: 10,
-        x: width, // At the right edge, matching the handle position
-        y: fieldYOffset + 8,
-      };
-    });
+export function createElkGraph(nodes: IGraphNode[], edges: IGraphEdge[], direction: 'LR' | 'TB' = 'LR'): ElkNode {
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  const elkNodes = nodes.map<ElkNode>((node) => {
+    const height = getNodeHeight(node);
+    const sourceCount = Math.max(node.data.complexFields.length, 1);
+    const sourcePorts = node.data.complexFields.map<ElkPort>((field, index) => ({
+      id: getSourcePortId(node.id, field.key),
+      width: 8,
+      height: 8,
+      x: direction === 'LR' ? NODE_WIDTH - 4 : ((index + 1) * NODE_WIDTH) / (sourceCount + 1) - 4,
+      y: direction === 'LR' ? HEADER_HEIGHT + (node.data.primitiveFields.length + index) * LINE_HEIGHT + 4 : height - 4,
+      layoutOptions: {
+        'elk.port.side': direction === 'LR' ? 'EAST' : 'SOUTH',
+        'elk.port.index': String(index + 1),
+      },
+    }));
+    const targetPort: ElkPort = {
+      id: getTargetPortId(node.id),
+      width: 8,
+      height: 8,
+      x: direction === 'LR' ? -4 : NODE_WIDTH / 2 - 4,
+      y: direction === 'LR' ? 4 : -4,
+      layoutOptions: {
+        'elk.port.side': direction === 'LR' ? 'WEST' : 'NORTH',
+        'elk.port.index': '0',
+      },
+    };
 
     return {
       id: node.id,
-      width,
+      width: NODE_WIDTH,
       height,
-      ports: ports.length > 0 ? ports : undefined,
+      ports: [targetPort, ...sourcePorts],
+      layoutOptions: { 'elk.portConstraints': 'FIXED_ORDER' },
     };
   });
-
-  // Convert graph edges to ELK format with port references
-  const elkEdges = edges.map((edge) => {
-    const sourceNode = nodes.find((n) => n.id === edge.source);
-    const sourcePortId = sourceNode ? `${edge.source}-port-${edge.label}` : undefined;
-
-    return {
+  const elkEdges = edges
+    .filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
+    .map<ElkExtendedEdge>((edge) => ({
       id: edge.id,
-      sources: sourcePortId ? [sourcePortId] : [edge.source],
-      targets: [edge.target],
-    };
-  });
+      sources: [getSourcePortId(edge.source, edge.label)],
+      targets: [getTargetPortId(edge.target)],
+    }));
 
-  // Map direction to ELK format
-  const elkDirection = direction === 'LR' ? 'RIGHT' : 'DOWN';
-
-  // Create ELK graph
-  // Node width is 280, so 120% spacing = 336
-  const nodeSpacing = Math.round(280 * 1.2);
-
-  const elkGraph: ElkNode = {
+  return {
     id: 'root',
     layoutOptions: {
       'elk.algorithm': 'layered',
-      'elk.direction': elkDirection,
-      'elk.spacing.nodeNode': String(nodeSpacing),
-      'elk.layered.spacing.nodeNodeBetweenLayers': String(nodeSpacing),
-      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX', // Better for minimizing edge crossings
-      'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP', // Minimize edge crossings
-      'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES', // Consider port order
-      'elk.portConstraints': 'FIXED_ORDER', // Respect port order
+      'elk.direction': direction === 'LR' ? 'RIGHT' : 'DOWN',
+      'elk.edgeRouting': 'ORTHOGONAL',
+      'elk.spacing.nodeNode': '80',
+      'elk.layered.spacing.nodeNodeBetweenLayers': '140',
+      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+      'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+      'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
+      'elk.layered.mergeEdges': 'false',
     },
     children: elkNodes,
     edges: elkEdges,
   };
+}
 
-  // Calculate layout
-  const layoutedGraph = await elk.layout(elkGraph);
-
-  // Apply positions back to original nodes
+export function mapElkResult(nodes: IGraphNode[], graph: ElkNode): IElkLayoutResult {
+  const positions = new Map((graph.children ?? []).map((node) => [node.id, node]));
   const layoutedNodes = nodes.map((node) => {
-    const elkNode = layoutedGraph.children?.find((n) => n.id === node.id);
-    if (elkNode?.x != null && elkNode?.y != null) {
-      return {
-        ...node,
-        position: {
-          x: elkNode.x,
-          y: elkNode.y,
-        },
-      };
-    }
-    return node;
-  });
+    const layouted = positions.get(node.id);
+    if (layouted?.x == null || layouted.y == null) return node;
 
-  return layoutedNodes;
+    return {
+      ...node,
+      width: layouted.width,
+      height: layouted.height,
+      position: { x: layouted.x, y: layouted.y },
+    };
+  });
+  const layoutedEdges = (graph.edges ?? []).map<ILayoutEdge>((edge) => ({
+    id: edge.id,
+    points: (edge.sections ?? []).flatMap((section) => [
+      section.startPoint,
+      ...(section.bendPoints ?? []),
+      section.endPoint,
+    ]),
+  }));
+
+  return {
+    nodes: layoutedNodes,
+    edges: layoutedEdges,
+    bounds: { width: graph.width ?? 0, height: graph.height ?? 0 },
+  };
+}
+
+export function applyElkLayout(
+  nodes: IGraphNode[],
+  edges: IGraphEdge[],
+  direction: 'LR' | 'TB' = 'LR',
+): { promise: Promise<IElkLayoutResult>; cancel: () => void } {
+  const elk = new ELK({ workerUrl: elkWorkerUrl });
+  const promise = elk
+    .layout(createElkGraph(nodes, edges, direction))
+    .then((graph) => mapElkResult(nodes, graph))
+    .finally(() => elk.terminateWorker());
+
+  return { promise, cancel: () => elk.terminateWorker() };
 }

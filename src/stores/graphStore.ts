@@ -3,6 +3,12 @@ import { create } from 'zustand';
 import type { TGraphStore } from '#/contracts/graph/TGraphStore';
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 
+const createNodeMap = (nodes: IGraphNode[]): Record<string, IGraphNode> => {
+  const nodeMap: Record<string, IGraphNode> = {};
+  for (const node of nodes) nodeMap[node.id] = node;
+  return nodeMap;
+};
+
 export const useGraphStore = create<TGraphStore>((set) => ({
   // Initial state
   nodes: [],
@@ -26,11 +32,11 @@ export const useGraphStore = create<TGraphStore>((set) => ({
         return { nodes: nexts };
       }
 
-      const map = ids.reduce<Record<string, boolean>>((aggregated, id) => ({ ...aggregated, [id]: true }), {});
+      const searchedIds = new Set(ids);
 
       const nexts = nodes.map((node) => {
         const next = { ...node, data: { ...node.data } };
-        next.data.searched = map[node.id] != null;
+        next.data.searched = searchedIds.has(node.id);
         return next;
       });
 
@@ -53,18 +59,12 @@ export const useGraphStore = create<TGraphStore>((set) => ({
   setNodesAndEdges: (nodes, edges) => set({ nodes, edges }),
   setNodesAndEdgesAndMap: (nodes, edges) =>
     set(() => {
-      const nodeMap = nodes.reduce<Record<string, IGraphNode>>(
-        (aggregated, node) => ({ ...aggregated, [node.id]: node }),
-        {},
-      );
+      const nodeMap = createNodeMap(nodes);
       return { nodes, edges, nodeMap };
     }),
   setNodesAndEdgesAndLocMapAndMap: (nodes, edges, locMap) =>
     set(() => {
-      const nodeMap = nodes.reduce<Record<string, IGraphNode>>(
-        (aggregated, node) => ({ ...aggregated, [node.id]: node }),
-        {},
-      );
+      const nodeMap = createNodeMap(nodes);
       return { nodes, edges, nodeMap, locMap };
     }),
   setDirection: (direction) => set({ direction }),

@@ -32,6 +32,7 @@ export function useGraphBuilder(): {
           language: value.language,
           origin,
           direction,
+          layout: false,
           config: new ParserConfig({ guard: 1_000_000 }),
         });
 

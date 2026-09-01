@@ -14,22 +14,17 @@ export function getPrimitiveValueStringify(value: JsonValue): string {
     return JSON.stringify(value);
   }
 
-  if (Array.isArray(value)) {
-    return JSON.stringify(value);
-  }
-
-  const primitive = value as JsonObject;
+  const primitive = (Array.isArray(value) ? Object.fromEntries(value.entries()) : value) as JsonObject;
   const keys = Object.keys(primitive);
 
-  const primitiveObject = keys.reduce<JsonObject>((aggregated, key) => {
+  const primitiveObject: JsonObject = {};
+  for (const key of keys) {
     const field = primitive[key];
 
     if (typeof field === 'string' || typeof field === 'number' || typeof field === 'boolean' || field == null) {
-      return { ...aggregated, [key]: field };
+      primitiveObject[key] = field;
     }
+  }
 
-    return aggregated;
-  }, {});
-
-  return JSON.stringify(primitiveObject);
+  return JSON.stringify(Array.isArray(value) ? Object.values(primitiveObject) : primitiveObject);
 }

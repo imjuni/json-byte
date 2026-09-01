@@ -31,6 +31,9 @@ interface ICreateGraphNodesParams {
   language: TEditorLanguage;
 
   direction?: TLayoutDirection;
+
+  /** Skip synchronous Dagre layout when an asynchronous renderer owns layout. */
+  layout?: boolean;
 }
 
 export function createGraphNodesAndEdgesAndLocMap({
@@ -39,6 +42,7 @@ export function createGraphNodesAndEdgesAndLocMap({
   config,
   language,
   direction,
+  layout = true,
 }: ICreateGraphNodesParams): {
   nodes: IGraphNode[];
   edges: IGraphEdge[];
@@ -53,7 +57,7 @@ export function createGraphNodesAndEdgesAndLocMap({
       lineStarts,
     });
 
-    const layoutedNodes = layoutNodes(nodes, edges, direction);
+    const layoutedNodes = layout ? layoutNodes(nodes, edges, direction) : nodes;
 
     return { nodes: layoutedNodes, edges, locMap: map };
   }
@@ -64,7 +68,7 @@ export function createGraphNodesAndEdgesAndLocMap({
     config,
   });
 
-  const layoutedNodes = layoutNodes(nodes, edges, direction);
+  const layoutedNodes = layout ? layoutNodes(nodes, edges, direction) : nodes;
 
   return { nodes: layoutedNodes, edges, locMap: map };
 }
