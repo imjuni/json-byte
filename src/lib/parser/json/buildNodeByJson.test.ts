@@ -1,4 +1,4 @@
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { ParserConfig } from '#/lib/parser/common/ParserConfig';
 import { buildLineStarts } from '#/lib/parser/json/buildLineStarts';
@@ -159,21 +159,56 @@ describe('buildNodeByJson', () => {
     console.log(result);
   });
 
-  it('plain string', () => {
-    const document = 'helloworld';
-    const origin = JSON.stringify(document, undefined, 2);
-    const lineStarts = buildLineStarts(origin);
-    const config = new ParserConfig({ guard: 1_000_000 });
+  it.each([
+    ['string', 'helloworld'],
+    ['number', 42],
+    ['boolean', true],
+    ['null', null],
+  ] as const)('creates a root node for %s', (type, document) => {
+    const origin = JSON.stringify(document);
+    const result = buildNodeByJson({
+      origin,
+      document,
+      lineStarts: buildLineStarts(origin),
+      config: new ParserConfig({ guard: 1_000_000 }),
+    });
 
-    buildNodeByJson({ origin, document, lineStarts, config });
+    expect(result.nodes).toHaveLength(1);
+    expect(result.edges).toHaveLength(0);
+    expect(result.nodes[0]).toMatchObject({
+      id: '$',
+      data: {
+        label: 'root',
+        nodeType: type,
+        primitiveFields: [{ key: 'value', type, value: document }],
+      },
+    });
   });
 
-  it('plain array', () => {
+  it('creates a root node for an array', () => {
     const document = structuredClone(array);
     const origin = JSON.stringify(document, undefined, 2);
     const lineStarts = buildLineStarts(origin);
     const config = new ParserConfig({ guard: 1_000_000 });
 
-    buildNodeByJson({ origin, document, lineStarts, config });
+    const result = buildNodeByJson({ origin, document, lineStarts, config });
+
+    expect(result.nodes[0]).toMatchObject({ id: '$', data: { label: 'root', nodeType: 'array' } });
+    expect(result.nodes[0].data.primitiveFields).toHaveLength(4);
+    expect(result.nodes[0].data.complexFields).toHaveLength(4);
+  });
+
+  it('creates a root node for an empty array', () => {
+    const document: [] = [];
+    const origin = JSON.stringify(document);
+    const result = buildNodeByJson({
+      origin,
+      document,
+      lineStarts: buildLineStarts(origin),
+      config: new ParserConfig({ guard: 1_000_000 }),
+    });
+
+    expect(result.nodes).toHaveLength(1);
+    expect(result.nodes[0]).toMatchObject({ id: '$', data: { label: 'root', nodeType: 'array' } });
   });
 });

@@ -1,4 +1,4 @@
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { stringify as yamlStringify } from 'yaml';
 
 import { ParserConfig } from '#/lib/parser/common/ParserConfig';
@@ -157,19 +157,36 @@ describe('buildNodeByYaml', () => {
     console.log(result);
   });
 
-  it('plain string', () => {
-    const document = 'helloworld';
+  it.each([
+    ['string', 'helloworld'],
+    ['number', 42],
+    ['boolean', true],
+    ['null', null],
+  ] as const)('creates a root node for %s', (type, document) => {
     const origin = yamlStringify(document, undefined, 2);
-    const config = new ParserConfig({ guard: 1_000_000 });
+    const result = buildNodeByYaml({ origin, document, config: new ParserConfig({ guard: 1_000_000 }) });
 
-    buildNodeByYaml({ origin, document, config });
+    expect(result.nodes).toHaveLength(1);
+    expect(result.edges).toHaveLength(0);
+    expect(result.nodes[0]).toMatchObject({
+      id: '$',
+      data: {
+        label: 'root',
+        nodeType: type,
+        primitiveFields: [{ key: 'value', type, value: document }],
+      },
+    });
   });
 
-  it('plain array', () => {
+  it('creates a root node for an array', () => {
     const document = structuredClone(array);
     const origin = yamlStringify(document, undefined, 2);
     const config = new ParserConfig({ guard: 1_000_000 });
 
-    buildNodeByYaml({ origin, document, config });
+    const result = buildNodeByYaml({ origin, document, config });
+
+    expect(result.nodes[0]).toMatchObject({ id: '$', data: { label: 'root', nodeType: 'array' } });
+    expect(result.nodes[0].data.primitiveFields).toHaveLength(4);
+    expect(result.nodes[0].data.complexFields).toHaveLength(4);
   });
 });
