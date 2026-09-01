@@ -4,7 +4,15 @@ import { Application, Container, Graphics, Text } from 'pixi.js';
 
 import { PixiSearchPanel } from '#/components/renderer/pixi/PixiSearchPanel';
 import { Button } from '#/components/ui/button';
-import { applyElkLayout, getNodeHeight, HEADER_HEIGHT, LINE_HEIGHT, NODE_WIDTH } from '#/lib/layout/elkLayout';
+import {
+  applyElkLayout,
+  getNodeHeight,
+  getSourcePortId,
+  getTargetPortId,
+  HEADER_HEIGHT,
+  LINE_HEIGHT,
+  NODE_WIDTH,
+} from '#/lib/layout/elkLayout';
 import { useEditorStore } from '#/stores/editorStore';
 import { useGraphStore } from '#/stores/graphStore';
 import { useThemeStore } from '#/stores/themeStore';
@@ -12,7 +20,7 @@ import { useThemeStore } from '#/stores/themeStore';
 import type { FederatedPointerEvent } from 'pixi.js';
 
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
-import type { IElkLayoutResult } from '#/lib/layout/interfaces/IElkLayoutResult';
+import type { IElkLayoutResult, ILayoutPort } from '#/lib/layout/interfaces/IElkLayoutResult';
 
 const MIN_ZOOM = 0.08;
 const MAX_ZOOM = 3;
@@ -90,7 +98,7 @@ const intersectsViewport = (
 const drawNode = (
   node: IGraphNode,
   theme: IRenderTheme,
-  direction: 'LR' | 'TB',
+  ports: ReadonlyMap<string, ILayoutPort>,
   onClick: (node: IGraphNode) => void,
 ): Container => {
   const container = new Container();
@@ -129,7 +137,7 @@ const drawNode = (
     y += LINE_HEIGHT;
   }
 
-  for (const [index, field] of node.data.complexFields.entries()) {
+  for (const field of node.data.complexFields) {
     const size = field.type === 'array' ? `[${field.size}]` : `{${field.size}}`;
     const text = new Text({
       text: `${field.key}: ${size}`,
@@ -138,9 +146,8 @@ const drawNode = (
     text.position.set(12, y);
     container.addChild(text);
     const handleColor = field.type === 'array' ? theme.arrayHandle : theme.objectHandle;
-    const handleX = direction === 'LR' ? NODE_WIDTH : ((index + 1) * NODE_WIDTH) / (node.data.complexFields.length + 1);
-    const handleY = direction === 'LR' ? y + 8 : height;
-    container.addChild(new Graphics().circle(handleX, handleY, 5).fill(handleColor));
+    const port = ports.get(getSourcePortId(node.id, field.key));
+    if (port != null) container.addChild(new Graphics().circle(port.position.x, port.position.y, 5).fill(handleColor));
     y += LINE_HEIGHT;
   }
 
@@ -148,9 +155,8 @@ const drawNode = (
   if (node.data._parent != null) {
     // eslint-disable-next-line no-underscore-dangle
     const color = node.data._parent.data.nodeType === 'array' ? theme.arrayHandle : theme.objectHandle;
-    container.addChild(
-      new Graphics().circle(direction === 'LR' ? 0 : NODE_WIDTH / 2, direction === 'LR' ? 8 : 0, 5).fill(color),
-    );
+    const port = ports.get(getTargetPortId(node.id));
+    if (port != null) container.addChild(new Graphics().circle(port.position.x, port.position.y, 5).fill(color));
   }
 
   return container;
@@ -327,19 +333,25 @@ export const PixiGraphRenderer = () => {
       const visibleIds = new Set(visibleNodes.map((node) => node.id));
       const edgeGraphics = new Graphics();
       const graphEdges = new Map(edges.map((edge) => [edge.id, edge]));
+      const layoutPorts = new Map(currentLayout.ports.map((port) => [port.id, port]));
       for (const edge of currentLayout.edges) {
         const graphEdge = graphEdges.get(edge.id);
-        const first = edge.points[0];
         const isVisible = graphEdge != null && (visibleIds.has(graphEdge.source) || visibleIds.has(graphEdge.target));
-        if (isVisible && first != null) {
-          edgeGraphics.moveTo(first.x, first.y);
-          for (const point of edge.points.slice(1)) edgeGraphics.lineTo(point.x, point.y);
+        if (isVisible) {
+          for (const section of edge.sections) {
+            const first = section[0];
+            if (first != null) {
+              edgeGraphics.moveTo(first.x, first.y);
+              for (const point of section.slice(1)) edgeGraphics.lineTo(point.x, point.y);
+            }
+          }
         }
       }
-      edgeGraphics.stroke({ color: renderTheme.edge, width: 2 / Math.max(transform.scale, 0.4) });
+      edgeGraphics.stroke({ color: renderTheme.edge, width: 2 / transform.scale });
       world.addChild(edgeGraphics);
-      const renderDirection = direction === 'LR' ? 'LR' : 'TB';
-      for (const node of visibleNodes) world.addChild(drawNode(node, renderTheme, renderDirection, selectNodeInEditor));
+      for (const node of visibleNodes) {
+        world.addChild(drawNode(node, renderTheme, layoutPorts, selectNodeInEditor));
+      }
       app.render();
     };
     renderRef.current();
