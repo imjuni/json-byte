@@ -2,6 +2,15 @@
 
 ----
 
+## Version 1.1.1
+
+Released on September 2, 2026
+
+----
+
+- Fixed graph edges disappearing after pasted content was rebuilt
+- Migrated the application build from Vite to Astro
+
 ## Version 1.1.0
 
 Released on November 14, 2025
