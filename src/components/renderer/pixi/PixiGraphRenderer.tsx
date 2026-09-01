@@ -1,484 +1,371 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Application, Container, Graphics, Text } from 'pixi.js';
 
-import { applyElkLayout } from '#/lib/layout/elkLayout';
+import { PixiSearchPanel } from '#/components/renderer/pixi/PixiSearchPanel';
+import { Button } from '#/components/ui/button';
+import { applyElkLayout, getNodeHeight, HEADER_HEIGHT, LINE_HEIGHT, NODE_WIDTH } from '#/lib/layout/elkLayout';
+import { useEditorStore } from '#/stores/editorStore';
 import { useGraphStore } from '#/stores/graphStore';
+import { useThemeStore } from '#/stores/themeStore';
 
-import type { IGraphEdge } from '#/lib/graph/interfaces/IGraphEdge';
+import type { FederatedPointerEvent } from 'pixi.js';
+
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
+import type { IElkLayoutResult } from '#/lib/layout/interfaces/IElkLayoutResult';
 
-export const PixiGraphRenderer = () => {
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const appRef = useRef<Application | null>(null);
-  const isInitializedRef = useRef(false);
-  const viewportRef = useRef<Container | null>(null);
-  const { nodes, edges, direction, setDirection } = useGraphStore();
-  const [layoutedNodes, setLayoutedNodes] = useState<IGraphNode[]>([]);
+const MIN_ZOOM = 0.08;
+const MAX_ZOOM = 3;
+const VIEW_PADDING = 300;
 
-  // Apply ELK layout when nodes/edges/direction change
-  useEffect(() => {
-    if (nodes.length === 0) {
-      setLayoutedNodes([]);
-      return;
-    }
+interface IViewportTransform {
+  x: number;
+  y: number;
+  scale: number;
+}
 
-    // Convert 'LR' to 'LR', but store uses 'LR' or 'TB' format
-    const layoutDirection = direction === 'LR' ? 'LR' : 'TB';
+interface IRenderTheme {
+  background: number;
+  node: number;
+  nodeBorder: number;
+  nodeSearched: number;
+  heading: number;
+  text: number;
+  complexText: number;
+  edge: number;
+  objectHandle: number;
+  arrayHandle: number;
+}
 
-    applyElkLayout(nodes, edges, layoutDirection)
-      .then((layouted) => {
-        setLayoutedNodes(layouted);
-      })
-      .catch((error) => {
-        // eslint-disable-next-line no-console
-        console.error('ELK layout failed:', error);
-        // Fallback to original nodes if layout fails
-        setLayoutedNodes(nodes);
-      });
-  }, [nodes, edges, direction]);
+const themes: Record<'light' | 'dark', IRenderTheme> = {
+  light: {
+    background: 0xffffff,
+    node: 0xffffff,
+    nodeBorder: 0xd4d4d8,
+    nodeSearched: 0x3b82f6,
+    heading: 0x18181b,
+    text: 0x52525b,
+    complexText: 0x2563eb,
+    edge: 0x94a3b8,
+    objectHandle: 0x3b82f6,
+    arrayHandle: 0xf59e0b,
+  },
+  dark: {
+    background: 0x09090b,
+    node: 0x18181b,
+    nodeBorder: 0x3f3f46,
+    nodeSearched: 0x60a5fa,
+    heading: 0xf4f4f5,
+    text: 0xd4d4d8,
+    complexText: 0x7dd3fc,
+    edge: 0x71717a,
+    objectHandle: 0x60a5fa,
+    arrayHandle: 0xfbbf24,
+  },
+};
 
-  useEffect(() => {
-    if (canvasRef.current == null) return;
+const truncate = (value: string, length = 32): string =>
+  value.length > length ? `${value.slice(0, length - 1)}…` : value;
 
-    let mounted = true;
-    let wheelHandler: ((event: WheelEvent) => void) | null = null;
-    let isDragging = false;
-    let dragStartX = 0;
-    let dragStartY = 0;
-    let viewportStartX = 0;
-    let viewportStartY = 0;
-
-    // Create PixiJS Application
-    const app = new Application();
-
-    // Initialize the application
-    app
-      .init({
-        width: canvasRef.current.clientWidth || 800,
-        height: canvasRef.current.clientHeight || 600,
-        backgroundColor: 0x1a1a1a,
-        antialias: true,
-        resolution: window.devicePixelRatio || 1,
-        autoDensity: true,
-        autoStart: true,
-      })
-      .then(() => {
-        if (!mounted || canvasRef.current == null) {
-          app.destroy(true, { children: true, texture: true });
-          return;
-        }
-
-        // Add canvas to DOM
-        canvasRef.current.appendChild(app.canvas);
-        appRef.current = app;
-        isInitializedRef.current = true;
-
-        // Create viewport container for zoom and pan
-        const viewport = new Container();
-        viewport.x = 0;
-        viewport.y = 0;
-        viewport.scale.set(1);
-        app.stage.addChild(viewport);
-        viewportRef.current = viewport;
-
-        // Create containers for graph (edges first, then nodes for proper layering)
-        const edgeContainer = new Container();
-        const nodeContainer = new Container();
-        viewport.addChild(edgeContainer);
-        viewport.addChild(nodeContainer);
-
-        // Render edges first (behind nodes)
-        const edgeDirection = direction === 'LR' || direction === 'RL' ? 'LR' : 'TB';
-        renderEdges(edgeContainer, edges, layoutedNodes, edgeDirection);
-
-        // Render nodes on top
-        renderNodes(nodeContainer, layoutedNodes);
-
-        // Start the ticker to continuously render
-        app.ticker.add(() => {
-          // This will render every frame
-          // PixiJS will automatically handle this, but we ensure it's running
-        });
-
-        // Add mouse wheel zoom functionality
-        const { canvas } = app;
-        wheelHandler = (event: WheelEvent) => {
-          // Check if this is a pinch gesture (trackpad pinch on macOS)
-          if (event.ctrlKey) {
-            event.preventDefault();
-
-            // Get mouse position relative to canvas
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = event.clientX - rect.left;
-            const mouseY = event.clientY - rect.top;
-
-            // For pinch gesture, deltaY is the zoom amount
-            // Negative deltaY = zoom in, Positive deltaY = zoom out
-            // Increase sensitivity with higher multiplier
-            const zoomFactor = 1 - event.deltaY * 0.02;
-            const oldScale = viewport.scale.x;
-            const newScale = oldScale * zoomFactor;
-
-            console.log('Pinch zoom:', { oldScale, zoomFactor, newScale, deltaY: event.deltaY });
-
-            // Limit zoom range (0.1x to 5x)
-            if (newScale < 0.1 || newScale > 5) {
-              console.log('Zoom limit reached:', newScale);
-              return;
-            }
-
-            // Calculate new position to zoom towards mouse cursor
-            const worldPosX = (mouseX - viewport.x) / viewport.scale.x;
-            const worldPosY = (mouseY - viewport.y) / viewport.scale.y;
-
-            viewport.scale.set(newScale);
-
-            viewport.x = mouseX - worldPosX * newScale;
-            viewport.y = mouseY - worldPosY * newScale;
-
-            console.log('Viewport updated:', { scale: viewport.scale.x, x: viewport.x, y: viewport.y });
-          } else {
-            // Regular mouse wheel scroll - zoom
-            event.preventDefault();
-
-            // Get mouse position relative to canvas
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = event.clientX - rect.left;
-            const mouseY = event.clientY - rect.top;
-
-            // Calculate zoom factor
-            const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
-            const newScale = viewport.scale.x * zoomFactor;
-
-            // Limit zoom range (0.1x to 5x)
-            if (newScale < 0.1 || newScale > 5) return;
-
-            // Calculate new position to zoom towards mouse cursor
-            const worldPosX = (mouseX - viewport.x) / viewport.scale.x;
-            const worldPosY = (mouseY - viewport.y) / viewport.scale.y;
-
-            viewport.scale.set(newScale);
-
-            viewport.x = mouseX - worldPosX * newScale;
-            viewport.y = mouseY - worldPosY * newScale;
-          }
-        };
-
-        canvas.addEventListener('wheel', wheelHandler, { passive: false });
-
-        // Add mouse pan functionality
-        const mouseDownHandler = (event: MouseEvent) => {
-          isDragging = true;
-          dragStartX = event.clientX;
-          dragStartY = event.clientY;
-          viewportStartX = viewport.x;
-          viewportStartY = viewport.y;
-          canvas.style.cursor = 'grabbing';
-        };
-
-        const mouseMoveHandler = (event: MouseEvent) => {
-          if (!isDragging) return;
-
-          const deltaX = event.clientX - dragStartX;
-          const deltaY = event.clientY - dragStartY;
-
-          viewport.x = viewportStartX + deltaX;
-          viewport.y = viewportStartY + deltaY;
-        };
-
-        const mouseUpHandler = () => {
-          isDragging = false;
-          canvas.style.cursor = 'grab';
-        };
-
-        const mouseLeaveHandler = () => {
-          isDragging = false;
-          canvas.style.cursor = 'grab';
-        };
-
-        canvas.style.cursor = 'grab';
-        canvas.addEventListener('mousedown', mouseDownHandler);
-        canvas.addEventListener('mousemove', mouseMoveHandler);
-        canvas.addEventListener('mouseup', mouseUpHandler);
-        canvas.addEventListener('mouseleave', mouseLeaveHandler);
-      })
-      .catch((error) => {
-        // eslint-disable-next-line no-console
-        console.error('PixiJS initialization failed:', error);
-      });
-
-    // Cleanup
-    return () => {
-      mounted = false;
-      isInitializedRef.current = false;
-      if (appRef.current) {
-        const { canvas } = appRef.current;
-        // Remove all event listeners
-        if (wheelHandler) {
-          canvas.removeEventListener('wheel', wheelHandler);
-        }
-        // Note: mousedown, mousemove, mouseup, mouseleave will be cleaned up
-        // automatically when canvas is destroyed
-        appRef.current.destroy(true, { children: true, texture: true });
-        appRef.current = null;
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Re-render when layouted nodes change
-  useEffect(() => {
-    if (!isInitializedRef.current || appRef.current == null || viewportRef.current == null) return;
-    if (layoutedNodes.length === 0) return;
-
-    try {
-      // Clear viewport's children only, not the viewport itself
-      viewportRef.current.removeChildren();
-
-      // Recreate containers inside viewport
-      const edgeContainer = new Container();
-      const nodeContainer = new Container();
-      viewportRef.current.addChild(edgeContainer);
-      viewportRef.current.addChild(nodeContainer);
-
-      // Re-render edges and nodes with layouted positions
-      const edgeDirection = direction === 'LR' || direction === 'RL' ? 'LR' : 'TB';
-      renderEdges(edgeContainer, edges, layoutedNodes, edgeDirection);
-      renderNodes(nodeContainer, layoutedNodes);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Error rendering graph:', error);
-    }
-  }, [layoutedNodes, edges, direction]);
+const intersectsViewport = (
+  node: IGraphNode,
+  transform: IViewportTransform,
+  screenWidth: number,
+  screenHeight: number,
+): boolean => {
+  const left = (-transform.x - VIEW_PADDING) / transform.scale;
+  const top = (-transform.y - VIEW_PADDING) / transform.scale;
+  const right = (screenWidth - transform.x + VIEW_PADDING) / transform.scale;
+  const bottom = (screenHeight - transform.y + VIEW_PADDING) / transform.scale;
+  const height = node.height ?? getNodeHeight(node);
 
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        position: 'relative',
-      }}
-    >
-      {/* Canvas container */}
-      <div
-        ref={canvasRef}
-        style={{
-          width: '100%',
-          height: '100%',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-        }}
-      />
-
-      {/* Direction toggle button */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '10px',
-          right: '10px',
-          zIndex: 10,
-        }}
-      >
-        <button
-          type="button"
-          style={{
-            padding: '8px 16px',
-            backgroundColor: 'rgba(42, 42, 42, 0.9)',
-            color: 'white',
-            border: '2px solid #444',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 'bold',
-          }}
-          onClick={() => setDirection(direction === 'LR' ? 'TB' : 'LR')}
-        >
-          {direction === 'LR' ? 'LR ↔' : 'TB ↕'}
-        </button>
-      </div>
-    </div>
+    node.position.x + NODE_WIDTH >= left &&
+    node.position.x <= right &&
+    node.position.y + height >= top &&
+    node.position.y <= bottom
   );
 };
 
-// Render nodes using PixiJS Graphics
-function renderNodes(container: Container, nodes: IGraphNode[]) {
-  for (const node of nodes) {
-    const nodeGraphics = createNodeGraphics(node);
-    container.addChild(nodeGraphics);
-  }
-}
-
-// Create a single node with Graphics
-function createNodeGraphics(node: IGraphNode): Container {
-  const nodeContainer = new Container();
-  nodeContainer.x = node.position.x;
-  nodeContainer.y = node.position.y;
-
-  const width = 280;
-  const headerHeight = 40;
-  const lineHeight = 20;
-  const padding = 10;
-
-  // Calculate dynamic height based on number of fields
-  const totalFields = node.data.primitiveFields.length + node.data.complexFields.length;
-  const contentHeight = totalFields * lineHeight;
-  const height = headerHeight + contentHeight + padding;
-
-  // Draw node background
-  const bg = new Graphics();
-  bg.rect(0, 0, width, height);
-  bg.fill({ color: 0x2a2a2a });
-  bg.stroke({ color: 0x444444, width: 2 });
-  nodeContainer.addChild(bg);
-
-  // Draw node label
-  const label = new Text({
-    text: node.data.label,
-    style: {
-      fontFamily: 'Arial',
-      fontSize: 16,
-      fill: 0xffffff,
-      fontWeight: 'bold',
-    },
+const drawNode = (
+  node: IGraphNode,
+  theme: IRenderTheme,
+  direction: 'LR' | 'TB',
+  onClick: (node: IGraphNode) => void,
+): Container => {
+  const container = new Container();
+  const height = node.height ?? getNodeHeight(node);
+  container.position.set(node.position.x, node.position.y);
+  container.eventMode = 'static';
+  container.cursor = 'pointer';
+  container.hitArea = { contains: (x, y) => x >= 0 && x <= NODE_WIDTH && y >= 0 && y <= height };
+  container.on('pointertap', (event: FederatedPointerEvent) => {
+    event.stopPropagation();
+    onClick(node);
   });
-  label.x = 10;
-  label.y = 10;
-  nodeContainer.addChild(label);
 
-  // Draw target handle on the left side (only if node has a parent)
+  const background = new Graphics()
+    .roundRect(0, 0, NODE_WIDTH, height, 6)
+    .fill(theme.node)
+    .stroke({ color: node.data.searched ? theme.nodeSearched : theme.nodeBorder, width: node.data.searched ? 3 : 2 });
+  container.addChild(background);
+
+  const heading = new Text({
+    text: truncate(node.data.label, 34),
+    style: { fontFamily: 'sans-serif', fontSize: 15, fill: theme.heading, fontWeight: '600' },
+  });
+  heading.position.set(12, 10);
+  container.addChild(heading);
+
+  let y = HEADER_HEIGHT;
+  for (const field of node.data.primitiveFields) {
+    const value = truncate(String(field.value));
+    const text = new Text({
+      text: `${field.key}: ${value}`,
+      style: { fontFamily: 'monospace', fontSize: 12, fill: theme.text },
+    });
+    text.position.set(12, y);
+    container.addChild(text);
+    y += LINE_HEIGHT;
+  }
+
+  for (const [index, field] of node.data.complexFields.entries()) {
+    const size = field.type === 'array' ? `[${field.size}]` : `{${field.size}}`;
+    const text = new Text({
+      text: `${field.key}: ${size}`,
+      style: { fontFamily: 'monospace', fontSize: 12, fill: theme.complexText },
+    });
+    text.position.set(12, y);
+    container.addChild(text);
+    const handleColor = field.type === 'array' ? theme.arrayHandle : theme.objectHandle;
+    const handleX = direction === 'LR' ? NODE_WIDTH : ((index + 1) * NODE_WIDTH) / (node.data.complexFields.length + 1);
+    const handleY = direction === 'LR' ? y + 8 : height;
+    container.addChild(new Graphics().circle(handleX, handleY, 5).fill(handleColor));
+    y += LINE_HEIGHT;
+  }
+
   // eslint-disable-next-line no-underscore-dangle
   if (node.data._parent != null) {
-    const targetHandle = new Graphics();
-    targetHandle.circle(0, 10, 5); // Left edge, near the top
-
-    // Use parent's type to determine color
-    // array: orange (0xffaa00), object: blue (0x88ccff)
     // eslint-disable-next-line no-underscore-dangle
-    const parentType = node.data._parent.data.nodeType;
-    const handleColor = parentType === 'array' ? 0xffaa00 : 0x88ccff;
-
-    targetHandle.fill({ color: handleColor });
-    nodeContainer.addChild(targetHandle);
+    const color = node.data._parent.data.nodeType === 'array' ? theme.arrayHandle : theme.objectHandle;
+    container.addChild(
+      new Graphics().circle(direction === 'LR' ? 0 : NODE_WIDTH / 2, direction === 'LR' ? 8 : 0, 5).fill(color),
+    );
   }
 
-  // Draw primitive fields
-  let yOffset = headerHeight;
-  for (const field of node.data.primitiveFields) {
-    const fieldText = new Text({
-      text: `${field.key}: ${String(field.value).substring(0, 20)}`,
-      style: {
-        fontFamily: 'Arial',
-        fontSize: 12,
-        fill: 0xcccccc,
-      },
-    });
-    fieldText.x = 10;
-    fieldText.y = yOffset;
-    nodeContainer.addChild(fieldText);
-    yOffset += lineHeight;
-  }
+  return container;
+};
 
-  // Draw complex fields
-  for (const field of node.data.complexFields) {
-    const fieldText = new Text({
-      text: `${field.key}: ${field.type === 'array' ? `[${field.size}]` : `{${field.size}}`}`,
-      style: {
-        fontFamily: 'Arial',
-        fontSize: 12,
-        fill: 0x88ccff,
-      },
-    });
-    fieldText.x = 10;
-    fieldText.y = yOffset;
-    nodeContainer.addChild(fieldText);
+export const PixiGraphRenderer = () => {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const appRef = useRef<Application | null>(null);
+  const worldRef = useRef<Container | null>(null);
+  const layoutRef = useRef<IElkLayoutResult | null>(null);
+  const transformRef = useRef<IViewportTransform>({ x: 40, y: 40, scale: 1 });
+  const renderRef = useRef<() => void>(() => undefined);
+  const [layout, setLayout] = useState<IElkLayoutResult | null>(null);
+  const [isLayouting, setIsLayouting] = useState(false);
+  const [layoutError, setLayoutError] = useState<string | null>(null);
+  const { nodes, edges, direction, locMap, setDirection } = useGraphStore();
+  const { editorInstance } = useEditorStore();
+  const { theme } = useThemeStore();
 
-    // Draw connection point (handle) - outside the node border
-    const handle = new Graphics();
-    handle.circle(width, yOffset + 8, 5); // At the right edge, not inside
-    handle.fill({ color: 0xffaa00 });
-    nodeContainer.addChild(handle);
+  const selectNodeInEditor = useCallback(
+    (node: IGraphNode) => {
+      const entry = locMap[node.id];
+      if (editorInstance == null || entry == null) return;
+      editorInstance.setSelection({
+        startLineNumber: entry.loc.start.line,
+        startColumn: entry.loc.start.column,
+        endLineNumber: entry.loc.end.line,
+        endColumn: entry.loc.end.column,
+      });
+      editorInstance.revealLineInCenter(entry.loc.start.line);
+      editorInstance.focus();
+    },
+    [editorInstance, locMap],
+  );
 
-    yOffset += lineHeight;
-  }
+  const focusNode = useCallback((node: IGraphNode) => {
+    const app = appRef.current;
+    const layoutedNode = layoutRef.current?.nodes.find((candidate) => candidate.id === node.id);
+    if (app == null || layoutedNode == null) return;
+    const scale = Math.max(transformRef.current.scale, 0.8);
+    transformRef.current = {
+      x: app.screen.width / 2 - (layoutedNode.position.x + NODE_WIDTH / 2) * scale,
+      y: app.screen.height / 2 - (layoutedNode.position.y + getNodeHeight(layoutedNode) / 2) * scale,
+      scale,
+    };
+    renderRef.current();
+  }, []);
 
-  return nodeContainer;
-}
-
-// Render edges using PixiJS Graphics with smooth bezier curves
-function renderEdges(container: Container, edges: IGraphEdge[], nodes: IGraphNode[], direction: 'LR' | 'TB' = 'TB') {
-  // Create a map for quick node lookup
-  const nodeMap = new Map<string, IGraphNode>();
-  for (const node of nodes) {
-    nodeMap.set(node.id, node);
-  }
-
-  for (const edge of edges) {
-    const sourceNode = nodeMap.get(edge.source);
-    const targetNode = nodeMap.get(edge.target);
-
-    if (sourceNode == null || targetNode == null) {
-      continue;
+  useEffect(() => {
+    if (nodes.length === 0) {
+      setLayout(null);
+      layoutRef.current = null;
+      return undefined;
     }
+    setIsLayouting(true);
+    setLayoutError(null);
+    const task = applyElkLayout(nodes, edges, direction === 'LR' ? 'LR' : 'TB');
+    task.promise
+      .then((result) => {
+        layoutRef.current = result;
+        setLayout(result);
+      })
+      .catch((error: unknown) => setLayoutError(error instanceof Error ? error.message : String(error)))
+      .finally(() => setIsLayouting(false));
+    return () => task.cancel();
+    // Search highlighting replaces node objects but does not change layout input.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [direction, edges, nodes.length, nodes[0]?.data.stringify]);
 
-    // Calculate source position based on the specific complex field handle
-    const width = 280;
-    const headerHeight = 40;
-    const lineHeight = 20;
+  useEffect(() => {
+    const host = hostRef.current;
+    if (host == null) return undefined;
+    let active = true;
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+    let renderTimer: ReturnType<typeof setTimeout> | undefined;
+    const app = new Application();
 
-    // Find which complex field this edge is coming from
-    const sourceFieldIndex = sourceNode.data.complexFields.findIndex((field) => edge.label === field.key);
+    const initialize = async () => {
+      await app.init({
+        resizeTo: host,
+        backgroundColor: themes[theme].background,
+        antialias: false,
+        resolution: Math.min(window.devicePixelRatio, 2),
+        autoDensity: true,
+      });
+      if (!active) {
+        app.destroy(true, { children: true });
+        return;
+      }
+      host.appendChild(app.canvas);
+      const world = new Container();
+      app.stage.addChild(world);
+      appRef.current = app;
+      worldRef.current = world;
 
-    let sourceY: number;
-    if (sourceFieldIndex >= 0) {
-      // Calculate Y position of this specific complex field
-      const primitiveFieldsCount = sourceNode.data.primitiveFields.length;
-      const fieldYOffset = headerHeight + primitiveFieldsCount * lineHeight + sourceFieldIndex * lineHeight;
-      sourceY = sourceNode.position.y + fieldYOffset + 8; // +8 to center on the field line
-    } else {
-      // Fallback to middle of node if field not found
-      sourceY = sourceNode.position.y + 75;
-    }
+      const scheduleRender = () => {
+        clearTimeout(renderTimer);
+        renderTimer = setTimeout(() => renderRef.current(), 80);
+      };
+      app.canvas.addEventListener(
+        'wheel',
+        (event) => {
+          event.preventDefault();
+          const rect = app.canvas.getBoundingClientRect();
+          const mouseX = event.clientX - rect.left;
+          const mouseY = event.clientY - rect.top;
+          const previous = transformRef.current;
+          const scale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, previous.scale * Math.exp(-event.deltaY * 0.0015)));
+          const worldX = (mouseX - previous.x) / previous.scale;
+          const worldY = (mouseY - previous.y) / previous.scale;
+          transformRef.current = { x: mouseX - worldX * scale, y: mouseY - worldY * scale, scale };
+          world.position.set(transformRef.current.x, transformRef.current.y);
+          world.scale.set(scale);
+          scheduleRender();
+        },
+        { passive: false },
+      );
+      app.canvas.addEventListener('pointerdown', (event) => {
+        dragging = true;
+        lastX = event.clientX;
+        lastY = event.clientY;
+        app.canvas.setPointerCapture(event.pointerId);
+      });
+      app.canvas.addEventListener('pointermove', (event) => {
+        if (!dragging) return;
+        transformRef.current.x += event.clientX - lastX;
+        transformRef.current.y += event.clientY - lastY;
+        lastX = event.clientX;
+        lastY = event.clientY;
+        world.position.set(transformRef.current.x, transformRef.current.y);
+        scheduleRender();
+      });
+      app.canvas.addEventListener('pointerup', () => {
+        dragging = false;
+        scheduleRender();
+      });
+      renderRef.current();
+    };
+    initialize().catch(() => undefined);
 
-    // Handle is at the right edge of the node (width)
-    const sourceX = sourceNode.position.x + width; // Handle position at right edge
-    const targetX = targetNode.position.x; // Left edge of target node
-    const targetY = targetNode.position.y + 10; // Top of target node with small offset
+    return () => {
+      active = false;
+      clearTimeout(renderTimer);
+      appRef.current = null;
+      worldRef.current = null;
+      if (app.canvas.parentNode != null) app.destroy(true, { children: true });
+    };
+    // Theme changes are applied without recreating the WebGL application.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    // Calculate control points for bezier curve
-    const deltaX = targetX - sourceX;
-    const deltaY = targetY - sourceY;
+  useEffect(() => {
+    renderRef.current = () => {
+      const app = appRef.current;
+      const world = worldRef.current;
+      const currentLayout = layoutRef.current;
+      if (app == null || world == null) return;
+      const renderTheme = themes[theme];
+      app.renderer.background.color = renderTheme.background;
+      world.removeChildren().forEach((child) => child.destroy({ children: true }));
+      if (currentLayout == null) return;
+      const transform = transformRef.current;
+      world.position.set(transform.x, transform.y);
+      world.scale.set(transform.scale);
+      const currentNodes = new Map(nodes.map((node) => [node.id, node]));
+      const visibleNodes = currentLayout.nodes
+        .filter((node) => intersectsViewport(node, transform, app.screen.width, app.screen.height))
+        .map((node) => {
+          const current = currentNodes.get(node.id);
+          return current == null ? node : { ...node, data: current.data };
+        });
+      const visibleIds = new Set(visibleNodes.map((node) => node.id));
+      const edgeGraphics = new Graphics();
+      const graphEdges = new Map(edges.map((edge) => [edge.id, edge]));
+      for (const edge of currentLayout.edges) {
+        const graphEdge = graphEdges.get(edge.id);
+        const first = edge.points[0];
+        const isVisible = graphEdge != null && (visibleIds.has(graphEdge.source) || visibleIds.has(graphEdge.target));
+        if (isVisible && first != null) {
+          edgeGraphics.moveTo(first.x, first.y);
+          for (const point of edge.points.slice(1)) edgeGraphics.lineTo(point.x, point.y);
+        }
+      }
+      edgeGraphics.stroke({ color: renderTheme.edge, width: 2 / Math.max(transform.scale, 0.4) });
+      world.addChild(edgeGraphics);
+      const renderDirection = direction === 'LR' ? 'LR' : 'TB';
+      for (const node of visibleNodes) world.addChild(drawNode(node, renderTheme, renderDirection, selectNodeInEditor));
+      app.render();
+    };
+    renderRef.current();
+  }, [direction, edges, layout, nodes, selectNodeInEditor, theme]);
 
-    // Control points for smooth curve (similar to XYFlow)
-    // Use layout direction to determine curve direction
-    let cp1X: number;
-    let cp1Y: number;
-    let cp2X: number;
-    let cp2Y: number;
-
-    if (direction === 'LR') {
-      // Horizontal flow - extend control points horizontally
-      const offset = Math.abs(deltaX) * 0.5;
-      cp1X = sourceX + offset;
-      cp1Y = sourceY;
-      cp2X = targetX - offset;
-      cp2Y = targetY;
-    } else {
-      // Vertical flow (TB) - extend control points vertically
-      const offset = Math.abs(deltaY) * 0.5;
-      cp1X = sourceX;
-      cp1Y = sourceY + offset;
-      cp2X = targetX;
-      cp2Y = targetY - offset;
-    }
-
-    // Draw smooth bezier curve
-    const line = new Graphics();
-    line.moveTo(sourceX, sourceY);
-    line.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, targetX, targetY);
-    line.stroke({ color: 0x666666, width: 2 });
-
-    container.addChild(line);
-  }
-}
+  return (
+    <div className="relative w-full h-full overflow-hidden bg-background">
+      <div ref={hostRef} className="absolute inset-0" />
+      <div className="absolute top-3 right-3 z-10 flex gap-2">
+        <Button onClick={() => setDirection(direction === 'LR' ? 'TB' : 'LR')} size="sm" variant="outline">
+          {direction === 'LR' ? 'Left → Right' : 'Top → Bottom'}
+        </Button>
+      </div>
+      <PixiSearchPanel onFocusNode={focusNode} />
+      {Boolean(isLayouting) && (
+        <div className="absolute inset-0 z-20 grid place-items-center bg-background/70 pointer-events-none">
+          <div className="rounded-md border bg-card px-5 py-3 text-sm shadow-lg">
+            ELK layout: {nodes.length.toLocaleString()} nodes / {edges.length.toLocaleString()} edges
+          </div>
+        </div>
+      )}
+      {Boolean(layoutError) && (
+        <div className="absolute top-14 right-3 z-20 max-w-sm rounded-md border border-destructive bg-card p-3 text-sm text-destructive">
+          ELK layout failed: {layoutError}
+        </div>
+      )}
+    </div>
+  );
+};
