@@ -138,5 +138,12 @@ describe('elkLayout', () => {
       x: (childNode?.position.x ?? 0) + (targetPort?.position.x ?? 0),
       y: (childNode?.position.y ?? 0) + (targetPort?.position.y ?? 0),
     });
+    if (direction === 'LR') {
+      expect(sourcePort?.position.x).toBe(parentNode?.width);
+      expect(targetPort?.position.x).toBe(0);
+    } else {
+      expect(sourcePort?.position.y).toBe(parentNode?.height);
+      expect(targetPort?.position.y).toBe(0);
+    }
   });
 });
