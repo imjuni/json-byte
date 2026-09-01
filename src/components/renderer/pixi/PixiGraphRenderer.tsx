@@ -5,7 +5,7 @@ import { Application, Container, Graphics, Text } from 'pixi.js';
 import { PixiSearchPanel } from '#/components/renderer/pixi/PixiSearchPanel';
 import { Button } from '#/components/ui/button';
 import {
-  applyElkLayout,
+  applyGraphLayout,
   getNodeHeight,
   getSourcePortId,
   getTargetPortId,
@@ -25,11 +25,20 @@ import type { IElkLayoutResult, ILayoutPort } from '#/lib/layout/interfaces/IElk
 const MIN_ZOOM = 0.08;
 const MAX_ZOOM = 3;
 const VIEW_PADDING = 300;
+const TEXT_MAX_LENGTH = 36;
+const MONOSPACE_FONT = 'SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace';
 
 interface IViewportTransform {
   x: number;
   y: number;
   scale: number;
+}
+
+interface IViewportBounds {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
 }
 
 interface IRenderTheme {
@@ -75,30 +84,52 @@ const themes: Record<'light' | 'dark', IRenderTheme> = {
 const truncate = (value: string, length = 32): string =>
   value.length > length ? `${value.slice(0, length - 1)}…` : value;
 
-const intersectsViewport = (
-  node: IGraphNode,
+const singleLine = (value: unknown): string =>
+  String(value).replaceAll('\r', '\\r').replaceAll('\n', '\\n').replaceAll('\t', '\\t');
+
+const getViewportBounds = (
   transform: IViewportTransform,
   screenWidth: number,
   screenHeight: number,
-): boolean => {
-  const left = (-transform.x - VIEW_PADDING) / transform.scale;
-  const top = (-transform.y - VIEW_PADDING) / transform.scale;
-  const right = (screenWidth - transform.x + VIEW_PADDING) / transform.scale;
-  const bottom = (screenHeight - transform.y + VIEW_PADDING) / transform.scale;
+): IViewportBounds => ({
+  left: (-transform.x - VIEW_PADDING) / transform.scale,
+  top: (-transform.y - VIEW_PADDING) / transform.scale,
+  right: (screenWidth - transform.x + VIEW_PADDING) / transform.scale,
+  bottom: (screenHeight - transform.y + VIEW_PADDING) / transform.scale,
+});
+
+const intersectsViewport = (node: IGraphNode, bounds: IViewportBounds): boolean => {
   const height = node.height ?? getNodeHeight(node);
 
   return (
-    node.position.x + NODE_WIDTH >= left &&
-    node.position.x <= right &&
-    node.position.y + height >= top &&
-    node.position.y <= bottom
+    node.position.x + NODE_WIDTH >= bounds.left &&
+    node.position.x <= bounds.right &&
+    node.position.y + height >= bounds.top &&
+    node.position.y <= bounds.bottom
   );
+};
+
+const sectionIntersectsViewport = (section: { x: number; y: number }[], bounds: IViewportBounds): boolean => {
+  for (let index = 1; index < section.length; index += 1) {
+    const start = section[index - 1];
+    const end = section[index];
+    if (start != null && end != null) {
+      const left = Math.min(start.x, end.x);
+      const right = Math.max(start.x, end.x);
+      const top = Math.min(start.y, end.y);
+      const bottom = Math.max(start.y, end.y);
+      if (right >= bounds.left && left <= bounds.right && bottom >= bounds.top && top <= bounds.bottom) return true;
+    }
+  }
+  return false;
 };
 
 const drawNode = (
   node: IGraphNode,
   theme: IRenderTheme,
   ports: ReadonlyMap<string, ILayoutPort>,
+  bounds: IViewportBounds,
+  textResolution: number,
   onClick: (node: IGraphNode) => void,
 ): Container => {
   const container = new Container();
@@ -118,37 +149,58 @@ const drawNode = (
     .stroke({ color: node.data.searched ? theme.nodeSearched : theme.nodeBorder, width: node.data.searched ? 3 : 2 });
   container.addChild(background);
 
-  const heading = new Text({
-    text: truncate(node.data.label, 34),
-    style: { fontFamily: 'sans-serif', fontSize: 15, fill: theme.heading, fontWeight: '600' },
-  });
-  heading.position.set(12, 10);
-  container.addChild(heading);
-
-  let y = HEADER_HEIGHT;
-  for (const field of node.data.primitiveFields) {
-    const value = truncate(String(field.value));
-    const text = new Text({
-      text: `${field.key}: ${value}`,
-      style: { fontFamily: 'monospace', fontSize: 12, fill: theme.text },
+  const localTop = bounds.top - node.position.y;
+  const localBottom = bounds.bottom - node.position.y;
+  if (localTop <= HEADER_HEIGHT && localBottom >= 0) {
+    const heading = new Text({
+      text: truncate(node.data.label, 34),
+      resolution: textResolution,
+      roundPixels: true,
+      style: { fontFamily: 'sans-serif', fontSize: 15, fill: theme.heading, fontWeight: '600' },
     });
-    text.position.set(12, y);
-    container.addChild(text);
-    y += LINE_HEIGHT;
+    heading.position.set(12, 10);
+    container.addChild(heading);
   }
 
-  for (const field of node.data.complexFields) {
-    const size = field.type === 'array' ? `[${field.size}]` : `{${field.size}}`;
-    const text = new Text({
-      text: `${field.key}: ${size}`,
-      style: { fontFamily: 'monospace', fontSize: 12, fill: theme.complexText },
-    });
-    text.position.set(12, y);
-    container.addChild(text);
-    const handleColor = field.type === 'array' ? theme.arrayHandle : theme.objectHandle;
-    const port = ports.get(getSourcePortId(node.id, field.key));
-    if (port != null) container.addChild(new Graphics().circle(port.position.x, port.position.y, 5).fill(handleColor));
-    y += LINE_HEIGHT;
+  const fieldCount = node.data.primitiveFields.length + node.data.complexFields.length;
+  const firstField = Math.max(0, Math.floor((localTop - HEADER_HEIGHT) / LINE_HEIGHT) - 1);
+  const lastField = Math.min(fieldCount - 1, Math.ceil((localBottom - HEADER_HEIGHT) / LINE_HEIGHT) + 1);
+  const firstPrimitive = Math.min(firstField, node.data.primitiveFields.length);
+  const lastPrimitive = Math.min(lastField, node.data.primitiveFields.length - 1);
+  for (let index = firstPrimitive; index <= lastPrimitive; index += 1) {
+    const field = node.data.primitiveFields[index];
+    if (field != null) {
+      const text = new Text({
+        text: truncate(`${singleLine(field.key)}: ${singleLine(field.value)}`, TEXT_MAX_LENGTH),
+        resolution: textResolution,
+        roundPixels: true,
+        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, fill: theme.text },
+      });
+      text.position.set(12, HEADER_HEIGHT + index * LINE_HEIGHT);
+      container.addChild(text);
+    }
+  }
+
+  const primitiveCount = node.data.primitiveFields.length;
+  const firstComplex = Math.max(0, firstField - primitiveCount);
+  const lastComplex = Math.min(node.data.complexFields.length - 1, lastField - primitiveCount);
+  for (let index = firstComplex; index <= lastComplex; index += 1) {
+    const field = node.data.complexFields[index];
+    if (field != null) {
+      const size = field.type === 'array' ? `[${field.size}]` : `{${field.size}}`;
+      const text = new Text({
+        text: truncate(`${singleLine(field.key)}: ${size}`, TEXT_MAX_LENGTH),
+        resolution: textResolution,
+        roundPixels: true,
+        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, fill: theme.complexText },
+      });
+      text.position.set(12, HEADER_HEIGHT + (primitiveCount + index) * LINE_HEIGHT);
+      container.addChild(text);
+      const handleColor = field.type === 'array' ? theme.arrayHandle : theme.objectHandle;
+      const port = ports.get(getSourcePortId(node.id, field.key));
+      if (port != null)
+        container.addChild(new Graphics().circle(port.position.x, port.position.y, 5).fill(handleColor));
+    }
   }
 
   // eslint-disable-next-line no-underscore-dangle
@@ -213,7 +265,7 @@ export const PixiGraphRenderer = () => {
     }
     setIsLayouting(true);
     setLayoutError(null);
-    const task = applyElkLayout(nodes, edges, direction === 'LR' ? 'LR' : 'TB');
+    const task = applyGraphLayout(nodes, edges, direction === 'LR' ? 'LR' : 'TB');
     task.promise
       .then((result) => {
         layoutRef.current = result;
@@ -240,7 +292,7 @@ export const PixiGraphRenderer = () => {
       await app.init({
         resizeTo: host,
         backgroundColor: themes[theme].background,
-        antialias: false,
+        antialias: true,
         resolution: Math.min(window.devicePixelRatio, 2),
         autoDensity: true,
       });
@@ -321,24 +373,22 @@ export const PixiGraphRenderer = () => {
       world.removeChildren().forEach((child) => child.destroy({ children: true }));
       if (currentLayout == null) return;
       const transform = transformRef.current;
+      const viewportBounds = getViewportBounds(transform, app.screen.width, app.screen.height);
+      const textResolution = Math.min(Math.max(app.renderer.resolution, app.renderer.resolution * transform.scale), 3);
       world.position.set(transform.x, transform.y);
       world.scale.set(transform.scale);
       const currentNodes = new Map(nodes.map((node) => [node.id, node]));
       const visibleNodes = currentLayout.nodes
-        .filter((node) => intersectsViewport(node, transform, app.screen.width, app.screen.height))
+        .filter((node) => intersectsViewport(node, viewportBounds))
         .map((node) => {
           const current = currentNodes.get(node.id);
           return current == null ? node : { ...node, data: current.data };
         });
-      const visibleIds = new Set(visibleNodes.map((node) => node.id));
       const edgeGraphics = new Graphics();
-      const graphEdges = new Map(edges.map((edge) => [edge.id, edge]));
       const layoutPorts = new Map(currentLayout.ports.map((port) => [port.id, port]));
       for (const edge of currentLayout.edges) {
-        const graphEdge = graphEdges.get(edge.id);
-        const isVisible = graphEdge != null && (visibleIds.has(graphEdge.source) || visibleIds.has(graphEdge.target));
-        if (isVisible) {
-          for (const section of edge.sections) {
+        for (const section of edge.sections) {
+          if (sectionIntersectsViewport(section, viewportBounds)) {
             const first = section[0];
             if (first != null) {
               edgeGraphics.moveTo(first.x, first.y);
@@ -350,7 +400,7 @@ export const PixiGraphRenderer = () => {
       edgeGraphics.stroke({ color: renderTheme.edge, width: 2 / transform.scale });
       world.addChild(edgeGraphics);
       for (const node of visibleNodes) {
-        world.addChild(drawNode(node, renderTheme, layoutPorts, selectNodeInEditor));
+        world.addChild(drawNode(node, renderTheme, layoutPorts, viewportBounds, textResolution, selectNodeInEditor));
       }
       app.render();
     };
