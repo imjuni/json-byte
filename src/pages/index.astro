@@ -1,0 +1,66 @@
+---
+import { AppWithIntl } from '#/AppWithIntl';
+
+import '#/index.css';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Visualize and explore JSON or YAML data as an interactive graph in your browser. Free, private, and developed by RovinjSoft."
+    />
+    <meta name="author" content="RovinjSoft" />
+    <meta property="og:title" content="JSON Byte - JSON/YAML Graph Visualizer" />
+    <meta
+      property="og:description"
+      content="Visualize JSON and YAML data as an interactive graph. Free, private, and browser-based."
+    />
+    <meta property="og:image" content="https://json-byte.pages.dev/json-byte-desktop-screenshot-001.png" />
+    <meta property="og:url" content="https://json-byte.pages.dev/" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@rovinjsoft" />
+    <link rel="icon" type="image/png" href="/json-byte-favicon.png" />
+    <link rel="canonical" href="https://json-byte.pages.dev/" />
+    <title>JSON Byte - JSON/YAML Visualizer & Graph Viewer</title>
+    <script type="application/ld+json" is:inline>
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "JSON Byte",
+        "url": "https://json-byte.pages.dev",
+        "image": "https://json-byte.pages.dev/json-byte-mobile-screenshot-001.png",
+        "author": {
+          "@type": "Organization",
+          "name": "RovinjSoft",
+          "url": "https://rovinjsoft.com"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "RovinjSoft",
+          "url": "https://rovinjsoft.com",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://rovinjsoft.com/icon_body.png"
+          }
+        },
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Web",
+        "description": "Visualize and explore JSON or YAML data as an interactive graph in your browser.",
+        "softwareVersion": "1.0.0",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "license": "https://www.apache.org/licenses/LICENSE-2.0"
+      }
+    </script>
+  </head>
+  <body>
+    <AppWithIntl client:only="react" />
+  </body>
+</html>

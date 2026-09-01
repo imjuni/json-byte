@@ -13,7 +13,8 @@
     overflow: hidden; /* 스크롤을 완전히 막으려면 */
   }
 
-  #root {
+  astro-island {
+    display: block;
     width: 100%;
     height: 100%;
   }
