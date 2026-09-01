@@ -7,6 +7,7 @@ import { debounceTime, tap } from 'rxjs/operators';
 import { ObjectNode } from '#/components/renderer/xyflow/ObjectNode';
 import { SearchPanel } from '#/components/renderer/xyflow/SearchPanel';
 import { findTextPositionByJsonPath } from '#/lib/editor/findTextPositionByJsonPath';
+import { applyNodeDimensionChanges } from '#/lib/graph/applyNodeDimensionChanges';
 import { CE_GRAPH_NODE_TYPE } from '#/lib/graph/const-enum/CE_GRAPH_NODE_TYPE';
 import { layoutNodes } from '#/lib/graph/layoutNodes';
 import { useEditorStore } from '#/stores/editorStore';
@@ -65,36 +66,11 @@ const FlowContent = () => {
 
   const handleNodesChange = useCallback(
     (changes: NodeChange<IGraphNode>[]) => {
-      // Handle node changes from React Flow
-      const dimensionChangeMap = changes.reduce<Record<string, NodeChange<IGraphNode>>>((aggregated, change) => {
-        if ('id' in change && change.type === 'dimensions') {
-          return { ...aggregated, [change.id]: change };
-        }
-        return aggregated;
-      }, {});
+      const hasDimensionChanges = changes.some((change) => change.type === 'dimensions' && change.dimensions != null);
 
-      const updatedTargetNodes = nodes.filter((node) => dimensionChangeMap[node.id] != null);
-      const updatedNodes = updatedTargetNodes
-        .map((node) => {
-          const change = dimensionChangeMap[node.id];
-
-          if (change.type === 'dimensions' && change.dimensions != null) {
-            return {
-              ...node,
-              measured: {
-                width: change.dimensions.width,
-                height: change.dimensions.height,
-              },
-            } as IGraphNode;
-          }
-
-          return undefined;
-        })
-        .filter((node): node is IGraphNode => node != null);
-
-      if (updatedNodes.length > 0) {
+      if (hasDimensionChanges) {
         // Reset relayout flag when dimensions change to trigger re-layout
-        setNodes(updatedNodes);
+        setNodes(applyNodeDimensionChanges(nodes, changes));
         hasRelayoutedRef.current = false;
       }
     },
