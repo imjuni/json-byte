@@ -138,12 +138,4 @@ const RawObjectNode = ({ data }: Omit<IGraphNode, 'position'>) => {
   );
 };
 
-// Return true if props are equal (should NOT re-render)
-// Return false if props are different (should re-render)
-
-// Only compare data.searched - ignore all other props
-// Re-render ONLY when data.searched changes
-export const ObjectNode = memo(
-  RawObjectNode,
-  (prevProps, nextProps) => prevProps.data.searched === nextProps.data.searched,
-);
+export const ObjectNode = memo(RawObjectNode);
