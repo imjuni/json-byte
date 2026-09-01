@@ -7,11 +7,18 @@ export interface ILayoutPoint {
 
 export interface ILayoutEdge {
   id: string;
-  points: ILayoutPoint[];
+  sections: ILayoutPoint[][];
+}
+
+export interface ILayoutPort {
+  id: string;
+  nodeId: string;
+  position: ILayoutPoint;
 }
 
 export interface IElkLayoutResult {
   nodes: IGraphNode[];
   edges: ILayoutEdge[];
+  ports: ILayoutPort[];
   bounds: { width: number; height: number };
 }

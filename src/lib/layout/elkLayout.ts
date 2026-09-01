@@ -7,7 +7,7 @@ import type { ElkExtendedEdge, ElkNode, ElkPort } from 'elkjs/lib/elk-api.js';
 
 import type { IGraphEdge } from '#/lib/graph/interfaces/IGraphEdge';
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
-import type { IElkLayoutResult, ILayoutEdge } from '#/lib/layout/interfaces/IElkLayoutResult';
+import type { IElkLayoutResult, ILayoutEdge, ILayoutPort } from '#/lib/layout/interfaces/IElkLayoutResult';
 
 export const NODE_WIDTH = 280;
 export const HEADER_HEIGHT = 40;
@@ -19,8 +19,21 @@ export const getNodeHeight = (node: IGraphNode): number => {
   return HEADER_HEIGHT + fieldCount * LINE_HEIGHT + NODE_PADDING;
 };
 
-const getSourcePortId = (nodeId: string, fieldKey: string): string => `${nodeId}-source-${fieldKey}`;
-const getTargetPortId = (nodeId: string): string => `${nodeId}-target`;
+export const getSourcePortId = (nodeId: string, fieldKey: string): string => `${nodeId}-source-${fieldKey}`;
+export const getTargetPortId = (nodeId: string): string => `${nodeId}-target`;
+
+const getPortAnchor = (port: ElkPort): { x: number; y: number } => {
+  const x = port.x ?? 0;
+  const y = port.y ?? 0;
+  const width = port.width ?? 0;
+  const height = port.height ?? 0;
+  const side = port.layoutOptions?.['elk.port.side'];
+
+  if (side === 'EAST') return { x: x + width, y: y + height / 2 };
+  if (side === 'WEST') return { x, y: y + height / 2 };
+  if (side === 'SOUTH') return { x: x + width / 2, y: y + height };
+  return { x: x + width / 2, y };
+};
 
 export function createElkGraph(nodes: IGraphNode[], edges: IGraphEdge[], direction: 'LR' | 'TB' = 'LR'): ElkNode {
   const nodeIds = new Set(nodes.map((node) => node.id));
@@ -31,8 +44,8 @@ export function createElkGraph(nodes: IGraphNode[], edges: IGraphEdge[], directi
       id: getSourcePortId(node.id, field.key),
       width: 8,
       height: 8,
-      x: direction === 'LR' ? NODE_WIDTH - 4 : ((index + 1) * NODE_WIDTH) / (sourceCount + 1) - 4,
-      y: direction === 'LR' ? HEADER_HEIGHT + (node.data.primitiveFields.length + index) * LINE_HEIGHT + 4 : height - 4,
+      x: direction === 'LR' ? NODE_WIDTH - 8 : ((index + 1) * NODE_WIDTH) / (sourceCount + 1) - 4,
+      y: direction === 'LR' ? HEADER_HEIGHT + (node.data.primitiveFields.length + index) * LINE_HEIGHT + 4 : height - 8,
       layoutOptions: {
         'elk.port.side': direction === 'LR' ? 'EAST' : 'SOUTH',
         'elk.port.index': String(index + 1),
@@ -42,8 +55,8 @@ export function createElkGraph(nodes: IGraphNode[], edges: IGraphEdge[], directi
       id: getTargetPortId(node.id),
       width: 8,
       height: 8,
-      x: direction === 'LR' ? -4 : NODE_WIDTH / 2 - 4,
-      y: direction === 'LR' ? 4 : -4,
+      x: direction === 'LR' ? 0 : NODE_WIDTH / 2 - 4,
+      y: direction === 'LR' ? 4 : 0,
       layoutOptions: {
         'elk.port.side': direction === 'LR' ? 'WEST' : 'NORTH',
         'elk.port.index': '0',
@@ -55,7 +68,7 @@ export function createElkGraph(nodes: IGraphNode[], edges: IGraphEdge[], directi
       width: NODE_WIDTH,
       height,
       ports: [targetPort, ...sourcePorts],
-      layoutOptions: { 'elk.portConstraints': 'FIXED_ORDER' },
+      layoutOptions: { 'elk.portConstraints': 'FIXED_POS' },
     };
   });
   const elkEdges = edges
@@ -73,9 +86,16 @@ export function createElkGraph(nodes: IGraphNode[], edges: IGraphEdge[], directi
       'elk.direction': direction === 'LR' ? 'RIGHT' : 'DOWN',
       'elk.edgeRouting': 'ORTHOGONAL',
       'elk.spacing.nodeNode': '80',
+      'elk.spacing.edgeNode': '24',
+      'elk.spacing.edgeEdge': '16',
+      'elk.spacing.portPort': '12',
       'elk.layered.spacing.nodeNodeBetweenLayers': '140',
+      'elk.layered.spacing.edgeNodeBetweenLayers': '32',
+      'elk.layered.spacing.edgeEdgeBetweenLayers': '16',
+      'elk.layered.layering.strategy': 'NETWORK_SIMPLEX',
       'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
       'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+      'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
       'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
       'elk.layered.mergeEdges': 'false',
     },
@@ -99,16 +119,20 @@ export function mapElkResult(nodes: IGraphNode[], graph: ElkNode): IElkLayoutRes
   });
   const layoutedEdges = (graph.edges ?? []).map<ILayoutEdge>((edge) => ({
     id: edge.id,
-    points: (edge.sections ?? []).flatMap((section) => [
+    sections: (edge.sections ?? []).map((section) => [
       section.startPoint,
       ...(section.bendPoints ?? []),
       section.endPoint,
     ]),
   }));
+  const layoutedPorts = (graph.children ?? []).flatMap<ILayoutPort>((node) =>
+    (node.ports ?? []).map((port) => ({ id: port.id, nodeId: node.id, position: getPortAnchor(port) })),
+  );
 
   return {
     nodes: layoutedNodes,
     edges: layoutedEdges,
+    ports: layoutedPorts,
     bounds: { width: graph.width ?? 0, height: graph.height ?? 0 },
   };
 }
