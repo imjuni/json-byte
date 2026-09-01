@@ -139,6 +139,20 @@ export function buildNodeByYaml({ document, origin, config }: IBuildNodeByYamlPa
 
       nodes.push(graphNode);
       nodeMap.set(path, graphNode);
+    } else if (parent == null) {
+      const graphNode = createGraphNode({
+        id: path,
+        label: task.key,
+        type: kind,
+        value: task.value,
+      });
+
+      graphNode.data.primitiveFields.push({
+        key: 'value',
+        value: task.value,
+        type: kind,
+      });
+      nodes.push(graphNode);
     }
 
     if (isMap(node)) {
