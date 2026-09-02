@@ -18,6 +18,13 @@
       "action-submit": "Submit",
       "action-close": "Close"
     },
+    "node-details-dialog": {
+      "title": "Node Details",
+      "content": "Source Data",
+      "json-path": "JSON Path",
+      "action-find-in-editor": "Find Node in Editor",
+      "action-close": "Close"
+    },
     "export-dialog": {
       "trigger": "Export",
       "title": "Export",
