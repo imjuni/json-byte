@@ -1,48 +1,37 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import { DiffEditor } from '@monaco-editor/react';
-import { ArrowLeftRight, Braces, RotateCcw } from 'lucide-react';
+import { DiffEditor, Editor } from '@monaco-editor/react';
+import { ArrowLeftRight, Braces, RotateCcw, Trash2 } from 'lucide-react';
 import { useIntl } from 'react-intl';
 
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert';
 import { Button } from '#/components/ui/button';
-import { safeJsoncParse } from '#/lib/json/safeJsoncParse';
+import { formatDiffDocument, parseDiffDocument } from '#/lib/diff/parseDiffDocument';
 import { useEditorStore } from '#/stores/editorStore';
 import { useThemeStore } from '#/stores/themeStore';
 
 import type { BeforeMount } from '@monaco-editor/react';
 
+import type { TEditorLanguage } from '#/contracts/editors/IEditorStore';
+
 const DEFAULT_LEFT = JSON.stringify(
-  {
-    name: 'JSON Byte',
-    version: 1,
-    features: ['visualization', 'search'],
-    active: true,
-  },
+  { name: 'JSON Byte', version: 1, features: ['visualization', 'search'], active: true },
   undefined,
   2,
 );
-
 const DEFAULT_RIGHT = JSON.stringify(
-  {
-    name: 'JSON Byte',
-    version: 2,
-    features: ['visualization', 'search', 'diff'],
-    active: true,
-  },
+  { name: 'JSON Byte', version: 2, features: ['visualization', 'search', 'diff'], active: true },
   undefined,
   2,
 );
 
-interface IValidationState {
-  left?: string;
-  right?: string;
+interface IDiffResult {
+  language: TEditorLanguage;
+  left: string;
+  right: string;
 }
 
-const formatJson = (content: string, indent: number): string | Error => {
-  const parsed = safeJsoncParse(content);
-  return parsed instanceof Error ? parsed : JSON.stringify(parsed, undefined, indent);
-};
+const inputLanguage = (language?: TEditorLanguage) => language ?? 'json';
 
 export const DiffWorkspace = () => {
   const intl = useIntl();
@@ -50,14 +39,14 @@ export const DiffWorkspace = () => {
   const indent = useEditorStore((state) => state.indent);
   const [left, setLeft] = useState(DEFAULT_LEFT);
   const [right, setRight] = useState(DEFAULT_RIGHT);
-  const [validation, setValidation] = useState<IValidationState>({});
+  const [result, setResult] = useState<IDiffResult>();
 
+  const leftDocument = useMemo(() => parseDiffDocument(left), [left]);
+  const rightDocument = useMemo(() => parseDiffDocument(right), [right]);
+  const languageMismatch =
+    leftDocument.error == null && rightDocument.error == null && leftDocument.language !== rightDocument.language;
+  const hasError = leftDocument.error != null || rightDocument.error != null || languageMismatch;
   const monacoTheme = appTheme === 'dark' ? 'json-byte-diff-dark' : 'json-byte-diff-light';
-  const hasError = validation.left != null || validation.right != null;
-  const status = useMemo(() => {
-    if (hasError) return intl.$t({ id: 'diff.status-invalid' });
-    return left === right ? intl.$t({ id: 'diff.status-identical' }) : intl.$t({ id: 'diff.status-different' });
-  }, [hasError, intl, left, right]);
 
   const defineThemes: BeforeMount = useCallback((monaco) => {
     monaco.editor.defineTheme('json-byte-diff-light', {
@@ -88,109 +77,226 @@ export const DiffWorkspace = () => {
     });
   }, []);
 
-  const validate = useCallback((side: 'left' | 'right', content: string) => {
-    const parsed = safeJsoncParse(content);
-    setValidation((current) => ({
-      ...current,
-      [side]: parsed instanceof Error ? parsed.message : undefined,
-    }));
-  }, []);
-
   const format = useCallback(
     (side: 'left' | 'right') => {
-      const content = side === 'left' ? left : right;
-      const formatted = formatJson(content, indent);
-      if (formatted instanceof Error) {
-        setValidation((current) => ({ ...current, [side]: formatted.message }));
-        return;
-      }
+      const formatted = formatDiffDocument(side === 'left' ? left : right, indent);
+      if (formatted instanceof Error) return;
       if (side === 'left') setLeft(formatted);
       else setRight(formatted);
-      setValidation((current) => ({ ...current, [side]: undefined }));
+      setResult(undefined);
     },
     [indent, left, right],
   );
 
+  const compare = useCallback(() => {
+    if (
+      leftDocument.error != null ||
+      rightDocument.error != null ||
+      leftDocument.language == null ||
+      rightDocument.language == null ||
+      leftDocument.language !== rightDocument.language
+    ) {
+      return;
+    }
+    const formattedLeft = formatDiffDocument(left, indent);
+    const formattedRight = formatDiffDocument(right, indent);
+    if (formattedLeft instanceof Error || formattedRight instanceof Error) return;
+    setResult({ language: leftDocument.language, left: formattedLeft, right: formattedRight });
+  }, [indent, left, leftDocument, right, rightDocument]);
+
   return (
-    <section aria-label={intl.$t({ id: 'diff.title' })} className="flex h-full w-full flex-col bg-background">
-      <header className="flex min-h-11 flex-wrap items-center gap-2 border-b bg-card px-4 py-1.5">
-        <div className="mr-auto flex items-center gap-2 text-sm">
-          <span className="font-semibold">{intl.$t({ id: 'diff.title' })}</span>
-          <span className={hasError ? 'text-destructive' : 'text-muted-foreground'}>{status}</span>
+    <section
+      aria-label={intl.$t({ id: 'diff.title' })}
+      className="h-full w-full overflow-y-auto bg-background px-4 py-3"
+    >
+      <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-4">
+        <header className="flex flex-wrap items-center gap-2">
+          <div className="mr-auto">
+            <h1 className="text-lg font-semibold">{intl.$t({ id: 'diff.title' })}</h1>
+            <p className="text-sm text-muted-foreground">{intl.$t({ id: 'diff.description' })}</p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setLeft(right);
+              setRight(left);
+              setResult(undefined);
+            }}
+          >
+            <ArrowLeftRight /> {intl.$t({ id: 'diff.swap' })}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setLeft('');
+              setRight('');
+              setResult(undefined);
+            }}
+          >
+            <Trash2 /> {intl.$t({ id: 'diff.clear' })}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setLeft(DEFAULT_LEFT);
+              setRight(DEFAULT_RIGHT);
+              setResult(undefined);
+            }}
+          >
+            <RotateCcw /> {intl.$t({ id: 'diff.reset' })}
+          </Button>
+        </header>
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {/* Input panels are declared below to keep the workspace flow readable. */}
+          {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}
+          <DiffInputPanel
+            error={leftDocument.error?.message}
+            label={intl.$t({ id: 'diff.left' })}
+            language={leftDocument.language}
+            modelPath="diff-input-left"
+            monacoTheme={monacoTheme}
+            onBeforeMount={defineThemes}
+            onFormat={() => format('left')}
+            value={left}
+            onChange={(value) => {
+              setLeft(value ?? '');
+              setResult(undefined);
+            }}
+          />
+          {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}
+          <DiffInputPanel
+            error={rightDocument.error?.message}
+            label={intl.$t({ id: 'diff.right' })}
+            language={rightDocument.language}
+            modelPath="diff-input-right"
+            monacoTheme={monacoTheme}
+            onBeforeMount={defineThemes}
+            onFormat={() => format('right')}
+            value={right}
+            onChange={(value) => {
+              setRight(value ?? '');
+              setResult(undefined);
+            }}
+          />
         </div>
-        <Button onClick={() => format('left')} size="sm" variant="outline">
-          <Braces /> {intl.$t({ id: 'diff.format-left' })}
-        </Button>
-        <Button onClick={() => format('right')} size="sm" variant="outline">
-          <Braces /> {intl.$t({ id: 'diff.format-right' })}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => {
-            setLeft(right);
-            setRight(left);
-            setValidation({});
-          }}
+
+        {hasError ? (
+          <Alert variant="destructive">
+            <AlertTitle>{intl.$t({ id: 'diff.invalid-title' })}</AlertTitle>
+            <AlertDescription>
+              {languageMismatch
+                ? intl.$t({ id: 'diff.language-mismatch' })
+                : (leftDocument.error?.message ?? rightDocument.error?.message)}
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
+        <div className="flex justify-center py-1">
+          <Button disabled={hasError} onClick={compare} size="lg">
+            {intl.$t(
+              { id: 'diff.compare' },
+              { format: (leftDocument.language ?? rightDocument.language ?? 'json').toUpperCase() },
+            )}
+          </Button>
+        </div>
+
+        {result != null ? (
+          <section aria-label={intl.$t({ id: 'diff.result' })} className="flex flex-col gap-2 pb-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">{intl.$t({ id: 'diff.result' })}</h2>
+              <span className="rounded-md border bg-muted px-2 py-1 text-xs font-medium uppercase">
+                {result.language}
+              </span>
+            </div>
+            <div className="h-[52vh] min-h-80 overflow-hidden rounded-lg border bg-card">
+              <DiffEditor
+                keepCurrentModifiedModel
+                keepCurrentOriginalModel
+                beforeMount={defineThemes}
+                height="100%"
+                language={result.language}
+                modified={result.right}
+                modifiedModelPath="diff-result-right"
+                original={result.left}
+                originalModelPath="diff-result-left"
+                theme={monacoTheme}
+                options={{
+                  automaticLayout: true,
+                  fontSize: 14,
+                  minimap: { enabled: false },
+                  originalEditable: false,
+                  readOnly: true,
+                  renderSideBySide: true,
+                  scrollBeyondLastLine: false,
+                  wordWrap: 'on',
+                }}
+              />
+            </div>
+          </section>
+        ) : null}
+      </div>
+    </section>
+  );
+};
+
+interface IDiffInputPanelProps {
+  error: string | undefined;
+  label: string;
+  language: TEditorLanguage | undefined;
+  modelPath: string;
+  monacoTheme: string;
+  onBeforeMount: BeforeMount;
+  onChange: (value?: string) => void;
+  onFormat: () => void;
+  value: string;
+}
+
+const DiffInputPanel = ({
+  error,
+  label,
+  language,
+  modelPath,
+  monacoTheme,
+  onBeforeMount,
+  onChange,
+  onFormat,
+  value,
+}: IDiffInputPanelProps) => {
+  const intl = useIntl();
+  return (
+    <section className="overflow-hidden rounded-lg border bg-card">
+      <header className="flex h-10 items-center gap-2 border-b px-3">
+        <h2 className="font-semibold">{label}</h2>
+        <span
+          className={
+            error == null
+              ? 'rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium uppercase text-muted-foreground'
+              : 'rounded bg-destructive/10 px-1.5 py-0.5 text-[11px] font-medium text-destructive'
+          }
         >
-          <ArrowLeftRight /> {intl.$t({ id: 'diff.swap' })}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => {
-            setLeft(DEFAULT_LEFT);
-            setRight(DEFAULT_RIGHT);
-            setValidation({});
-          }}
-        >
-          <RotateCcw /> {intl.$t({ id: 'diff.reset' })}
+          {error == null ? language : intl.$t({ id: 'diff.invalid' })}
+        </span>
+        <Button className="ml-auto" disabled={error != null} onClick={onFormat} size="sm" variant="ghost">
+          <Braces /> {intl.$t({ id: 'diff.format' })}
         </Button>
       </header>
-
-      {hasError ? (
-        <Alert className="m-3 w-auto" variant="destructive">
-          <AlertTitle>{intl.$t({ id: 'diff.invalid-title' })}</AlertTitle>
-          <AlertDescription>
-            {validation.left != null && `${intl.$t({ id: 'diff.left' })}: ${validation.left}`}
-            {validation.right != null && `${intl.$t({ id: 'diff.right' })}: ${validation.right}`}
-          </AlertDescription>
-        </Alert>
-      ) : null}
-
-      <div className="grid grid-cols-2 border-b bg-muted/40 px-4 py-1.5 text-xs font-medium text-muted-foreground">
-        <span>{intl.$t({ id: 'diff.left' })}</span>
-        <span className="pl-4">{intl.$t({ id: 'diff.right' })}</span>
-      </div>
-
-      <div className="min-h-0 flex-1">
-        <DiffEditor
-          beforeMount={defineThemes}
+      <div className="h-72">
+        <Editor
+          beforeMount={onBeforeMount}
           height="100%"
-          language="json"
-          modified={right}
-          original={left}
+          language={inputLanguage(language)}
+          onChange={onChange}
+          path={modelPath}
           theme={monacoTheme}
-          onMount={(editor) => {
-            const originalEditor = editor.getOriginalEditor();
-            const modifiedEditor = editor.getModifiedEditor();
-            originalEditor.onDidChangeModelContent(() => {
-              const value = originalEditor.getValue();
-              setLeft(value);
-              validate('left', value);
-            });
-            modifiedEditor.onDidChangeModelContent(() => {
-              const value = modifiedEditor.getValue();
-              setRight(value);
-              validate('right', value);
-            });
-          }}
+          value={value}
           options={{
             automaticLayout: true,
             fontSize: 14,
             minimap: { enabled: false },
-            originalEditable: true,
-            renderSideBySide: true,
             scrollBeyondLastLine: false,
             wordWrap: 'on',
           }}
