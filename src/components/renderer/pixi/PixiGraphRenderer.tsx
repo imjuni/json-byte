@@ -58,6 +58,7 @@ interface IRenderTheme {
   background: number;
   node: number;
   nodeBorder: number;
+  nodeSearched: number;
   heading: number;
   text: number;
   complexText: number;
@@ -75,6 +76,7 @@ const themes: Record<'light' | 'dark', IRenderTheme> = {
     background: 0xffffff,
     node: 0xffffff,
     nodeBorder: 0xd4d4d8,
+    nodeSearched: 0x3b82f6,
     heading: 0x18181b,
     text: 0x52525b,
     complexText: 0x2563eb,
@@ -90,6 +92,7 @@ const themes: Record<'light' | 'dark', IRenderTheme> = {
     background: 0x09090b,
     node: 0x18181b,
     nodeBorder: 0x3f3f46,
+    nodeSearched: 0x60a5fa,
     heading: 0xf4f4f5,
     text: 0xd4d4d8,
     complexText: 0x7dd3fc,
@@ -219,7 +222,7 @@ const drawNode = (
   const background = new Graphics()
     .roundRect(0, 0, NODE_WIDTH, height, 6)
     .fill(theme.node)
-    .stroke({ color: theme.nodeBorder, width: 2 });
+    .stroke({ color: searchMatch == null ? theme.nodeBorder : theme.nodeSearched, width: searchMatch == null ? 2 : 3 });
   container.addChild(background);
 
   const localTop = bounds.top - node.position.y;
