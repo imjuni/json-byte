@@ -5,16 +5,6 @@ import type { JsonValue } from 'type-fest';
 import type { TComplexTypeString } from '#/contracts/json/TComplexTypeString';
 import type { TPrimitiveTypeString } from '#/contracts/json/TPrimitiveTypeString';
 
-/**
- * Light mode / Dark mode colors:
- * string:  #1565C0 / #2196F3 - Cool blue for text
- * number:  #6A1B9A / #9C27B0 - Purple for numbers
- * boolean: #2E7D32 / #4CAF50 - Green for boolean
- * null:    #616161 / #9E9E9E - Gray for null
- * object:  #EF6C00 / #FF9800 - Orange for objects
- * array:   #C62828 / #F44336 - Red for arrays
- */
-
 const span = tv({
   variants: {
     color: {

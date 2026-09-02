@@ -4,7 +4,7 @@ import { Search, Trash2, X } from 'lucide-react';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { LegendPopover } from '#/components/renderer/xyflow/LegendPopover';
+import { LegendPopover } from '#/components/renderer/common/LegendPopover';
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
 import { useFuseStore } from '#/stores/fuseStore';
