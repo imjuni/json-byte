@@ -133,6 +133,7 @@ dist
 
 # dist directory
 dist/
+/json-byte.zip
 .DS_Store
 
 # lint logging
