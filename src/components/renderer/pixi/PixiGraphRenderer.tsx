@@ -50,6 +50,12 @@ interface IRenderTheme {
   text: number;
   complexText: number;
   edge: number;
+  string: number;
+  number: number;
+  boolean: number;
+  null: number;
+  object: number;
+  array: number;
   objectHandle: number;
   arrayHandle: number;
 }
@@ -64,6 +70,12 @@ const themes: Record<'light' | 'dark', IRenderTheme> = {
     text: 0x52525b,
     complexText: 0x2563eb,
     edge: 0x94a3b8,
+    string: 0x2196f3,
+    number: 0x9c27b0,
+    boolean: 0x4caf50,
+    null: 0x9e9e9e,
+    object: 0xff9800,
+    array: 0xf44336,
     objectHandle: 0x3b82f6,
     arrayHandle: 0xf59e0b,
   },
@@ -76,6 +88,12 @@ const themes: Record<'light' | 'dark', IRenderTheme> = {
     text: 0xd4d4d8,
     complexText: 0x7dd3fc,
     edge: 0x71717a,
+    string: 0x2196f3,
+    number: 0xb52dcc,
+    boolean: 0x4caf50,
+    null: 0x9e9e9e,
+    object: 0xff9800,
+    array: 0xf44336,
     objectHandle: 0x60a5fa,
     arrayHandle: 0xfbbf24,
   },
@@ -86,6 +104,8 @@ const truncate = (value: string, length = 32): string =>
 
 const singleLine = (value: unknown): string =>
   String(value).replaceAll('\r', '\\r').replaceAll('\n', '\\n').replaceAll('\t', '\\t');
+
+const getTypeColor = (theme: IRenderTheme, type: IGraphNode['data']['nodeType']): number => theme[type];
 
 const getViewportBounds = (
   transform: IViewportTransform,
@@ -122,6 +142,14 @@ const sectionIntersectsViewport = (section: { x: number; y: number }[], bounds: 
     }
   }
   return false;
+};
+
+const getSectionCenter = (section: { x: number; y: number }[]): { x: number; y: number } | undefined => {
+  const segmentIndex = Math.max(0, Math.floor((section.length - 1) / 2));
+  const start = section[segmentIndex];
+  const end = section[segmentIndex + 1];
+  if (start == null || end == null) return undefined;
+  return { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
 };
 
 const drawNode = (
@@ -167,17 +195,32 @@ const drawNode = (
   const lastField = Math.min(fieldCount - 1, Math.ceil((localBottom - HEADER_HEIGHT) / LINE_HEIGHT) + 1);
   const firstPrimitive = Math.min(firstField, node.data.primitiveFields.length);
   const lastPrimitive = Math.min(lastField, node.data.primitiveFields.length - 1);
+  const separators = new Graphics();
   for (let index = firstPrimitive; index <= lastPrimitive; index += 1) {
     const field = node.data.primitiveFields[index];
     if (field != null) {
-      const text = new Text({
-        text: truncate(`${singleLine(field.key)}: ${singleLine(field.value)}`, TEXT_MAX_LENGTH),
+      const rowY = HEADER_HEIGHT + index * LINE_HEIGHT;
+      const key = truncate(`${singleLine(field.key)}:`, 16);
+      const value = truncate(singleLine(field.value), Math.max(1, TEXT_MAX_LENGTH - key.length - 1));
+      const color = getTypeColor(theme, field.type);
+      container.addChild(new Graphics().circle(15, rowY + 7, 3).fill(color));
+      const keyText = new Text({
+        text: key,
         resolution: textResolution,
         roundPixels: true,
         style: { fontFamily: MONOSPACE_FONT, fontSize: 12, fill: theme.text },
       });
-      text.position.set(12, HEADER_HEIGHT + index * LINE_HEIGHT);
-      container.addChild(text);
+      keyText.position.set(24, rowY);
+      container.addChild(keyText);
+      const valueText = new Text({
+        text: value,
+        resolution: textResolution,
+        roundPixels: true,
+        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, fill: color },
+      });
+      valueText.position.set(28 + keyText.width, rowY);
+      container.addChild(valueText);
+      separators.moveTo(0, rowY + LINE_HEIGHT).lineTo(NODE_WIDTH, rowY + LINE_HEIGHT);
     }
   }
 
@@ -188,20 +231,35 @@ const drawNode = (
     const field = node.data.complexFields[index];
     if (field != null) {
       const size = field.type === 'array' ? `[${field.size}]` : `{${field.size}}`;
-      const text = new Text({
-        text: truncate(`${singleLine(field.key)}: ${size}`, TEXT_MAX_LENGTH),
+      const rowY = HEADER_HEIGHT + (primitiveCount + index) * LINE_HEIGHT;
+      const key = truncate(`${singleLine(field.key)}:`, 16);
+      const color = getTypeColor(theme, field.type);
+      container.addChild(new Graphics().circle(15, rowY + 7, 3).fill(color));
+      const keyText = new Text({
+        text: key,
         resolution: textResolution,
         roundPixels: true,
-        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, fill: theme.complexText },
+        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, fill: theme.text },
       });
-      text.position.set(12, HEADER_HEIGHT + (primitiveCount + index) * LINE_HEIGHT);
-      container.addChild(text);
+      keyText.position.set(24, rowY);
+      container.addChild(keyText);
+      const valueText = new Text({
+        text: size,
+        resolution: textResolution,
+        roundPixels: true,
+        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, fill: color },
+      });
+      valueText.position.set(28 + keyText.width, rowY);
+      container.addChild(valueText);
       const handleColor = field.type === 'array' ? theme.arrayHandle : theme.objectHandle;
       const port = ports.get(getSourcePortId(node.id, field.key));
       if (port != null)
         container.addChild(new Graphics().circle(port.position.x, port.position.y, 5).fill(handleColor));
+      separators.moveTo(0, rowY + LINE_HEIGHT).lineTo(NODE_WIDTH, rowY + LINE_HEIGHT);
     }
   }
+  separators.stroke({ color: theme.nodeBorder, width: 1 });
+  container.addChild(separators);
 
   // eslint-disable-next-line no-underscore-dangle
   if (node.data._parent != null) {
@@ -265,15 +323,24 @@ export const PixiGraphRenderer = () => {
     }
     setIsLayouting(true);
     setLayoutError(null);
+    let active = true;
     const task = applyGraphLayout(nodes, edges, direction === 'LR' ? 'LR' : 'TB');
     task.promise
       .then((result) => {
+        if (!active) return;
         layoutRef.current = result;
         setLayout(result);
       })
-      .catch((error: unknown) => setLayoutError(error instanceof Error ? error.message : String(error)))
-      .finally(() => setIsLayouting(false));
-    return () => task.cancel();
+      .catch((error: unknown) => {
+        if (active) setLayoutError(error instanceof Error ? error.message : String(error));
+      })
+      .finally(() => {
+        if (active) setIsLayouting(false);
+      });
+    return () => {
+      active = false;
+      task.cancel();
+    };
     // Search highlighting replaces node objects but does not change layout input.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [direction, edges, nodes.length, nodes[0]?.data.stringify]);
@@ -385,8 +452,11 @@ export const PixiGraphRenderer = () => {
           return current == null ? node : { ...node, data: current.data };
         });
       const edgeGraphics = new Graphics();
+      const edgeLabels = new Container();
+      const graphEdges = new Map(edges.map((edge) => [edge.id, edge]));
       const layoutPorts = new Map(currentLayout.ports.map((port) => [port.id, port]));
       for (const edge of currentLayout.edges) {
+        let labelDrawn = false;
         for (const section of edge.sections) {
           if (sectionIntersectsViewport(section, viewportBounds)) {
             const first = section[0];
@@ -394,11 +464,31 @@ export const PixiGraphRenderer = () => {
               edgeGraphics.moveTo(first.x, first.y);
               for (const point of section.slice(1)) edgeGraphics.lineTo(point.x, point.y);
             }
+            const graphEdge = graphEdges.get(edge.id);
+            const center = getSectionCenter(section);
+            if (!labelDrawn && graphEdge != null && center != null) {
+              const label = new Text({
+                text: truncate(singleLine(graphEdge.label), 24),
+                resolution: textResolution,
+                roundPixels: true,
+                style: {
+                  fontFamily: 'sans-serif',
+                  fontSize: 12,
+                  fill: renderTheme.heading,
+                  stroke: { color: renderTheme.background, width: 5 },
+                },
+              });
+              label.anchor.set(0.5);
+              label.position.set(center.x, center.y);
+              edgeLabels.addChild(label);
+              labelDrawn = true;
+            }
           }
         }
       }
       edgeGraphics.stroke({ color: renderTheme.edge, width: 2 / transform.scale });
       world.addChild(edgeGraphics);
+      world.addChild(edgeLabels);
       for (const node of visibleNodes) {
         world.addChild(drawNode(node, renderTheme, layoutPorts, viewportBounds, textResolution, selectNodeInEditor));
       }
