@@ -86,6 +86,9 @@ importers:
       fuse.js:
         specifier: ^7.1.0
         version: 7.1.0
+      json-edit-react:
+        specifier: ^1.30.2
+        version: 1.30.2(react@19.2.0)
       jsonc-parser:
         specifier: ^3.3.1
         version: 3.3.1
@@ -3764,6 +3767,11 @@ packages:
 
   json-buffer@3.0.1:
     resolution: {integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==}
+
+  json-edit-react@1.30.2:
+    resolution: {integrity: sha512-uUIDqCxTvOXoIgxJXLscInTL09M+W7RPl/vJQIXlrgImcK8umQ8MdGFCCExCyPRNoRhAAXQJ0//QnDftM8UdSQ==}
+    peerDependencies:
+      react: '>=16.0.0'
 
   json-schema-traverse@0.4.1:
     resolution: {integrity: sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg==}
@@ -9087,6 +9095,10 @@ snapshots:
   jsesc@3.1.0: {}
 
   json-buffer@3.0.1: {}
+
+  json-edit-react@1.30.2(react@19.2.0):
+    dependencies:
+      react: 19.2.0
 
   json-schema-traverse@0.4.1: {}
 

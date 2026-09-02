@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Application, CanvasTextMetrics, Container, Graphics, Text, TextStyle } from 'pixi.js';
 
+import { PixiNodeDetailsDialog } from '#/components/renderer/pixi/PixiNodeDetailsDialog';
 import { PixiSearchPanel } from '#/components/renderer/pixi/PixiSearchPanel';
 import { Button } from '#/components/ui/button';
 import {
@@ -322,22 +323,30 @@ export const PixiGraphRenderer = () => {
   const [layout, setLayout] = useState<IElkLayoutResult | null>(null);
   const [isLayouting, setIsLayouting] = useState(false);
   const [layoutError, setLayoutError] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<IGraphNode | null>(null);
   const { nodes, edges, direction, locMap, setDirection } = useGraphStore();
   const { editorInstance } = useEditorStore();
   const { theme } = useThemeStore();
 
-  const selectNodeInEditor = useCallback(
+  const findNodeInEditor = useCallback(
     (node: IGraphNode) => {
       const entry = locMap[node.id];
-      if (editorInstance == null || entry == null) return;
-      editorInstance.setSelection({
-        startLineNumber: entry.loc.start.line,
-        startColumn: entry.loc.start.column,
-        endLineNumber: entry.loc.end.line,
-        endColumn: entry.loc.end.column,
-      });
-      editorInstance.revealLineInCenter(entry.loc.start.line);
-      editorInstance.focus();
+      if (editorInstance == null) return;
+      const selection =
+        node.id === '$' || entry == null
+          ? { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 }
+          : {
+              startLineNumber: entry.loc.start.line,
+              startColumn: entry.loc.start.column,
+              endLineNumber: entry.loc.end.line,
+              endColumn: entry.loc.end.column,
+            };
+      setSelectedNode(null);
+      setTimeout(() => {
+        editorInstance.setSelection(selection);
+        editorInstance.revealLineInCenter(selection.startLineNumber);
+        editorInstance.focus();
+      }, 100);
     },
     [editorInstance, locMap],
   );
@@ -531,12 +540,12 @@ export const PixiGraphRenderer = () => {
       world.addChild(edgeGraphics);
       world.addChild(edgeLabels);
       for (const node of visibleNodes) {
-        world.addChild(drawNode(node, renderTheme, layoutPorts, viewportBounds, textResolution, selectNodeInEditor));
+        world.addChild(drawNode(node, renderTheme, layoutPorts, viewportBounds, textResolution, setSelectedNode));
       }
       app.render();
     };
     renderRef.current();
-  }, [direction, edges, layout, nodes, selectNodeInEditor, theme]);
+  }, [direction, edges, layout, nodes, theme]);
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-background">
@@ -559,6 +568,11 @@ export const PixiGraphRenderer = () => {
           ELK layout failed: {layoutError}
         </div>
       )}
+      <PixiNodeDetailsDialog
+        node={selectedNode}
+        onClose={() => setSelectedNode(null)}
+        onFindInEditor={findNodeInEditor}
+      />
     </div>
   );
 };
