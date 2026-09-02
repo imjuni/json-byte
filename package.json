@@ -9,9 +9,11 @@
     "node": ">=22.12.0"
   },
   "scripts": {
+    "clean": "rimraf dist",
     "dev": "NODE_OPTIONS='--max-http-header-size=8192' astro dev",
     "build": "astro check && astro build",
-    "artifact": "pnpm build && tsx scripts/artifact.ts",
+    "preartifact": "pnpm run clean && pnpm run build",
+    "artifact": "tsx scripts/artifact.ts",
     "lint": "eslint .",
     "preview": "astro preview",
     "test": "vitest run"
@@ -89,6 +91,7 @@
     "globals": "^16.4.0",
     "pathe": "^2.0.3",
     "prettier": "^3.6.2",
+    "rimraf": "^6.1.3",
     "tsx": "^4.23.13",
     "tw-animate-css": "^1.4.0",
     "typescript": "~5.9.3",
