@@ -14,7 +14,6 @@ const createNode = (id: string, label: string): IGraphNode => ({
   position: { x: 0, y: 0 },
   data: {
     label,
-    searched: false,
     stringify: '{}',
     origin: {},
     nodeType: 'object',

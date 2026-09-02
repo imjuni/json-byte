@@ -8,33 +8,11 @@ export const useGraphStore = create<TGraphStore>((set) => ({
   edges: [],
   locMap: {},
   direction: 'LR',
+  searchMatches: {},
 
   // Actions
-  setSearcheds: (ids) =>
-    set((state) => {
-      const { nodes } = state;
-
-      if (ids.length <= 0) {
-        const nexts = nodes.map((node) => {
-          const next = { ...node, data: { ...node.data } };
-          next.data.searched = false;
-          return next;
-        });
-
-        return { nodes: nexts };
-      }
-
-      const searchedIds = new Set(ids);
-
-      const nexts = nodes.map((node) => {
-        const next = { ...node, data: { ...node.data } };
-        next.data.searched = searchedIds.has(node.id);
-        return next;
-      });
-
-      return { nodes: nexts };
-    }),
+  setSearchMatches: (searchMatches) => set({ searchMatches }),
   setNodesAndEdgesAndLocMap: (nodes, edges, locMap) => set({ nodes, edges, locMap }),
   setDirection: (direction) => set({ direction }),
-  reset: () => set({ nodes: [], edges: [], direction: 'LR' }),
+  reset: () => set({ nodes: [], edges: [], direction: 'LR', searchMatches: {} }),
 }));

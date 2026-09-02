@@ -1,3 +1,4 @@
+import type { IGraphSearchMatch } from '#/contracts/graph/IGraphSearchMatch';
 import type { TGraphDirection } from '#/contracts/graph/TGraphDirection';
 import type { IGraphEdge } from '#/lib/graph/interfaces/IGraphEdge';
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
@@ -9,11 +10,12 @@ export interface IGraphStoreState {
   edges: IGraphEdge[];
   locMap: IPathLoCIndexMap;
   direction: TGraphDirection;
+  searchMatches: Record<string, IGraphSearchMatch>;
 }
 
 export interface IGraphStoreAction {
   // Actions
-  setSearcheds: (ids: string[]) => void;
+  setSearchMatches: (matches: Record<string, IGraphSearchMatch>) => void;
   setNodesAndEdgesAndLocMap: (nodes: IGraphNode[], edges: IGraphEdge[], locMap: IPathLoCIndexMap) => void;
   setDirection: (direction: TGraphDirection) => void;
   reset: () => void;

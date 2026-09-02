@@ -6,7 +6,15 @@ import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 
 export const createFuse = (nodes: IGraphNode[]): Fuse<IGraphNode> =>
   new Fuse(nodes, {
-    keys: ['id', 'data.label', 'data.primitiveFields.key', 'data.primitiveFields.value'],
+    includeMatches: true,
+    keys: [
+      'id',
+      'data.label',
+      'data.primitiveFields.key',
+      'data.primitiveFields.value',
+      'data.complexFields.key',
+      'data.complexFields.size',
+    ],
     threshold: 0,
   });
 

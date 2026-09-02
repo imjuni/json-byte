@@ -20,6 +20,7 @@ import { useThemeStore } from '#/stores/themeStore';
 
 import type { FederatedPointerEvent } from 'pixi.js';
 
+import type { IGraphSearchMatch } from '#/contracts/graph/IGraphSearchMatch';
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 import type { IElkLayoutResult, ILayoutPort } from '#/lib/layout/interfaces/IElkLayoutResult';
 
@@ -57,7 +58,6 @@ interface IRenderTheme {
   background: number;
   node: number;
   nodeBorder: number;
-  nodeSearched: number;
   heading: number;
   text: number;
   complexText: number;
@@ -75,7 +75,6 @@ const themes: Record<'light' | 'dark', IRenderTheme> = {
     background: 0xffffff,
     node: 0xffffff,
     nodeBorder: 0xd4d4d8,
-    nodeSearched: 0x3b82f6,
     heading: 0x18181b,
     text: 0x52525b,
     complexText: 0x2563eb,
@@ -91,7 +90,6 @@ const themes: Record<'light' | 'dark', IRenderTheme> = {
     background: 0x09090b,
     node: 0x18181b,
     nodeBorder: 0x3f3f46,
-    nodeSearched: 0x60a5fa,
     heading: 0xf4f4f5,
     text: 0xd4d4d8,
     complexText: 0x7dd3fc,
@@ -112,6 +110,14 @@ const singleLine = (value: unknown): string =>
   String(value).replaceAll('\r', '\\r').replaceAll('\n', '\\n').replaceAll('\t', '\\t');
 
 const getTypeColor = (theme: IRenderTheme, type: IGraphNode['data']['nodeType']): number => theme[type];
+
+export const darkenColor = (color: number, amount = 0.1): number => {
+  const factor = 1 - amount;
+  const red = Math.round(Math.floor(color / 65_536) * factor);
+  const green = Math.round((Math.floor(color / 256) % 256) * factor);
+  const blue = Math.round((color % 256) * factor);
+  return red * 65_536 + green * 256 + blue;
+};
 
 const measureFieldText = (value: string): number => CanvasTextMetrics.measureText(value, FIELD_TEXT_STYLE).width;
 
@@ -197,6 +203,7 @@ const drawNode = (
   bounds: IViewportBounds,
   textResolution: number,
   onClick: (node: IGraphNode) => void,
+  searchMatch?: IGraphSearchMatch,
 ): Container => {
   const container = new Container();
   const height = node.height ?? getNodeHeight(node);
@@ -212,7 +219,7 @@ const drawNode = (
   const background = new Graphics()
     .roundRect(0, 0, NODE_WIDTH, height, 6)
     .fill(theme.node)
-    .stroke({ color: node.data.searched ? theme.nodeSearched : theme.nodeBorder, width: node.data.searched ? 3 : 2 });
+    .stroke({ color: theme.nodeBorder, width: 2 });
   container.addChild(background);
 
   const localTop = bounds.top - node.position.y;
@@ -226,8 +233,8 @@ const drawNode = (
         fontFamily: 'sans-serif',
         fontSize: 15,
         lineHeight: HEADING_LINE_HEIGHT,
-        fill: theme.heading,
-        fontWeight: '600',
+        fill: searchMatch?.heading ? darkenColor(theme.heading) : theme.heading,
+        fontWeight: searchMatch?.heading ? '700' : '600',
       },
     });
     heading.position.set(12, 10);
@@ -246,12 +253,19 @@ const drawNode = (
       const rowY = HEADER_HEIGHT + index * LINE_HEIGHT;
       const fieldText = getFieldTextLayout(field.key, field.value);
       const color = getTypeColor(theme, field.type);
+      const fieldMatch = searchMatch?.primitiveFields[index];
       container.addChild(new Graphics().circle(15, rowY + LINE_HEIGHT / 2, 3).fill(color));
       const keyText = new Text({
         text: fieldText.key,
         resolution: textResolution,
         roundPixels: true,
-        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, lineHeight: TEXT_LINE_HEIGHT, fill: theme.text },
+        style: {
+          fontFamily: MONOSPACE_FONT,
+          fontSize: 12,
+          lineHeight: TEXT_LINE_HEIGHT,
+          fill: fieldMatch?.key ? darkenColor(theme.text) : theme.text,
+          fontWeight: fieldMatch?.key ? '700' : '400',
+        },
       });
       keyText.position.set(FIELD_TEXT_X, rowY + TEXT_ROW_OFFSET);
       container.addChild(keyText);
@@ -259,7 +273,13 @@ const drawNode = (
         text: fieldText.value,
         resolution: textResolution,
         roundPixels: true,
-        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, lineHeight: TEXT_LINE_HEIGHT, fill: color },
+        style: {
+          fontFamily: MONOSPACE_FONT,
+          fontSize: 12,
+          lineHeight: TEXT_LINE_HEIGHT,
+          fill: fieldMatch?.value ? darkenColor(color) : color,
+          fontWeight: fieldMatch?.value ? '700' : '400',
+        },
       });
       valueText.position.set(FIELD_TEXT_X + fieldText.keyWidth + FIELD_TEXT_GAP, rowY + TEXT_ROW_OFFSET);
       container.addChild(valueText);
@@ -277,12 +297,19 @@ const drawNode = (
       const rowY = HEADER_HEIGHT + (primitiveCount + index) * LINE_HEIGHT;
       const fieldText = getFieldTextLayout(field.key, size);
       const color = getTypeColor(theme, field.type);
+      const fieldMatch = searchMatch?.complexFields[index];
       container.addChild(new Graphics().circle(15, rowY + LINE_HEIGHT / 2, 3).fill(color));
       const keyText = new Text({
         text: fieldText.key,
         resolution: textResolution,
         roundPixels: true,
-        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, lineHeight: TEXT_LINE_HEIGHT, fill: theme.text },
+        style: {
+          fontFamily: MONOSPACE_FONT,
+          fontSize: 12,
+          lineHeight: TEXT_LINE_HEIGHT,
+          fill: fieldMatch?.key ? darkenColor(theme.text) : theme.text,
+          fontWeight: fieldMatch?.key ? '700' : '400',
+        },
       });
       keyText.position.set(FIELD_TEXT_X, rowY + TEXT_ROW_OFFSET);
       container.addChild(keyText);
@@ -290,7 +317,13 @@ const drawNode = (
         text: fieldText.value,
         resolution: textResolution,
         roundPixels: true,
-        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, lineHeight: TEXT_LINE_HEIGHT, fill: color },
+        style: {
+          fontFamily: MONOSPACE_FONT,
+          fontSize: 12,
+          lineHeight: TEXT_LINE_HEIGHT,
+          fill: fieldMatch?.value ? darkenColor(color) : color,
+          fontWeight: fieldMatch?.value ? '700' : '400',
+        },
       });
       valueText.position.set(FIELD_TEXT_X + fieldText.keyWidth + FIELD_TEXT_GAP, rowY + TEXT_ROW_OFFSET);
       container.addChild(valueText);
@@ -324,7 +357,7 @@ export const PixiGraphRenderer = () => {
   const [isLayouting, setIsLayouting] = useState(false);
   const [layoutError, setLayoutError] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<IGraphNode | null>(null);
-  const { nodes, edges, direction, locMap, setDirection } = useGraphStore();
+  const { nodes, edges, direction, locMap, searchMatches, setDirection } = useGraphStore();
   const { editorInstance } = useEditorStore();
   const { theme } = useThemeStore();
 
@@ -540,12 +573,22 @@ export const PixiGraphRenderer = () => {
       world.addChild(edgeGraphics);
       world.addChild(edgeLabels);
       for (const node of visibleNodes) {
-        world.addChild(drawNode(node, renderTheme, layoutPorts, viewportBounds, textResolution, setSelectedNode));
+        world.addChild(
+          drawNode(
+            node,
+            renderTheme,
+            layoutPorts,
+            viewportBounds,
+            textResolution,
+            setSelectedNode,
+            searchMatches[node.id],
+          ),
+        );
       }
       app.render();
     };
     renderRef.current();
-  }, [direction, edges, layout, nodes, theme]);
+  }, [direction, edges, layout, nodes, searchMatches, theme]);
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-background">

@@ -29,7 +29,6 @@ export function createGraphNode({ id, label, type, value }: ICreateNodeParams): 
       origin: value,
       stringify: getPrimitiveValueStringify(value),
       nodeType: type,
-      searched: false,
       primitiveFields: [],
       complexFields: [],
       _children: [],
