@@ -10,6 +10,9 @@ export const NODE_WIDTH = 280;
 export const HEADER_HEIGHT = 40;
 export const LINE_HEIGHT = 30;
 export const NODE_PADDING = 10;
+export const EDGE_LANE_SEPARATION_NODE_CAP = 1_000;
+
+export const shouldSeparateEdgeLanes = (nodeCount: number): boolean => nodeCount <= EDGE_LANE_SEPARATION_NODE_CAP;
 
 export const getNodeHeight = (node: IGraphNode): number => {
   const fieldCount = node.data.primitiveFields.length + node.data.complexFields.length;
@@ -152,7 +155,9 @@ export function mapElkResult(nodes: IGraphNode[], graph: ElkNode): IElkLayoutRes
 
   return {
     nodes: layoutedNodes,
-    edges: separateOverlappingEdgeSegments(layoutedEdges),
+    edges: shouldSeparateEdgeLanes(layoutedNodes.length)
+      ? separateOverlappingEdgeSegments(layoutedEdges)
+      : layoutedEdges,
     ports: layoutedPorts,
     bounds: { width: graph.width ?? 0, height: graph.height ?? 0 },
   };
