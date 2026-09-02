@@ -29,6 +29,7 @@ const TEXT_MAX_LENGTH = 36;
 const MONOSPACE_FONT = 'SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace';
 const TEXT_LINE_HEIGHT = 18;
 const HEADING_LINE_HEIGHT = 22.5;
+const TEXT_ROW_OFFSET = (LINE_HEIGHT - TEXT_LINE_HEIGHT) / 2;
 
 interface IViewportTransform {
   x: number;
@@ -211,14 +212,14 @@ const drawNode = (
       const key = truncate(`${singleLine(field.key)}:`, 16);
       const value = truncate(singleLine(field.value), Math.max(1, TEXT_MAX_LENGTH - key.length - 1));
       const color = getTypeColor(theme, field.type);
-      container.addChild(new Graphics().circle(15, rowY + 7, 3).fill(color));
+      container.addChild(new Graphics().circle(15, rowY + LINE_HEIGHT / 2, 3).fill(color));
       const keyText = new Text({
         text: key,
         resolution: textResolution,
         roundPixels: true,
         style: { fontFamily: MONOSPACE_FONT, fontSize: 12, lineHeight: TEXT_LINE_HEIGHT, fill: theme.text },
       });
-      keyText.position.set(24, rowY);
+      keyText.position.set(24, rowY + TEXT_ROW_OFFSET);
       container.addChild(keyText);
       const valueText = new Text({
         text: value,
@@ -226,7 +227,7 @@ const drawNode = (
         roundPixels: true,
         style: { fontFamily: MONOSPACE_FONT, fontSize: 12, lineHeight: TEXT_LINE_HEIGHT, fill: color },
       });
-      valueText.position.set(28 + keyText.width, rowY);
+      valueText.position.set(28 + keyText.width, rowY + TEXT_ROW_OFFSET);
       container.addChild(valueText);
       separators.moveTo(0, rowY + LINE_HEIGHT).lineTo(NODE_WIDTH, rowY + LINE_HEIGHT);
     }
@@ -242,14 +243,14 @@ const drawNode = (
       const rowY = HEADER_HEIGHT + (primitiveCount + index) * LINE_HEIGHT;
       const key = truncate(`${singleLine(field.key)}:`, 16);
       const color = getTypeColor(theme, field.type);
-      container.addChild(new Graphics().circle(15, rowY + 7, 3).fill(color));
+      container.addChild(new Graphics().circle(15, rowY + LINE_HEIGHT / 2, 3).fill(color));
       const keyText = new Text({
         text: key,
         resolution: textResolution,
         roundPixels: true,
         style: { fontFamily: MONOSPACE_FONT, fontSize: 12, lineHeight: TEXT_LINE_HEIGHT, fill: theme.text },
       });
-      keyText.position.set(24, rowY);
+      keyText.position.set(24, rowY + TEXT_ROW_OFFSET);
       container.addChild(keyText);
       const valueText = new Text({
         text: size,
@@ -257,7 +258,7 @@ const drawNode = (
         roundPixels: true,
         style: { fontFamily: MONOSPACE_FONT, fontSize: 12, lineHeight: TEXT_LINE_HEIGHT, fill: color },
       });
-      valueText.position.set(28 + keyText.width, rowY);
+      valueText.position.set(28 + keyText.width, rowY + TEXT_ROW_OFFSET);
       container.addChild(valueText);
       const handleColor = field.type === 'array' ? theme.arrayHandle : theme.objectHandle;
       const port = ports.get(getSourcePortId(node.id, field.key));
