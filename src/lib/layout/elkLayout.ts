@@ -6,7 +6,7 @@ import type { IElkLayoutResult, ILayoutEdge, ILayoutPort } from '#/lib/layout/in
 
 export const NODE_WIDTH = 280;
 export const HEADER_HEIGHT = 40;
-export const LINE_HEIGHT = 20;
+export const LINE_HEIGHT = 30;
 export const NODE_PADDING = 10;
 
 export const getNodeHeight = (node: IGraphNode): number => {
@@ -40,7 +40,10 @@ export function createElkGraph(nodes: IGraphNode[], edges: IGraphEdge[], directi
       width: 8,
       height: 8,
       x: direction === 'LR' ? NODE_WIDTH - 8 : ((index + 1) * NODE_WIDTH) / (sourceCount + 1) - 4,
-      y: direction === 'LR' ? HEADER_HEIGHT + (node.data.primitiveFields.length + index) * LINE_HEIGHT + 4 : height - 8,
+      y:
+        direction === 'LR'
+          ? HEADER_HEIGHT + (node.data.primitiveFields.length + index + 0.5) * LINE_HEIGHT - 4
+          : height - 8,
       layoutOptions: {
         'elk.port.side': direction === 'LR' ? 'EAST' : 'SOUTH',
         'elk.port.index': String(index + 1),
