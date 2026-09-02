@@ -69,6 +69,7 @@ interface IRenderTheme {
   null: number;
   object: number;
   array: number;
+  searchTextAdjustment: 'darken' | 'lighten';
 }
 
 const themes: Record<'light' | 'dark', IRenderTheme> = {
@@ -87,6 +88,7 @@ const themes: Record<'light' | 'dark', IRenderTheme> = {
     null: 0x9e9e9e,
     object: 0xff9800,
     array: 0xf44336,
+    searchTextAdjustment: 'darken',
   },
   dark: {
     background: 0x09090b,
@@ -103,6 +105,7 @@ const themes: Record<'light' | 'dark', IRenderTheme> = {
     null: 0x9e9e9e,
     object: 0xff9800,
     array: 0xf44336,
+    searchTextAdjustment: 'lighten',
   },
 };
 
@@ -114,11 +117,13 @@ const singleLine = (value: unknown): string =>
 
 const getTypeColor = (theme: IRenderTheme, type: IGraphNode['data']['nodeType']): number => theme[type];
 
-export const darkenColor = (color: number, amount = 0.1): number => {
-  const factor = 1 - amount;
-  const red = Math.round(Math.floor(color / 65_536) * factor);
-  const green = Math.round((Math.floor(color / 256) % 256) * factor);
-  const blue = Math.round((color % 256) * factor);
+export const adjustSearchColor = (color: number, adjustment: IRenderTheme['searchTextAdjustment']): number => {
+  const amount = 0.2;
+  const adjustChannel = (channel: number) =>
+    adjustment === 'darken' ? channel * (1 - amount) : channel + (255 - channel) * amount;
+  const red = Math.round(adjustChannel(Math.floor(color / 65_536)));
+  const green = Math.round(adjustChannel(Math.floor(color / 256) % 256));
+  const blue = Math.round(adjustChannel(color % 256));
   return red * 65_536 + green * 256 + blue;
 };
 
@@ -236,7 +241,7 @@ const drawNode = (
         fontFamily: 'sans-serif',
         fontSize: 15,
         lineHeight: HEADING_LINE_HEIGHT,
-        fill: searchMatch?.heading ? darkenColor(theme.heading) : theme.heading,
+        fill: searchMatch?.heading ? adjustSearchColor(theme.heading, theme.searchTextAdjustment) : theme.heading,
         fontWeight: searchMatch?.heading ? '700' : '600',
       },
     });
@@ -266,7 +271,7 @@ const drawNode = (
           fontFamily: MONOSPACE_FONT,
           fontSize: 12,
           lineHeight: TEXT_LINE_HEIGHT,
-          fill: fieldMatch?.key ? darkenColor(theme.text) : theme.text,
+          fill: fieldMatch?.key ? adjustSearchColor(theme.text, theme.searchTextAdjustment) : theme.text,
           fontWeight: fieldMatch?.key ? '700' : '400',
         },
       });
@@ -280,7 +285,7 @@ const drawNode = (
           fontFamily: MONOSPACE_FONT,
           fontSize: 12,
           lineHeight: TEXT_LINE_HEIGHT,
-          fill: fieldMatch?.value ? darkenColor(color) : color,
+          fill: fieldMatch?.value ? adjustSearchColor(color, theme.searchTextAdjustment) : color,
           fontWeight: fieldMatch?.value ? '700' : '400',
         },
       });
@@ -310,7 +315,7 @@ const drawNode = (
           fontFamily: MONOSPACE_FONT,
           fontSize: 12,
           lineHeight: TEXT_LINE_HEIGHT,
-          fill: fieldMatch?.key ? darkenColor(theme.text) : theme.text,
+          fill: fieldMatch?.key ? adjustSearchColor(theme.text, theme.searchTextAdjustment) : theme.text,
           fontWeight: fieldMatch?.key ? '700' : '400',
         },
       });
@@ -324,7 +329,7 @@ const drawNode = (
           fontFamily: MONOSPACE_FONT,
           fontSize: 12,
           lineHeight: TEXT_LINE_HEIGHT,
-          fill: fieldMatch?.value ? darkenColor(color) : color,
+          fill: fieldMatch?.value ? adjustSearchColor(color, theme.searchTextAdjustment) : color,
           fontWeight: fieldMatch?.value ? '700' : '400',
         },
       });
