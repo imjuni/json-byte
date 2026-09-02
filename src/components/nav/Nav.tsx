@@ -3,12 +3,19 @@ import { Moon, Sun } from 'lucide-react';
 import { LocaleDropdown } from '#/components/nav/LocaleDropdown';
 import { Button } from '#/components/ui/button';
 import { Label } from '#/components/ui/label';
-import { useAppStore } from '#/stores/appStore';
 import { useThemeStore } from '#/stores/themeStore';
 
-export const Nav = () => {
+export type TWorkspacePage = 'visualization' | 'diff';
+
+interface INavProps {
+  activePage: TWorkspacePage;
+}
+
+const workspaceLinkClassName =
+  'relative flex items-center px-4 text-sm font-medium transition-colors after:absolute after:inset-x-4 after:bottom-0 after:h-0.5 after:rounded-full';
+
+export const Nav = ({ activePage }: INavProps) => {
   const { theme, toggleTheme } = useThemeStore();
-  const { view, setView } = useAppStore();
 
   return (
     <nav className="absolute top-0 left-0 m-0 w-full h-12 shadow-sm bg-card border-b border-border flex items-center justify-between px-4">
@@ -20,26 +27,22 @@ export const Nav = () => {
       </div>
 
       <div className="flex flex-1 justify-center self-stretch">
-        <div aria-label="Workspace" className="flex items-stretch" role="tablist">
-          <button
-            aria-selected={view === 'visualization'}
-            className="relative px-4 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground aria-selected:text-foreground after:absolute after:inset-x-4 after:bottom-0 after:h-0.5 after:rounded-full after:bg-transparent aria-selected:after:bg-primary"
-            onClick={() => setView('visualization')}
-            role="tab"
-            type="button"
+        <nav aria-label="Workspace" className="flex items-stretch">
+          <a
+            aria-current={activePage === 'visualization' ? 'page' : undefined}
+            className={`${workspaceLinkClassName} ${activePage === 'visualization' ? 'text-foreground after:bg-primary' : 'text-muted-foreground hover:text-foreground after:bg-transparent'}`}
+            href="/"
           >
             Visualization
-          </button>
-          <button
-            aria-selected={view === 'diff'}
-            className="relative px-4 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground aria-selected:text-foreground after:absolute after:inset-x-4 after:bottom-0 after:h-0.5 after:rounded-full after:bg-transparent aria-selected:after:bg-primary"
-            onClick={() => setView('diff')}
-            role="tab"
-            type="button"
+          </a>
+          <a
+            aria-current={activePage === 'diff' ? 'page' : undefined}
+            className={`${workspaceLinkClassName} ${activePage === 'diff' ? 'text-foreground after:bg-primary' : 'text-muted-foreground hover:text-foreground after:bg-transparent'}`}
+            href="/diff/"
           >
             Diff
-          </button>
-        </div>
+          </a>
+        </nav>
       </div>
 
       <div className="flex gap-4">
