@@ -10,16 +10,18 @@
   },
   "diff": {
     "title": "JSON Diff",
-    "left": "Original JSON",
-    "right": "Modified JSON",
-    "format-left": "Format Left",
-    "format-right": "Format Right",
+    "description": "Enter two documents, then compare them to see the differences.",
+    "left": "Original Document",
+    "right": "Modified Document",
+    "format": "Beautify",
     "swap": "Swap",
+    "clear": "Clear All",
     "reset": "Reset",
-    "status-identical": "No differences",
-    "status-different": "Showing differences",
-    "status-invalid": "Invalid JSON detected",
-    "invalid-title": "Check your JSON"
+    "compare": "Compare {format}",
+    "result": "Comparison Result",
+    "invalid": "Invalid",
+    "invalid-title": "Check your documents",
+    "language-mismatch": "The document formats do not match. Compare JSON with JSON or YAML with YAML."
   },
   "graph": {
     "editor-config-dialog": {
