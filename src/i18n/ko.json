@@ -22,6 +22,7 @@
       "title": "노드 상세",
       "content": "원본 데이터",
       "json-path": "JSON Path",
+      "jq-path": "jq Path",
       "action-find-in-editor": "에디터에서 노드 찾기",
       "action-close": "닫기"
     },
