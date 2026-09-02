@@ -1,7 +1,14 @@
 import ELK from 'elkjs/lib/elk.bundled.js';
 import { describe, expect, it } from 'vitest';
 
-import { createElkGraph, getSourcePortId, getTargetPortId, mapElkResult } from '#/lib/layout/elkLayout';
+import {
+  createElkGraph,
+  EDGE_LANE_SEPARATION_NODE_CAP,
+  getSourcePortId,
+  getTargetPortId,
+  mapElkResult,
+  shouldSeparateEdgeLanes,
+} from '#/lib/layout/elkLayout';
 
 import type { ElkNode } from 'elkjs/lib/elk.bundled.js';
 
@@ -25,6 +32,11 @@ const createNode = (id: string, label: string): IGraphNode => ({
 });
 
 describe('elkLayout', () => {
+  it('should separate edge lanes only within the node cap', () => {
+    expect(shouldSeparateEdgeLanes(EDGE_LANE_SEPARATION_NODE_CAP)).toBe(true);
+    expect(shouldSeparateEdgeLanes(EDGE_LANE_SEPARATION_NODE_CAP + 1)).toBe(false);
+  });
+
   it('should create orthogonal ELK graph with connected ports', () => {
     const parent = createNode('$', 'root');
     const child = createNode("$['child']", 'child');
