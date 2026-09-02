@@ -1,8 +1,3 @@
-import ELK from 'elkjs/lib/elk-api.js';
-// Vite resolves the worker asset query during bundling.
-// eslint-disable-next-line import-x/no-unresolved
-import elkWorkerUrl from 'elkjs/lib/elk-worker.min.js?url';
-
 import type { ElkExtendedEdge, ElkNode, ElkPort } from 'elkjs/lib/elk-api.js';
 
 import type { IGraphEdge } from '#/lib/graph/interfaces/IGraphEdge';
@@ -13,7 +8,6 @@ export const NODE_WIDTH = 280;
 export const HEADER_HEIGHT = 40;
 export const LINE_HEIGHT = 20;
 export const NODE_PADDING = 10;
-export const ELK_NODE_LIMIT = 2_000;
 
 export const getNodeHeight = (node: IGraphNode): number => {
   const fieldCount = node.data.primitiveFields.length + node.data.complexFields.length;
@@ -159,32 +153,17 @@ export function mapElkResult(nodes: IGraphNode[], graph: ElkNode): IElkLayoutRes
   };
 }
 
-export function applyElkLayout(
-  nodes: IGraphNode[],
-  edges: IGraphEdge[],
-  direction: 'LR' | 'TB' = 'LR',
-): { promise: Promise<IElkLayoutResult>; cancel: () => void } {
-  const elk = new ELK({ workerUrl: elkWorkerUrl });
-  const promise = elk
-    .layout(createElkGraph(nodes, edges, direction))
-    .then((graph) => mapElkResult(nodes, graph))
-    .finally(() => elk.terminateWorker());
-
-  return { promise, cancel: () => elk.terminateWorker() };
-}
-
 export function applyGraphLayout(
   nodes: IGraphNode[],
   edges: IGraphEdge[],
   direction: 'LR' | 'TB' = 'LR',
 ): { promise: Promise<IElkLayoutResult>; cancel: () => void } {
-  if (nodes.length < ELK_NODE_LIMIT) return applyElkLayout(nodes, edges, direction);
-
+  const graph = createElkGraph(nodes, edges, direction);
   const worker = new Worker(new URL('./treeLayout.worker.ts', import.meta.url), { type: 'module' });
   const promise = new Promise<IElkLayoutResult>((resolve, reject) => {
     worker.onmessage = (event: MessageEvent<ElkNode>) => resolve(mapElkResult(nodes, event.data));
     worker.onerror = (event) => reject(new Error(event.message));
-    worker.postMessage({ graph: createElkGraph(nodes, edges, direction), direction });
+    worker.postMessage({ graph, direction });
   }).finally(() => worker.terminate());
 
   return { promise, cancel: () => worker.terminate() };
