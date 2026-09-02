@@ -59,8 +59,6 @@ interface IRenderTheme {
   null: number;
   object: number;
   array: number;
-  objectHandle: number;
-  arrayHandle: number;
 }
 
 const themes: Record<'light' | 'dark', IRenderTheme> = {
@@ -79,8 +77,6 @@ const themes: Record<'light' | 'dark', IRenderTheme> = {
     null: 0x9e9e9e,
     object: 0xff9800,
     array: 0xf44336,
-    objectHandle: 0x3b82f6,
-    arrayHandle: 0xf59e0b,
   },
   dark: {
     background: 0x09090b,
@@ -97,8 +93,6 @@ const themes: Record<'light' | 'dark', IRenderTheme> = {
     null: 0x9e9e9e,
     object: 0xff9800,
     array: 0xf44336,
-    objectHandle: 0x60a5fa,
-    arrayHandle: 0xfbbf24,
   },
 };
 
@@ -260,10 +254,8 @@ const drawNode = (
       });
       valueText.position.set(28 + keyText.width, rowY + TEXT_ROW_OFFSET);
       container.addChild(valueText);
-      const handleColor = field.type === 'array' ? theme.arrayHandle : theme.objectHandle;
       const port = ports.get(getSourcePortId(node.id, field.key));
-      if (port != null)
-        container.addChild(new Graphics().circle(port.position.x, port.position.y, 5).fill(handleColor));
+      if (port != null) container.addChild(new Graphics().circle(port.position.x, port.position.y, 5).fill(color));
       if (primitiveCount + index < fieldCount - 1)
         separators.moveTo(0, rowY + LINE_HEIGHT).lineTo(NODE_WIDTH, rowY + LINE_HEIGHT);
     }
@@ -273,8 +265,7 @@ const drawNode = (
 
   // eslint-disable-next-line no-underscore-dangle
   if (node.data._parent != null) {
-    // eslint-disable-next-line no-underscore-dangle
-    const color = node.data._parent.data.nodeType === 'array' ? theme.arrayHandle : theme.objectHandle;
+    const color = getTypeColor(theme, node.data.nodeType);
     const port = ports.get(getTargetPortId(node.id));
     if (port != null) container.addChild(new Graphics().circle(port.position.x, port.position.y, 5).fill(color));
   }
