@@ -8,6 +8,19 @@
     "pretty": "Pretty",
     "compact": "Compact"
   },
+  "diff": {
+    "title": "JSON Diff",
+    "left": "Original JSON",
+    "right": "Modified JSON",
+    "format-left": "Format Left",
+    "format-right": "Format Right",
+    "swap": "Swap",
+    "reset": "Reset",
+    "status-identical": "No differences",
+    "status-different": "Showing differences",
+    "status-invalid": "Invalid JSON detected",
+    "invalid-title": "Check your JSON"
+  },
   "graph": {
     "editor-config-dialog": {
       "title": "Editor Settings",

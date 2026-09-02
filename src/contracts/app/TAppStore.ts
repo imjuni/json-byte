@@ -1,5 +1,6 @@
 // State
 interface IAppStoreValue {
+  view: 'visualization' | 'diff';
   /**
    * orientation
    *
@@ -13,6 +14,7 @@ interface IAppStoreValue {
 
 // Actions
 interface IAppStoreAction {
+  setView: (view: IAppStoreValue['view']) => void;
   setEditorWidthPercent: (percent: number) => void;
   setEditorHeightPercent: (percent: number) => void;
 }
