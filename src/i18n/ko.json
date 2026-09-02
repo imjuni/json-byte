@@ -19,6 +19,8 @@
     "reset": "초기화",
     "compare": "{format} 비교",
     "result": "비교 결과",
+    "result-left": "왼쪽 {format}",
+    "result-right": "오른쪽 {format}",
     "result-stale": "입력 변경됨 · 다시 비교해 주세요",
     "show-all": "전체 보기",
     "show-diff-only": "변경점만 보기",
