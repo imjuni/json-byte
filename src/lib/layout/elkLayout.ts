@@ -1,3 +1,5 @@
+import { separateOverlappingEdgeSegments } from '#/lib/layout/separateOverlappingEdgeSegments';
+
 import type { ElkExtendedEdge, ElkNode, ElkPort } from 'elkjs/lib/elk-api.js';
 
 import type { IGraphEdge } from '#/lib/graph/interfaces/IGraphEdge';
@@ -150,7 +152,7 @@ export function mapElkResult(nodes: IGraphNode[], graph: ElkNode): IElkLayoutRes
 
   return {
     nodes: layoutedNodes,
-    edges: layoutedEdges,
+    edges: separateOverlappingEdgeSegments(layoutedEdges),
     ports: layoutedPorts,
     bounds: { width: graph.width ?? 0, height: graph.height ?? 0 },
   };
