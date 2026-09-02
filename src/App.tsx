@@ -1,86 +1,57 @@
 import { BrowserView, MobileView } from 'react-device-detect';
 
-import { DiffWorkspace } from '#/components/diff/DiffWorkspace';
 import { Editor } from '#/components/editor/Editor';
-import { FooterEditorStatus } from '#/components/layout/FooterEditorStatus';
+import { AppShell } from '#/components/layout/AppShell';
 import { Resizer } from '#/components/layout/Resizer';
-import { Nav } from '#/components/nav/Nav';
-import { Notification } from '#/components/nav/Notification';
 import { PixiGraphRenderer } from '#/components/renderer/pixi/PixiGraphRenderer';
 import { useAppStore } from '#/stores/appStore';
 
 import './App.css';
 
 export const App = () => {
-  const { view, editorWidthPercent, editorHeightPercent } = useAppStore();
+  const { editorWidthPercent, editorHeightPercent } = useAppStore();
 
   return (
-    <div className="flex flex-col w-full h-full">
-      <Nav />
-      <Notification />
-
-      <main className="flex-1 mt-13 overflow-y-scroll md:overflow-hidden">
-        {view === 'diff' ? (
-          <DiffWorkspace />
-        ) : (
-          <>
-            <BrowserView className="flex flex-col md:flex-row h-full">
-              {/* editor control container */}
-              <div
-                className="flex w-full h-full md:w-auto"
-                id="editor-control-container"
-                style={{ width: `${editorWidthPercent}%` }}
-              >
-                <Editor />
-              </div>
-
-              <Resizer orientation="vertical" />
-
-              {/* graph control container */}
-              <div
-                className="flex w-full h-full md:w-auto"
-                id="graph-tree-control-container"
-                style={{ width: `${100 - editorWidthPercent}%` }}
-              >
-                <PixiGraphRenderer />
-              </div>
-            </BrowserView>
-
-            <MobileView className="flex flex-col md:flex-row h-full">
-              {/* editor control container */}
-              <div
-                className="flex w-full h-full md:w-auto"
-                id="editor-control-container"
-                style={{ height: `${editorHeightPercent}%` }}
-              >
-                <Editor />
-              </div>
-
-              <Resizer orientation="horizontal" />
-
-              {/* graph control container */}
-              <div
-                className="flex w-full h-full md:w-auto"
-                id="graph-tree-control-container"
-                style={{ height: `${100 - editorHeightPercent}%` }}
-              >
-                <PixiGraphRenderer />
-              </div>
-            </MobileView>
-          </>
-        )}
-      </main>
-
-      <footer className="h-6 px-4 bg-card border-t flex items-center justify-between text-xs text-muted-foreground">
-        {view === 'visualization' ? <FooterEditorStatus /> : <span />}
-        <div className="flex gap-4">
-          <span>© 2025 JSON Byte</span>
-
-          <a className="hover:text-foreground transition-colors" href="https://rovinjsoft.com/" target="_blink">
-            <span className="font-bold">Rovinj Soft Co.</span>
-          </a>
+    <AppShell activePage="visualization">
+      <BrowserView className="flex flex-col md:flex-row h-full">
+        <div
+          className="flex w-full h-full md:w-auto"
+          id="editor-control-container"
+          style={{ width: `${editorWidthPercent}%` }}
+        >
+          <Editor />
         </div>
-      </footer>
-    </div>
+
+        <Resizer orientation="vertical" />
+
+        <div
+          className="flex w-full h-full md:w-auto"
+          id="graph-tree-control-container"
+          style={{ width: `${100 - editorWidthPercent}%` }}
+        >
+          <PixiGraphRenderer />
+        </div>
+      </BrowserView>
+
+      <MobileView className="flex flex-col md:flex-row h-full">
+        <div
+          className="flex w-full h-full md:w-auto"
+          id="editor-control-container"
+          style={{ height: `${editorHeightPercent}%` }}
+        >
+          <Editor />
+        </div>
+
+        <Resizer orientation="horizontal" />
+
+        <div
+          className="flex w-full h-full md:w-auto"
+          id="graph-tree-control-container"
+          style={{ height: `${100 - editorHeightPercent}%` }}
+        >
+          <PixiGraphRenderer />
+        </div>
+      </MobileView>
+    </AppShell>
   );
 };

@@ -1,0 +1,12 @@
+---
+import { DiffAppWithIntl } from '#/DiffAppWithIntl';
+import BaseLayout from '#/layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  canonicalPath="/diff/"
+  description="Compare JSON or YAML documents side by side with syntax-aware formatting and configurable context lines."
+  title="JSON Byte - JSON/YAML Diff Viewer"
+>
+  <DiffAppWithIntl client:only="react" />
+</BaseLayout>

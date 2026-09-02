@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { DiffEditor, Editor } from '@monaco-editor/react';
 import { ArrowLeftRight, Braces, RotateCcw, Trash2 } from 'lucide-react';
@@ -10,7 +10,7 @@ import { formatDiffDocument, parseDiffDocument } from '#/lib/diff/parseDiffDocum
 import { useEditorStore } from '#/stores/editorStore';
 import { useThemeStore } from '#/stores/themeStore';
 
-import type { BeforeMount } from '@monaco-editor/react';
+import type { BeforeMount, DiffOnMount } from '@monaco-editor/react';
 
 import type { TEditorLanguage } from '#/contracts/editors/IEditorStore';
 
@@ -32,6 +32,7 @@ interface IDiffResult {
 }
 
 const inputLanguage = (language?: TEditorLanguage) => language ?? 'json';
+const CONTEXT_LINE_OPTIONS = [0, 1, 2, 3, 5, 10] as const;
 
 export const DiffWorkspace = () => {
   const intl = useIntl();
@@ -42,6 +43,9 @@ export const DiffWorkspace = () => {
   const [result, setResult] = useState<IDiffResult>();
   const [showResult, setShowResult] = useState(false);
   const [resultStale, setResultStale] = useState(false);
+  const [showOnlyChanges, setShowOnlyChanges] = useState(true);
+  const [contextLines, setContextLines] = useState(3);
+  const diffEditorRef = useRef<Parameters<DiffOnMount>[0] | null>(null);
 
   const leftDocument = useMemo(() => parseDiffDocument(left), [left]);
   const rightDocument = useMemo(() => parseDiffDocument(right), [right]);
@@ -78,6 +82,21 @@ export const DiffWorkspace = () => {
       },
     });
   }, []);
+
+  const mountDiffEditor: DiffOnMount = useCallback((editor) => {
+    diffEditorRef.current = editor;
+  }, []);
+
+  useEffect(() => {
+    diffEditorRef.current?.updateOptions({
+      hideUnchangedRegions: {
+        contextLineCount: contextLines,
+        enabled: showOnlyChanges,
+        minimumLineCount: 3,
+        revealLineCount: contextLines,
+      },
+    });
+  }, [contextLines, showOnlyChanges]);
 
   const format = useCallback(
     (side: 'left' | 'right') => {
@@ -226,6 +245,48 @@ export const DiffWorkspace = () => {
                 {result.language}
               </span>
             </div>
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-card px-3 py-2">
+              <Button
+                aria-pressed={showOnlyChanges}
+                onClick={() => setShowOnlyChanges((current) => !current)}
+                size="sm"
+                variant={showOnlyChanges ? 'default' : 'outline'}
+              >
+                {intl.$t({ id: showOnlyChanges ? 'diff.show-all' : 'diff.show-diff-only' })}
+              </Button>
+              {showOnlyChanges ? (
+                <label className="flex items-center gap-2 text-sm text-muted-foreground" htmlFor="diff-context-lines">
+                  {intl.$t({ id: 'diff.context' })}
+                  <select
+                    aria-label={intl.$t({ id: 'diff.context-lines' })}
+                    className="h-8 rounded-md border bg-background px-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    id="diff-context-lines"
+                    onChange={(event) => setContextLines(Number(event.target.value))}
+                    value={contextLines}
+                  >
+                    {CONTEXT_LINE_OPTIONS.map((lineCount) => (
+                      <option key={lineCount} value={lineCount}>
+                        {intl.$t({ id: 'diff.context-line-option' }, { count: lineCount })}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <span className="size-2.5 rounded-full bg-destructive/70" />
+                  {intl.$t({ id: 'diff.removed' })}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="size-2.5 rounded-full bg-green-600/70 dark:bg-green-400/70" />
+                  {intl.$t({ id: 'diff.added' })}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="size-2.5 rounded-full bg-muted-foreground/60" />
+                  {intl.$t({ id: 'diff.unchanged' })}
+                </span>
+              </div>
+            </div>
             <div className="h-[52vh] min-h-80 overflow-hidden rounded-lg border bg-card">
               <DiffEditor
                 keepCurrentModifiedModel
@@ -235,12 +296,19 @@ export const DiffWorkspace = () => {
                 language={result.language}
                 modified={result.right}
                 modifiedModelPath="diff-result-right"
+                onMount={mountDiffEditor}
                 original={result.left}
                 originalModelPath="diff-result-left"
                 theme={monacoTheme}
                 options={{
                   automaticLayout: true,
                   fontSize: 14,
+                  hideUnchangedRegions: {
+                    contextLineCount: contextLines,
+                    enabled: showOnlyChanges,
+                    minimumLineCount: 3,
+                    revealLineCount: contextLines,
+                  },
                   minimap: { enabled: false },
                   originalEditable: false,
                   readOnly: true,

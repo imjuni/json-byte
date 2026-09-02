@@ -1,8 +1,8 @@
-import { App } from './App';
 import { AppIntlProvider } from './AppIntlProvider';
+import { DiffApp } from './DiffApp';
 
-export const AppWithIntl = () => (
+export const DiffAppWithIntl = () => (
   <AppIntlProvider>
-    <App />
+    <DiffApp />
   </AppIntlProvider>
 );
