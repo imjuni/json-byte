@@ -19,6 +19,7 @@
     "reset": "초기화",
     "compare": "{format} 비교",
     "result": "비교 결과",
+    "result-stale": "입력 변경됨 · 다시 비교해 주세요",
     "invalid": "인식 불가",
     "invalid-title": "문서를 확인해 주세요",
     "language-mismatch": "좌우 문서의 형식이 다릅니다. JSON끼리 또는 YAML끼리 비교할 수 있습니다."

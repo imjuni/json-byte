@@ -40,6 +40,8 @@ export const DiffWorkspace = () => {
   const [left, setLeft] = useState(DEFAULT_LEFT);
   const [right, setRight] = useState(DEFAULT_RIGHT);
   const [result, setResult] = useState<IDiffResult>();
+  const [showResult, setShowResult] = useState(false);
+  const [resultStale, setResultStale] = useState(false);
 
   const leftDocument = useMemo(() => parseDiffDocument(left), [left]);
   const rightDocument = useMemo(() => parseDiffDocument(right), [right]);
@@ -83,9 +85,9 @@ export const DiffWorkspace = () => {
       if (formatted instanceof Error) return;
       if (side === 'left') setLeft(formatted);
       else setRight(formatted);
-      setResult(undefined);
+      if (result != null) setResultStale(true);
     },
-    [indent, left, right],
+    [indent, left, result, right],
   );
 
   const compare = useCallback(() => {
@@ -102,6 +104,8 @@ export const DiffWorkspace = () => {
     const formattedRight = formatDiffDocument(right, indent);
     if (formattedLeft instanceof Error || formattedRight instanceof Error) return;
     setResult({ language: leftDocument.language, left: formattedLeft, right: formattedRight });
+    setShowResult(true);
+    setResultStale(false);
   }, [indent, left, leftDocument, right, rightDocument]);
 
   return (
@@ -121,7 +125,7 @@ export const DiffWorkspace = () => {
             onClick={() => {
               setLeft(right);
               setRight(left);
-              setResult(undefined);
+              if (result != null) setResultStale(true);
             }}
           >
             <ArrowLeftRight /> {intl.$t({ id: 'diff.swap' })}
@@ -132,7 +136,7 @@ export const DiffWorkspace = () => {
             onClick={() => {
               setLeft('');
               setRight('');
-              setResult(undefined);
+              setShowResult(false);
             }}
           >
             <Trash2 /> {intl.$t({ id: 'diff.clear' })}
@@ -143,7 +147,7 @@ export const DiffWorkspace = () => {
             onClick={() => {
               setLeft(DEFAULT_LEFT);
               setRight(DEFAULT_RIGHT);
-              setResult(undefined);
+              setShowResult(false);
             }}
           >
             <RotateCcw /> {intl.$t({ id: 'diff.reset' })}
@@ -164,7 +168,7 @@ export const DiffWorkspace = () => {
             value={left}
             onChange={(value) => {
               setLeft(value ?? '');
-              setResult(undefined);
+              if (result != null) setResultStale(true);
             }}
           />
           {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}
@@ -179,7 +183,7 @@ export const DiffWorkspace = () => {
             value={right}
             onChange={(value) => {
               setRight(value ?? '');
-              setResult(undefined);
+              if (result != null) setResultStale(true);
             }}
           />
         </div>
@@ -205,9 +209,19 @@ export const DiffWorkspace = () => {
         </div>
 
         {result != null ? (
-          <section aria-label={intl.$t({ id: 'diff.result' })} className="flex flex-col gap-2 pb-4">
+          <section
+            aria-label={intl.$t({ id: 'diff.result' })}
+            className={showResult ? 'flex flex-col gap-2 pb-4' : 'hidden'}
+          >
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">{intl.$t({ id: 'diff.result' })}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold">{intl.$t({ id: 'diff.result' })}</h2>
+                {resultStale ? (
+                  <span className="rounded-md bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300">
+                    {intl.$t({ id: 'diff.result-stale' })}
+                  </span>
+                ) : null}
+              </div>
               <span className="rounded-md border bg-muted px-2 py-1 text-xs font-medium uppercase">
                 {result.language}
               </span>
