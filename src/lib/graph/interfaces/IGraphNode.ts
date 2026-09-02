@@ -15,7 +15,7 @@ export interface IGraphNode {
   /** 드래그 가능 여부. false로 기본 설정된다 */
   draggable: boolean;
 
-  /** XYFlow position */
+  /** Graph position */
   position: { x: number; y: number };
 
   /** 코드에서 위치, 시작 지점과 종료 지점 */
@@ -34,7 +34,7 @@ export interface IGraphNode {
   };
 
   data: {
-    /** 현재 key 값, XyFlow에서 이름이 된다 */
+    /** 현재 key 값, 그래프에서 이름이 된다 */
     label: string;
 
     /** 검색어 포함 여부. false로 기본 설정된다 */

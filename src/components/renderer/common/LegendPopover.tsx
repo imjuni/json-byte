@@ -1,8 +1,8 @@
 import { Info as IconInfo } from 'lucide-react';
 import { tv } from 'tailwind-variants';
 
-import { FieldValue } from '#/components/renderer/xyflow/FieldValue';
-import { TypeDisc } from '#/components/renderer/xyflow/TypeDisc';
+import { FieldValue } from '#/components/renderer/common/FieldValue';
+import { TypeDisc } from '#/components/renderer/common/TypeDisc';
 import { Button } from '#/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '#/components/ui/popover';
 

@@ -13,14 +13,14 @@ import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 const ENABLE_QUERYSTRING = false;
 
 /**
- * Custom hook for building and updating XyFlow graph visualization
+ * Custom hook for building and updating graph visualization
  * Handles parsing content, creating nodes/edges, and updating stores
  */
 export function useGraphBuilder(): {
   buildGraph: (origin: string, value: ReturnType<typeof multiParse>) => IGraphNode[];
   updateFromContent: (content: string) => void;
 } {
-  const { direction, setNodesAndEdgesAndLocMapAndMap } = useGraphStore();
+  const { setNodesAndEdgesAndLocMap } = useGraphStore();
   const { setFuse } = useFuseStore();
   const { setLanguage } = useEditorStore();
 
@@ -31,20 +31,18 @@ export function useGraphBuilder(): {
           document: value.data,
           language: value.language,
           origin,
-          direction,
-          layout: false,
           config: new ParserConfig({ guard: 1_000_000 }),
         });
 
         setLanguage(value.language);
-        setNodesAndEdgesAndLocMapAndMap(nodes, edges, locMap);
+        setNodesAndEdgesAndLocMap(nodes, edges, locMap);
 
         return nodes;
       }
 
       return [];
     },
-    [direction, setLanguage, setNodesAndEdgesAndLocMapAndMap],
+    [setLanguage, setNodesAndEdgesAndLocMap],
   );
 
   const updateFromContent = useCallback(

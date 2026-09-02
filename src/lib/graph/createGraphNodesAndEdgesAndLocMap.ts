@@ -1,4 +1,3 @@
-import { layoutNodes } from '#/lib/graph/layoutNodes';
 import { buildLineStarts } from '#/lib/parser/json/buildLineStarts';
 import { buildNodeByJson } from '#/lib/parser/json/buildNodeByJson';
 import { buildNodeByYaml } from '#/lib/parser/yaml/buildNodeByYaml';
@@ -8,7 +7,6 @@ import type { JsonValue } from 'type-fest';
 import type { TEditorLanguage } from '#/contracts/editors/IEditorStore';
 import type { IGraphEdge } from '#/lib/graph/interfaces/IGraphEdge';
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
-import type { TLayoutDirection } from '#/lib/graph/layoutNodes';
 import type { ParserConfig } from '#/lib/parser/common/ParserConfig';
 import type { IPathLoCIndexMap } from '#/lib/parser/interfaces/IPathLoCIndexMap';
 
@@ -30,10 +28,6 @@ interface ICreateGraphNodesParams {
    */
   language: TEditorLanguage;
 
-  direction?: TLayoutDirection;
-
-  /** Skip synchronous Dagre layout when an asynchronous renderer owns layout. */
-  layout?: boolean;
 }
 
 export function createGraphNodesAndEdgesAndLocMap({
@@ -41,8 +35,6 @@ export function createGraphNodesAndEdgesAndLocMap({
   document,
   config,
   language,
-  direction,
-  layout = true,
 }: ICreateGraphNodesParams): {
   nodes: IGraphNode[];
   edges: IGraphEdge[];
@@ -57,9 +49,7 @@ export function createGraphNodesAndEdgesAndLocMap({
       lineStarts,
     });
 
-    const layoutedNodes = layout ? layoutNodes(nodes, edges, direction) : nodes;
-
-    return { nodes: layoutedNodes, edges, locMap: map };
+    return { nodes, edges, locMap: map };
   }
 
   const { nodes, edges, map } = buildNodeByYaml({
@@ -68,7 +58,5 @@ export function createGraphNodesAndEdgesAndLocMap({
     config,
   });
 
-  const layoutedNodes = layout ? layoutNodes(nodes, edges, direction) : nodes;
-
-  return { nodes: layoutedNodes, edges, locMap: map };
+  return { nodes, edges, locMap: map };
 }
