@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Application, Container, Graphics, Text } from 'pixi.js';
+import { Application, CanvasTextMetrics, Container, Graphics, Text, TextStyle } from 'pixi.js';
 
 import { PixiSearchPanel } from '#/components/renderer/pixi/PixiSearchPanel';
 import { Button } from '#/components/ui/button';
@@ -25,11 +25,19 @@ import type { IElkLayoutResult, ILayoutPort } from '#/lib/layout/interfaces/IElk
 const MIN_ZOOM = 0.08;
 const MAX_ZOOM = 3;
 const VIEW_PADDING = 300;
-const TEXT_MAX_LENGTH = 36;
 const MONOSPACE_FONT = 'SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace';
 const TEXT_LINE_HEIGHT = 18;
 const HEADING_LINE_HEIGHT = 22.5;
 const TEXT_ROW_OFFSET = (LINE_HEIGHT - TEXT_LINE_HEIGHT) / 2;
+const FIELD_TEXT_X = 24;
+const FIELD_TEXT_GAP = 4;
+const FIELD_RIGHT_PADDING = 12;
+const FIELD_TEXT_WIDTH = NODE_WIDTH - FIELD_TEXT_X - FIELD_RIGHT_PADDING;
+const FIELD_TEXT_STYLE = new TextStyle({
+  fontFamily: MONOSPACE_FONT,
+  fontSize: 12,
+  lineHeight: TEXT_LINE_HEIGHT,
+});
 
 interface IViewportTransform {
   x: number;
@@ -103,6 +111,38 @@ const singleLine = (value: unknown): string =>
   String(value).replaceAll('\r', '\\r').replaceAll('\n', '\\n').replaceAll('\t', '\\t');
 
 const getTypeColor = (theme: IRenderTheme, type: IGraphNode['data']['nodeType']): number => theme[type];
+
+const measureFieldText = (value: string): number => CanvasTextMetrics.measureText(value, FIELD_TEXT_STYLE).width;
+
+const fitFieldText = (value: string, maxWidth: number): string => {
+  if (measureFieldText(value) <= maxWidth) return value;
+
+  const characters = CanvasTextMetrics.graphemeSegmenter(value);
+  let low = 0;
+  let high = characters.length;
+  while (low < high) {
+    const middle = Math.ceil((low + high) / 2);
+    if (measureFieldText(`${characters.slice(0, middle).join('')}…`) <= maxWidth) low = middle;
+    else high = middle - 1;
+  }
+  return low === 0 ? '' : `${characters.slice(0, low).join('')}…`;
+};
+
+const getFieldTextLayout = (key: unknown, value: unknown): { key: string; keyWidth: number; value: string } => {
+  const fullKey = `${singleLine(key)}:`;
+  const fullValue = singleLine(value);
+  const fullKeyWidth = measureFieldText(fullKey);
+  const fullValueWidth = measureFieldText(fullValue);
+  if (fullKeyWidth + FIELD_TEXT_GAP + fullValueWidth <= FIELD_TEXT_WIDTH) {
+    return { key: fullKey, keyWidth: fullKeyWidth, value: fullValue };
+  }
+
+  const reservedValueWidth = Math.min(fullValueWidth, FIELD_TEXT_WIDTH * 0.55);
+  const fittedKey = fitFieldText(fullKey, FIELD_TEXT_WIDTH - FIELD_TEXT_GAP - reservedValueWidth);
+  const keyWidth = measureFieldText(fittedKey);
+  const fittedValue = fitFieldText(fullValue, FIELD_TEXT_WIDTH - FIELD_TEXT_GAP - keyWidth);
+  return { key: fittedKey, keyWidth, value: fittedValue };
+};
 
 const getViewportBounds = (
   transform: IViewportTransform,
@@ -203,25 +243,24 @@ const drawNode = (
     const field = node.data.primitiveFields[index];
     if (field != null) {
       const rowY = HEADER_HEIGHT + index * LINE_HEIGHT;
-      const key = truncate(`${singleLine(field.key)}:`, 16);
-      const value = truncate(singleLine(field.value), Math.max(1, TEXT_MAX_LENGTH - key.length - 1));
+      const fieldText = getFieldTextLayout(field.key, field.value);
       const color = getTypeColor(theme, field.type);
       container.addChild(new Graphics().circle(15, rowY + LINE_HEIGHT / 2, 3).fill(color));
       const keyText = new Text({
-        text: key,
+        text: fieldText.key,
         resolution: textResolution,
         roundPixels: true,
         style: { fontFamily: MONOSPACE_FONT, fontSize: 12, lineHeight: TEXT_LINE_HEIGHT, fill: theme.text },
       });
-      keyText.position.set(24, rowY + TEXT_ROW_OFFSET);
+      keyText.position.set(FIELD_TEXT_X, rowY + TEXT_ROW_OFFSET);
       container.addChild(keyText);
       const valueText = new Text({
-        text: value,
+        text: fieldText.value,
         resolution: textResolution,
         roundPixels: true,
         style: { fontFamily: MONOSPACE_FONT, fontSize: 12, lineHeight: TEXT_LINE_HEIGHT, fill: color },
       });
-      valueText.position.set(28 + keyText.width, rowY + TEXT_ROW_OFFSET);
+      valueText.position.set(FIELD_TEXT_X + fieldText.keyWidth + FIELD_TEXT_GAP, rowY + TEXT_ROW_OFFSET);
       container.addChild(valueText);
       if (index < fieldCount - 1) separators.moveTo(0, rowY + LINE_HEIGHT).lineTo(NODE_WIDTH, rowY + LINE_HEIGHT);
     }
@@ -235,24 +274,24 @@ const drawNode = (
     if (field != null) {
       const size = field.type === 'array' ? `[${field.size}]` : `{${field.size}}`;
       const rowY = HEADER_HEIGHT + (primitiveCount + index) * LINE_HEIGHT;
-      const key = truncate(`${singleLine(field.key)}:`, 16);
+      const fieldText = getFieldTextLayout(field.key, size);
       const color = getTypeColor(theme, field.type);
       container.addChild(new Graphics().circle(15, rowY + LINE_HEIGHT / 2, 3).fill(color));
       const keyText = new Text({
-        text: key,
+        text: fieldText.key,
         resolution: textResolution,
         roundPixels: true,
         style: { fontFamily: MONOSPACE_FONT, fontSize: 12, lineHeight: TEXT_LINE_HEIGHT, fill: theme.text },
       });
-      keyText.position.set(24, rowY + TEXT_ROW_OFFSET);
+      keyText.position.set(FIELD_TEXT_X, rowY + TEXT_ROW_OFFSET);
       container.addChild(keyText);
       const valueText = new Text({
-        text: size,
+        text: fieldText.value,
         resolution: textResolution,
         roundPixels: true,
         style: { fontFamily: MONOSPACE_FONT, fontSize: 12, lineHeight: TEXT_LINE_HEIGHT, fill: color },
       });
-      valueText.position.set(28 + keyText.width, rowY + TEXT_ROW_OFFSET);
+      valueText.position.set(FIELD_TEXT_X + fieldText.keyWidth + FIELD_TEXT_GAP, rowY + TEXT_ROW_OFFSET);
       container.addChild(valueText);
       const port = ports.get(getSourcePortId(node.id, field.key));
       if (port != null) container.addChild(new Graphics().circle(port.position.x, port.position.y, 5).fill(color));
