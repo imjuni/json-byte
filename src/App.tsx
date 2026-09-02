@@ -72,7 +72,7 @@ export const App = () => {
       </main>
 
       <footer className="h-6 px-4 bg-card border-t flex items-center justify-between text-xs text-muted-foreground">
-        <FooterEditorStatus />
+        {view === 'visualization' ? <FooterEditorStatus /> : <span />}
         <div className="flex gap-4">
           <span>© 2025 JSON Byte</span>
 
