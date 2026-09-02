@@ -229,7 +229,7 @@ const drawNode = (
       });
       valueText.position.set(28 + keyText.width, rowY + TEXT_ROW_OFFSET);
       container.addChild(valueText);
-      separators.moveTo(0, rowY + LINE_HEIGHT).lineTo(NODE_WIDTH, rowY + LINE_HEIGHT);
+      if (index < fieldCount - 1) separators.moveTo(0, rowY + LINE_HEIGHT).lineTo(NODE_WIDTH, rowY + LINE_HEIGHT);
     }
   }
 
@@ -264,7 +264,8 @@ const drawNode = (
       const port = ports.get(getSourcePortId(node.id, field.key));
       if (port != null)
         container.addChild(new Graphics().circle(port.position.x, port.position.y, 5).fill(handleColor));
-      separators.moveTo(0, rowY + LINE_HEIGHT).lineTo(NODE_WIDTH, rowY + LINE_HEIGHT);
+      if (primitiveCount + index < fieldCount - 1)
+        separators.moveTo(0, rowY + LINE_HEIGHT).lineTo(NODE_WIDTH, rowY + LINE_HEIGHT);
     }
   }
   separators.stroke({ color: theme.nodeBorder, width: 1 });
