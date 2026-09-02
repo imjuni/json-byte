@@ -8,6 +8,19 @@
     "pretty": "Pretty",
     "compact": "Compact"
   },
+  "diff": {
+    "title": "JSON 비교",
+    "left": "원본 JSON",
+    "right": "변경 JSON",
+    "format-left": "왼쪽 정렬",
+    "format-right": "오른쪽 정렬",
+    "swap": "교환",
+    "reset": "초기화",
+    "status-identical": "차이가 없습니다",
+    "status-different": "차이를 표시하고 있습니다",
+    "status-invalid": "유효하지 않은 JSON이 있습니다",
+    "invalid-title": "JSON을 확인해 주세요"
+  },
   "graph": {
     "editor-config-dialog": {
       "title": "에디터 설정",
