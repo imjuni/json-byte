@@ -19,6 +19,8 @@
     "reset": "Reset",
     "compare": "Compare {format}",
     "result": "Comparison Result",
+    "result-left": "Left {format}",
+    "result-right": "Right {format}",
     "result-stale": "Input changed · Compare again",
     "show-all": "Show All",
     "show-diff-only": "Show Diff Only",

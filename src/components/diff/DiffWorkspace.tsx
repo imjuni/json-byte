@@ -33,6 +33,8 @@ interface IDiffResult {
 
 const inputLanguage = (language?: TEditorLanguage) => language ?? 'json';
 const CONTEXT_LINE_OPTIONS = [0, 1, 2, 3, 5, 10] as const;
+const MINIMUM_UNCHANGED_LINE_COUNT = 1;
+const UNCHANGED_REGION_REVEAL_LINE_COUNT = 20;
 
 export const DiffWorkspace = () => {
   const intl = useIntl();
@@ -92,8 +94,8 @@ export const DiffWorkspace = () => {
       hideUnchangedRegions: {
         contextLineCount: contextLines,
         enabled: showOnlyChanges,
-        minimumLineCount: 3,
-        revealLineCount: contextLines,
+        minimumLineCount: MINIMUM_UNCHANGED_LINE_COUNT,
+        revealLineCount: UNCHANGED_REGION_REVEAL_LINE_COUNT,
       },
     });
   }, [contextLines, showOnlyChanges]);
@@ -287,36 +289,47 @@ export const DiffWorkspace = () => {
                 </span>
               </div>
             </div>
-            <div className="h-[52vh] min-h-80 overflow-hidden rounded-lg border bg-card">
-              <DiffEditor
-                keepCurrentModifiedModel
-                keepCurrentOriginalModel
-                beforeMount={defineThemes}
-                height="100%"
-                language={result.language}
-                modified={result.right}
-                modifiedModelPath="diff-result-right"
-                onMount={mountDiffEditor}
-                original={result.left}
-                originalModelPath="diff-result-left"
-                theme={monacoTheme}
-                options={{
-                  automaticLayout: true,
-                  fontSize: 14,
-                  hideUnchangedRegions: {
-                    contextLineCount: contextLines,
-                    enabled: showOnlyChanges,
-                    minimumLineCount: 3,
-                    revealLineCount: contextLines,
-                  },
-                  minimap: { enabled: false },
-                  originalEditable: false,
-                  readOnly: true,
-                  renderSideBySide: true,
-                  scrollBeyondLastLine: false,
-                  wordWrap: 'on',
-                }}
-              />
+            <div className="flex h-[52vh] min-h-80 flex-col overflow-hidden rounded-lg border bg-card">
+              <div className="grid h-9 shrink-0 grid-cols-2 border-b bg-muted/30 text-center text-sm font-semibold">
+                <div className="flex items-center justify-center border-r">
+                  {intl.$t({ id: 'diff.result-left' }, { format: result.language.toUpperCase() })}
+                </div>
+                <div className="flex items-center justify-center">
+                  {intl.$t({ id: 'diff.result-right' }, { format: result.language.toUpperCase() })}
+                </div>
+              </div>
+              <div className="min-h-0 flex-1">
+                <DiffEditor
+                  key={`${showOnlyChanges}-${contextLines}`}
+                  keepCurrentModifiedModel
+                  keepCurrentOriginalModel
+                  beforeMount={defineThemes}
+                  height="100%"
+                  language={result.language}
+                  modified={result.right}
+                  modifiedModelPath="diff-result-right"
+                  onMount={mountDiffEditor}
+                  original={result.left}
+                  originalModelPath="diff-result-left"
+                  theme={monacoTheme}
+                  options={{
+                    automaticLayout: true,
+                    fontSize: 14,
+                    hideUnchangedRegions: {
+                      contextLineCount: contextLines,
+                      enabled: showOnlyChanges,
+                      minimumLineCount: MINIMUM_UNCHANGED_LINE_COUNT,
+                      revealLineCount: UNCHANGED_REGION_REVEAL_LINE_COUNT,
+                    },
+                    minimap: { enabled: false },
+                    originalEditable: false,
+                    readOnly: true,
+                    renderSideBySide: true,
+                    scrollBeyondLastLine: false,
+                    wordWrap: 'on',
+                  }}
+                />
+              </div>
             </div>
           </section>
         ) : null}
