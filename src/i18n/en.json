@@ -19,6 +19,7 @@
     "reset": "Reset",
     "compare": "Compare {format}",
     "result": "Comparison Result",
+    "result-stale": "Input changed · Compare again",
     "invalid": "Invalid",
     "invalid-title": "Check your documents",
     "language-mismatch": "The document formats do not match. Compare JSON with JSON or YAML with YAML."
