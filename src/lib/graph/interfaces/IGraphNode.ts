@@ -37,9 +37,6 @@ export interface IGraphNode {
     /** 현재 key 값, 그래프에서 이름이 된다 */
     label: string;
 
-    /** 검색어 포함 여부. false로 기본 설정된다 */
-    searched: boolean;
-
     /** 필드의 실제 값 */
     stringify: string;
 

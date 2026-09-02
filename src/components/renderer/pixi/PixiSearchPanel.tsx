@@ -7,6 +7,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { LegendPopover } from '#/components/renderer/common/LegendPopover';
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
+import { toGraphSearchMatches } from '#/lib/graph/toGraphSearchMatches';
 import { useFuseStore } from '#/stores/fuseStore';
 import { useGraphStore } from '#/stores/graphStore';
 
@@ -21,21 +22,21 @@ export const PixiSearchPanel = ({ onFocusNode }: IPixiSearchPanelProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const searchTerm$ = useMemo(() => new Subject<string>(), []);
   const { fuse } = useFuseStore();
-  const { setSearcheds } = useGraphStore();
+  const { setSearchMatches } = useGraphStore();
 
   const search = useCallback(
     (term: string) => {
       const trimmed = term.trim();
       if (trimmed.length < 3) {
-        setSearcheds([]);
+        setSearchMatches({});
         return;
       }
 
       const results = fuse.search(trimmed);
-      setSearcheds(results.map((result) => result.item.id));
+      setSearchMatches(toGraphSearchMatches(results));
       if (results.length === 1 && results[0] != null) onFocusNode(results[0].item);
     },
-    [fuse, onFocusNode, setSearcheds],
+    [fuse, onFocusNode, setSearchMatches],
   );
 
   useEffect(() => {
@@ -45,8 +46,8 @@ export const PixiSearchPanel = ({ onFocusNode }: IPixiSearchPanelProps) => {
 
   const clear = useCallback(() => {
     setSearchTerm('');
-    setSearcheds([]);
-  }, [setSearcheds]);
+    setSearchMatches({});
+  }, [setSearchMatches]);
 
   return (
     <div className="absolute bottom-4 left-4 z-10 flex items-center gap-2">
