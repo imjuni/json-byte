@@ -27,6 +27,8 @@ const MAX_ZOOM = 3;
 const VIEW_PADDING = 300;
 const TEXT_MAX_LENGTH = 36;
 const MONOSPACE_FONT = 'SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace';
+const TEXT_LINE_HEIGHT = 18;
+const HEADING_LINE_HEIGHT = 22.5;
 
 interface IViewportTransform {
   x: number;
@@ -184,7 +186,13 @@ const drawNode = (
       text: truncate(node.data.label, 34),
       resolution: textResolution,
       roundPixels: true,
-      style: { fontFamily: 'sans-serif', fontSize: 15, fill: theme.heading, fontWeight: '600' },
+      style: {
+        fontFamily: 'sans-serif',
+        fontSize: 15,
+        lineHeight: HEADING_LINE_HEIGHT,
+        fill: theme.heading,
+        fontWeight: '600',
+      },
     });
     heading.position.set(12, 10);
     container.addChild(heading);
@@ -208,7 +216,7 @@ const drawNode = (
         text: key,
         resolution: textResolution,
         roundPixels: true,
-        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, fill: theme.text },
+        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, lineHeight: TEXT_LINE_HEIGHT, fill: theme.text },
       });
       keyText.position.set(24, rowY);
       container.addChild(keyText);
@@ -216,7 +224,7 @@ const drawNode = (
         text: value,
         resolution: textResolution,
         roundPixels: true,
-        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, fill: color },
+        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, lineHeight: TEXT_LINE_HEIGHT, fill: color },
       });
       valueText.position.set(28 + keyText.width, rowY);
       container.addChild(valueText);
@@ -239,7 +247,7 @@ const drawNode = (
         text: key,
         resolution: textResolution,
         roundPixels: true,
-        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, fill: theme.text },
+        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, lineHeight: TEXT_LINE_HEIGHT, fill: theme.text },
       });
       keyText.position.set(24, rowY);
       container.addChild(keyText);
@@ -247,7 +255,7 @@ const drawNode = (
         text: size,
         resolution: textResolution,
         roundPixels: true,
-        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, fill: color },
+        style: { fontFamily: MONOSPACE_FONT, fontSize: 12, lineHeight: TEXT_LINE_HEIGHT, fill: color },
       });
       valueText.position.set(28 + keyText.width, rowY);
       container.addChild(valueText);
@@ -474,6 +482,7 @@ export const PixiGraphRenderer = () => {
                 style: {
                   fontFamily: 'sans-serif',
                   fontSize: 12,
+                  lineHeight: TEXT_LINE_HEIGHT,
                   fill: renderTheme.heading,
                   stroke: { color: renderTheme.background, width: 5 },
                 },
