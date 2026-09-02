@@ -43,6 +43,7 @@
     "elkjs": "^0.11.0",
     "flat": "^6.0.1",
     "fuse.js": "^7.1.0",
+    "json-edit-react": "^1.30.2",
     "jsonc-parser": "^3.3.1",
     "lucide-react": "^0.544.0",
     "monaco-editor": "^0.54.0",

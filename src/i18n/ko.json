@@ -18,6 +18,13 @@
       "action-submit": "저장",
       "action-close": "닫기"
     },
+    "node-details-dialog": {
+      "title": "노드 상세",
+      "content": "원본 데이터",
+      "json-path": "JSON Path",
+      "action-find-in-editor": "에디터에서 노드 찾기",
+      "action-close": "닫기"
+    },
     "export-dialog": {
       "trigger": "공유",
       "title": "공유",
