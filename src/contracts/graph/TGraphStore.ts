@@ -1,6 +1,6 @@
+import type { TGraphDirection } from '#/contracts/graph/TGraphDirection';
 import type { IGraphEdge } from '#/lib/graph/interfaces/IGraphEdge';
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
-import type { TGraphDirection } from '#/contracts/graph/TGraphDirection';
 import type { IPathLoCIndexMap } from '#/lib/parser/interfaces/IPathLoCIndexMap';
 
 export interface IGraphStoreState {

@@ -1,8 +1,3 @@
-export interface IHeader {
-  key: string;
-  value: string;
-}
-
 export interface IImportStoreValue {
   open: boolean;
   error?: Error;

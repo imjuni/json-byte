@@ -44,9 +44,6 @@ importers:
       '@radix-ui/react-tabs':
         specifier: ^1.1.13
         version: 1.1.13(@types/react-dom@19.2.0(@types/react@19.2.0))(@types/react@19.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      '@std/jsonc':
-        specifier: jsr:^1.0.2
-        version: '@jsr/std__jsonc@1.0.2'
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.2.2(@types/node@24.6.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.8.1))
@@ -192,12 +189,6 @@ importers:
       eslint-plugin-react-hooks:
         specifier: ^5.2.0
         version: 5.2.0(eslint@9.37.0(jiti@2.7.0))
-      eslint-plugin-react-refresh:
-        specifier: ^0.4.22
-        version: 0.4.23(eslint@9.37.0(jiti@2.7.0))
-      globals:
-        specifier: ^16.4.0
-        version: 16.4.0
       knip:
         specifier: ^6.34.0
         version: 6.34.0
@@ -1163,18 +1154,6 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
-
-  '@jsr/std__bytes@1.0.6':
-    resolution: {integrity: sha512-St6yKggjFGhxS52IFLJWvkchRFbAKg2Xh8UxA4S1EGz7GJ2Ui+ssDDldj/w2c8vCxvl6qgR0HaYbKeFJNqujmA==, tarball: https://npm.jsr.io/~/11/@jsr/std__bytes/1.0.6.tgz}
-
-  '@jsr/std__json@1.0.2':
-    resolution: {integrity: sha512-6d7R77+6NBf/OwA/8pT6uI3UkME+nkdertGjB7ni4J+2izuDu8AjbUH9aRvj8XqU3LQsqqsIRD4a3DvprMQDWA==, tarball: https://npm.jsr.io/~/11/@jsr/std__json/1.0.2.tgz}
-
-  '@jsr/std__jsonc@1.0.2':
-    resolution: {integrity: sha512-Lva9lY0UPvvgmS8INUHU8Tqijq2SPfdlnSAvofOYUBiB6ALPxo0rTMznRlY5Wt30nMW+rhMTha1x5RGpMBKUoQ==, tarball: https://npm.jsr.io/~/11/@jsr/std__jsonc/1.0.2.tgz}
-
-  '@jsr/std__streams@1.0.13':
-    resolution: {integrity: sha512-XeFuOkxi3BMrRnJ8nYNtfedY48M27ftThUuVuND74dTyOUJGCEUw1FBjpsNwQgeeATU8Cl/hX0Z7Rg66/ewEJA==, tarball: https://npm.jsr.io/~/11/@jsr/std__streams/1.0.13.tgz}
 
   '@monaco-editor/loader@1.5.0':
     resolution: {integrity: sha512-hKoGSM+7aAc7eRTRjpqAZucPmoNOC4UUbknb/VNoTkEIkCPhqV8LfbsgM1webRM7S/z21eHEx9Fkwx8Z/C/+Xw==}
@@ -3190,11 +3169,6 @@ packages:
     engines: {node: '>=10'}
     peerDependencies:
       eslint: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0
-
-  eslint-plugin-react-refresh@0.4.23:
-    resolution: {integrity: sha512-G4j+rv0NmbIR45kni5xJOrYvCtyD3/7LjpVH8MPPcudXDcNu8gv+4ATTDXTtbRR8rTCM5HxECvCSsRmxKnWDsA==}
-    peerDependencies:
-      eslint: '>=8.40'
 
   eslint-plugin-react@7.37.5:
     resolution: {integrity: sha512-Qteup0SqU15kdocexFNAJMvCJEfa2xUKNV4CC1xsVMrIIqEy3SQ/rqyxCWNzfrd3/ldy6HMlD2e0JDVpDg2qIA==}
@@ -6191,20 +6165,6 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@jsr/std__bytes@1.0.6': {}
-
-  '@jsr/std__json@1.0.2':
-    dependencies:
-      '@jsr/std__streams': 1.0.13
-
-  '@jsr/std__jsonc@1.0.2':
-    dependencies:
-      '@jsr/std__json': 1.0.2
-
-  '@jsr/std__streams@1.0.13':
-    dependencies:
-      '@jsr/std__bytes': 1.0.6
-
   '@monaco-editor/loader@1.5.0':
     dependencies:
       state-local: 1.0.7
@@ -8219,10 +8179,6 @@ snapshots:
       eslint-config-prettier: 10.1.8(eslint@9.37.0(jiti@2.7.0))
 
   eslint-plugin-react-hooks@5.2.0(eslint@9.37.0(jiti@2.7.0)):
-    dependencies:
-      eslint: 9.37.0(jiti@2.7.0)
-
-  eslint-plugin-react-refresh@0.4.23(eslint@9.37.0(jiti@2.7.0)):
     dependencies:
       eslint: 9.37.0(jiti@2.7.0)
 

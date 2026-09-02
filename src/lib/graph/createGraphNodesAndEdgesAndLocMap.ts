@@ -27,15 +27,9 @@ interface ICreateGraphNodesParams {
    * - yaml
    */
   language: TEditorLanguage;
-
 }
 
-export function createGraphNodesAndEdgesAndLocMap({
-  origin,
-  document,
-  config,
-  language,
-}: ICreateGraphNodesParams): {
+export function createGraphNodesAndEdgesAndLocMap({ origin, document, config, language }: ICreateGraphNodesParams): {
   nodes: IGraphNode[];
   edges: IGraphEdge[];
   locMap: IPathLoCIndexMap;
