@@ -1,11 +1,31 @@
 ---
 import { AppWithIntl } from '#/AppWithIntl';
+import SeoFallback from '#/components/SeoFallback.astro';
 import BaseLayout from '#/layouts/BaseLayout.astro';
+
+const description =
+  'Visualize and explore JSON or YAML data as an interactive graph in your browser. Free, private, and developed by RovinjSoft.';
+const features = [
+  'Interactive graph visualization for nested JSON and YAML',
+  'Synchronized source editor and graph navigation',
+  'JSONPath and keyword search',
+  'Local browser processing with no server upload',
+  'File import, URL sharing, and mobile support',
+];
 ---
 
 <BaseLayout
-  description="Visualize and explore JSON or YAML data as an interactive graph in your browser. Free, private, and developed by RovinjSoft."
+  {description}
+  {features}
+  name="JSON Byte Graph Visualizer"
   title="JSON Byte - JSON/YAML Visualizer & Graph Viewer"
 >
-  <AppWithIntl client:only="react" />
+  <AppWithIntl client:only="react">
+    <SeoFallback
+      slot="fallback"
+      {description}
+      {features}
+      heading="Free JSON and YAML Graph Visualizer"
+    />
+  </AppWithIntl>
 </BaseLayout>

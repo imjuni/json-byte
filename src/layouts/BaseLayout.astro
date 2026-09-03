@@ -4,11 +4,53 @@ import '#/index.css';
 interface Props {
   canonicalPath?: string;
   description: string;
+  features: string[];
+  name: string;
   title: string;
 }
 
-const { canonicalPath = '/', description, title } = Astro.props;
+const { canonicalPath = '/', description, features, name, title } = Astro.props;
 const canonicalUrl = new URL(canonicalPath, Astro.site);
+const socialImageUrl = new URL('/json-byte-desktop-screenshot-001.png', Astro.site);
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': `${new URL('/', Astro.site)}#website`,
+      name: 'JSON Byte',
+      alternateName: 'JSON Byte Developer Tools',
+      url: new URL('/', Astro.site),
+    },
+    {
+      '@type': 'WebApplication',
+      '@id': `${canonicalUrl}#application`,
+      name,
+      url: canonicalUrl,
+      description,
+      image: socialImageUrl,
+      applicationCategory: 'DeveloperApplication',
+      applicationSubCategory: 'JSON and YAML developer tool',
+      browserRequirements: 'Requires JavaScript and a modern web browser.',
+      operatingSystem: 'Any',
+      isAccessibleForFree: true,
+      featureList: features,
+      author: {
+        '@type': 'Organization',
+        name: 'RovinjSoft',
+        url: 'https://rovinjsoft.com',
+      },
+      offers: {
+        '@type': 'Offer',
+        price: 0,
+        priceCurrency: 'USD',
+      },
+      softwareVersion: '2.3.1',
+      license: 'https://www.apache.org/licenses/LICENSE-2.0',
+      isPartOf: { '@id': `${new URL('/', Astro.site)}#website` },
+    },
+  ],
+};
 ---
 
 <!doctype html>
@@ -18,48 +60,28 @@ const canonicalUrl = new URL(canonicalPath, Astro.site);
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="author" content="RovinjSoft" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="generator" content={Astro.generator} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content="https://json-byte.pages.dev/json-byte-desktop-screenshot-001.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="JSON Byte" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content={socialImageUrl} />
+    <meta property="og:image:alt" content="JSON Byte developer tool interface" />
     <meta property="og:url" content={canonicalUrl} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@rovinjsoft" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImageUrl} />
+    <meta name="twitter:image:alt" content="JSON Byte developer tool interface" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)" />
     <link rel="icon" type="image/png" href="/json-byte-favicon.png" />
     <link rel="canonical" href={canonicalUrl} />
     <title>{title}</title>
-    <script type="application/ld+json" is:inline>
-      {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "JSON Byte",
-        "url": "https://json-byte.pages.dev",
-        "image": "https://json-byte.pages.dev/json-byte-mobile-screenshot-001.png",
-        "author": {
-          "@type": "Organization",
-          "name": "RovinjSoft",
-          "url": "https://rovinjsoft.com"
-        },
-        "publisher": {
-          "@type": "Organization",
-          "name": "RovinjSoft",
-          "url": "https://rovinjsoft.com",
-          "logo": {
-            "@type": "ImageObject",
-            "url": "https://rovinjsoft.com/icon_body.png"
-          }
-        },
-        "applicationCategory": "DeveloperApplication",
-        "operatingSystem": "Web",
-        "description": "Visualize and explore JSON or YAML data as an interactive graph in your browser.",
-        "softwareVersion": "2.3.1",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        },
-        "license": "https://www.apache.org/licenses/LICENSE-2.0"
-      }
-    </script>
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData)} is:inline />
   </head>
   <body>
     <slot />

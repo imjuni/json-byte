@@ -5,8 +5,10 @@
 >
   <url>
     <loc>https://json-byte.pages.dev/</loc>
-    <lastmod>2025-10-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>1.0</priority>
+    <lastmod>2026-09-04</lastmod>
+  </url>
+  <url>
+    <loc>https://json-byte.pages.dev/diff/</loc>
+    <lastmod>2026-09-04</lastmod>
   </url>
 </urlset>

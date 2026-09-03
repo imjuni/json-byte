@@ -1,4 +1,7 @@
 User-agent: *
-Disallow:
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
 
 Sitemap: https://json-byte.pages.dev/sitemap.xml

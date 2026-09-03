@@ -1,0 +1,17 @@
+# JSON Byte
+
+> JSON Byte is a free, open-source browser tool for visualizing and comparing JSON and YAML documents. All document processing happens locally in the user's browser.
+
+## Tools
+
+- [JSON and YAML Graph Visualizer](https://json-byte.pages.dev/): Explore nested objects and arrays as an interactive graph, synchronize selections with the source editor, and search by keyword or JSONPath.
+- [JSON and YAML Diff Viewer](https://json-byte.pages.dev/diff/): Compare two JSON or YAML documents side by side, format them, filter unchanged lines, and configure surrounding context.
+
+## Key facts
+
+- Supported input: JSON, JSON with comments, YAML, and multi-document YAML.
+- Privacy: Input documents are processed locally and are not uploaded to JSON Byte servers.
+- Access: The web tools are free and do not require an account.
+- License: Apache License 2.0.
+- Source: https://github.com/imjuni/json-byte
+- Publisher: RovinjSoft, https://rovinjsoft.com/

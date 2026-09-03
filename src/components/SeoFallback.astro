@@ -1,0 +1,70 @@
+---
+interface Props {
+  description: string;
+  features: string[];
+  heading: string;
+}
+
+const { description, features, heading } = Astro.props;
+---
+
+<main class="seo-fallback">
+  <article>
+    <img alt="JSON Byte logo" height="64" src="/json-byte-logo.png" width="64" />
+    <h1>{heading}</h1>
+    <p>{description}</p>
+    <h2>Key features</h2>
+    <ul>
+      {features.map((feature) => <li>{feature}</li>)}
+    </ul>
+    <nav aria-label="JSON Byte tools">
+      <a href="/">JSON and YAML graph visualizer</a>
+      <a href="/diff/">JSON and YAML diff viewer</a>
+    </nav>
+    <p>Your data is processed locally in your browser and is not uploaded to a server.</p>
+  </article>
+</main>
+
+<style>
+  .seo-fallback {
+    align-items: center;
+    background: #f8fafc;
+    box-sizing: border-box;
+    color: #0f172a;
+    display: flex;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    min-height: 100%;
+    padding: 2rem;
+  }
+
+  article {
+    margin: auto;
+    max-width: 48rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+    margin-top: 1.5rem;
+  }
+
+  li,
+  p {
+    line-height: 1.6;
+  }
+
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  a {
+    color: #1d4ed8;
+  }
+</style>

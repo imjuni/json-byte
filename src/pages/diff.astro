@@ -1,12 +1,32 @@
 ---
 import { DiffAppWithIntl } from '#/DiffAppWithIntl';
+import SeoFallback from '#/components/SeoFallback.astro';
 import BaseLayout from '#/layouts/BaseLayout.astro';
+
+const description =
+  'Compare JSON or YAML documents side by side with syntax-aware formatting and configurable context lines.';
+const features = [
+  'Side-by-side comparison for JSON and YAML documents',
+  'Syntax-aware document formatting',
+  'Added, removed, and unchanged line summaries',
+  'Configurable context lines and change-only filtering',
+  'Local browser processing with no server upload',
+];
 ---
 
 <BaseLayout
   canonicalPath="/diff/"
-  description="Compare JSON or YAML documents side by side with syntax-aware formatting and configurable context lines."
+  {description}
+  {features}
+  name="JSON Byte Diff Viewer"
   title="JSON Byte - JSON/YAML Diff Viewer"
 >
-  <DiffAppWithIntl client:only="react" />
+  <DiffAppWithIntl client:only="react">
+    <SeoFallback
+      slot="fallback"
+      {description}
+      {features}
+      heading="Free JSON and YAML Diff Viewer"
+    />
+  </DiffAppWithIntl>
 </BaseLayout>
