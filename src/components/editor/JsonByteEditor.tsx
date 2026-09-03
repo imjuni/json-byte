@@ -7,11 +7,13 @@ import { debounceTime, distinctUntilChanged, filter, tap } from 'rxjs/operators'
 import { useGraphBuilder } from '#/components/editor/hooks/useGraphBuilder';
 import { getOrDefault } from '#/lib/getOrDefault';
 import { useEditorStore } from '#/stores/editorStore';
+import { useThemeStore } from '#/stores/themeStore';
 
 import type { BeforeMount, OnMount } from '@monaco-editor/react';
 
 export const JsonByteEditor = () => {
-  const { content, language, theme, indent, setContent, setEditorInstance, setMonacoInstance } = useEditorStore();
+  const { content, language, indent, setContent, setEditorInstance, setMonacoInstance } = useEditorStore();
+  const appTheme = useThemeStore((state) => state.theme);
   const { updateFromContent } = useGraphBuilder();
 
   // Create Subject once using useMemo
@@ -71,7 +73,7 @@ export const JsonByteEditor = () => {
       height="100%"
       language={language === 'jsonc' ? 'json' : language}
       onMount={handleEditorMount}
-      theme={theme}
+      theme={appTheme === 'dark' ? 'vs-dark' : 'vs'}
       value={content}
       width="100%"
       onChange={(value) => {

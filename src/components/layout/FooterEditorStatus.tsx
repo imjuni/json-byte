@@ -1,9 +1,11 @@
 import { BrowserView, MobileView } from 'react-device-detect';
 
 import { useEditorStore } from '#/stores/editorStore';
+import { useThemeStore } from '#/stores/themeStore';
 
 export const FooterEditorStatus = () => {
-  const { language, indent, theme } = useEditorStore();
+  const { language, indent } = useEditorStore();
+  const theme = useThemeStore((state) => state.theme);
 
   return (
     <>

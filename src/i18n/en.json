@@ -37,10 +37,9 @@
   "graph": {
     "editor-config-dialog": {
       "title": "Editor Settings",
-      "description": "Change editor settings such as indentation, theme, and language.",
+      "description": "Change editor settings such as indentation and language.",
       "indent": "Indentation",
       "language": "Language",
-      "theme": "Theme",
       "action-submit": "Submit",
       "action-close": "Close"
     },
