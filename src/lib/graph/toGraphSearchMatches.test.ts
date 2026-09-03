@@ -15,7 +15,7 @@ const node: IGraphNode = {
     origin: {},
     nodeType: 'object',
     primitiveFields: [
-      { key: 'username', value: 'john', type: 'string' },
+      { key: 'userName', value: 'john', type: 'string' },
       { key: 'age', value: 42, type: 'number' },
     ],
     complexFields: [{ key: 'children', type: 'array', size: 3, nodeId: "$['children']" }],
@@ -27,6 +27,11 @@ const node: IGraphNode = {
 describe('toGraphSearchMatches', () => {
   it('preserves primitive key match references from Fuse', () => {
     const matches = toGraphSearchMatches(createFuse([node]).search('username'));
+    expect(matches.$?.primitiveFields[0]).toEqual({ key: true, value: false });
+  });
+
+  it('matches a case-insensitive key fragment at any position', () => {
+    const matches = toGraphSearchMatches(createFuse([node]).search('Name'));
     expect(matches.$?.primitiveFields[0]).toEqual({ key: true, value: false });
   });
 

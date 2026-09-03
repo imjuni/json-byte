@@ -15,6 +15,8 @@ export const createFuse = (nodes: IGraphNode[]): Fuse<IGraphNode> =>
       'data.complexFields.key',
       'data.complexFields.size',
     ],
+    isCaseSensitive: false,
+    ignoreLocation: true,
     threshold: 0,
   });
 
