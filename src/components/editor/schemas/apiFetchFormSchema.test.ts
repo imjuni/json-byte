@@ -9,6 +9,7 @@ describe('apiFetchFormSchema', () => {
       { key: 'Authorization', value: 'Bearer some-api-token' },
       { key: 'referer', value: 'json-byte' },
     ],
+    method: 'post',
     body: JSON.stringify({ name: 'pikachu' }),
   };
 
@@ -23,7 +24,7 @@ describe('apiFetchFormSchema', () => {
   });
 
   it('should return false when invalid data that is invalid url', () => {
-    const result = apiFetchFormSchema.safeParse({ data, url: 'invalid' });
+    const result = apiFetchFormSchema.safeParse({ ...data, url: 'invalid' });
     expect(result.success).toBeFalsy();
   });
 });

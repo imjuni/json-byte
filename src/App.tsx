@@ -1,6 +1,7 @@
 import { BrowserView, MobileView } from 'react-device-detect';
 
 import { Editor } from '#/components/editor/Editor';
+import { useQueryStringContent } from '#/components/editor/hooks/useQueryStringContent';
 import { AppShell } from '#/components/layout/AppShell';
 import { Resizer } from '#/components/layout/Resizer';
 import { PixiGraphRenderer } from '#/components/renderer/pixi/PixiGraphRenderer';
@@ -10,6 +11,7 @@ import './App.css';
 
 export const App = () => {
   const { editorWidthPercent, editorHeightPercent } = useAppStore();
+  useQueryStringContent();
 
   return (
     <AppShell activePage="visualization">

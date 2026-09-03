@@ -57,7 +57,8 @@
     "export-dialog": {
       "trigger": "Export",
       "title": "Export",
-      "description": "Anyone who has this link will be able to view this. It has already been copied. If you want to copy it again, please copy the link below.",
+      "description": "Anyone who has this link can view the same visualization. Share links are available for visualizations with up to 1,000 nodes. The link has already been copied.",
+      "limit-description": "Share links support up to 1,000 nodes. This visualization has {count} nodes, so a link was not generated.",
       "sr-textarea-label": "Export Link",
       "action-close": "Close"
     },

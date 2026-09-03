@@ -1,11 +1,10 @@
 import { isError } from 'my-easy-fp';
 
-import { encode } from '#/lib/messagepack/encode';
-import { toBase64 } from '#/lib/messagepack/toBase64';
+import { compressQueryString } from '#/lib/compression/queryStringCodec';
 
 import type { JsonValue } from 'type-fest';
 
-export function replaceHref(value: JsonValue | Error): boolean {
+export async function replaceHref(value: JsonValue | Error): Promise<boolean> {
   try {
     if (value instanceof Error) {
       return false;
@@ -14,13 +13,8 @@ export function replaceHref(value: JsonValue | Error): boolean {
     const { href } = window.location;
 
     const url = new URL(href);
-    const encoded = encode(value);
-
-    if (encoded instanceof Error) {
-      return false;
-    }
-
-    const base64Content = toBase64(encoded);
+    const base64Content = await compressQueryString(JSON.stringify(value));
+    if (base64Content instanceof Error) return false;
 
     url.searchParams.delete('c');
     url.searchParams.append('c', base64Content);

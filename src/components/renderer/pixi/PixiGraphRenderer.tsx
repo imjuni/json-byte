@@ -117,8 +117,7 @@ const singleLine = (value: unknown): string =>
 
 const getTypeColor = (theme: IRenderTheme, type: IGraphNode['data']['nodeType']): number => theme[type];
 
-export const adjustSearchColor = (color: number, adjustment: IRenderTheme['searchTextAdjustment']): number => {
-  const amount = 0.2;
+const adjustColor = (color: number, adjustment: IRenderTheme['searchTextAdjustment'], amount: number): number => {
   const adjustChannel = (channel: number) =>
     adjustment === 'darken' ? channel * (1 - amount) : channel + (255 - channel) * amount;
   const red = Math.round(adjustChannel(Math.floor(color / 65_536)));
@@ -126,6 +125,9 @@ export const adjustSearchColor = (color: number, adjustment: IRenderTheme['searc
   const blue = Math.round(adjustChannel(color % 256));
   return red * 65_536 + green * 256 + blue;
 };
+
+export const adjustSearchColor = (color: number, adjustment: IRenderTheme['searchTextAdjustment']): number =>
+  adjustColor(color, adjustment, 0.2);
 
 const measureFieldText = (value: string): number => CanvasTextMetrics.measureText(value, FIELD_TEXT_STYLE).width;
 
@@ -229,6 +231,9 @@ const drawNode = (
     .fill(theme.node)
     .stroke({ color: searchMatch == null ? theme.nodeBorder : theme.nodeSearched, width: searchMatch == null ? 2 : 3 });
   container.addChild(background);
+  const rowHighlights = new Graphics();
+  container.addChild(rowHighlights);
+  const searchRowColor = adjustColor(theme.node, theme.searchTextAdjustment, 0.05);
 
   const localTop = bounds.top - node.position.y;
   const localBottom = bounds.bottom - node.position.y;
@@ -262,6 +267,10 @@ const drawNode = (
       const fieldText = getFieldTextLayout(field.key, field.value);
       const color = getTypeColor(theme, field.type);
       const fieldMatch = searchMatch?.primitiveFields[index];
+      if (fieldMatch?.key === true || fieldMatch?.value === true) {
+        const highlightHeight = index === fieldCount - 1 ? LINE_HEIGHT - 2 : LINE_HEIGHT;
+        rowHighlights.rect(2, rowY, NODE_WIDTH - 4, highlightHeight).fill(searchRowColor);
+      }
       container.addChild(new Graphics().circle(15, rowY + LINE_HEIGHT / 2, 3).fill(color));
       const keyText = new Text({
         text: fieldText.key,
@@ -306,6 +315,10 @@ const drawNode = (
       const fieldText = getFieldTextLayout(field.key, size);
       const color = getTypeColor(theme, field.type);
       const fieldMatch = searchMatch?.complexFields[index];
+      if (fieldMatch?.key === true || fieldMatch?.value === true) {
+        const highlightHeight = primitiveCount + index === fieldCount - 1 ? LINE_HEIGHT - 2 : LINE_HEIGHT;
+        rowHighlights.rect(2, rowY, NODE_WIDTH - 4, highlightHeight).fill(searchRowColor);
+      }
       container.addChild(new Graphics().circle(15, rowY + LINE_HEIGHT / 2, 3).fill(color));
       const keyText = new Text({
         text: fieldText.key,

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import axios from 'axios';
 import { Upload } from 'lucide-react';
 import { isError } from 'my-easy-fp';
 import { Controller, useForm } from 'react-hook-form';
@@ -63,7 +62,7 @@ export const ImportDialog = () => {
     },
   });
 
-  const { fileUploadButtonTitle, apiFetchButtonTitle, hanldeJsonParse, handleUploadProgress, handleFetchProgress } =
+  const { fileUploadButtonTitle, apiFetchButtonTitle, handleUploadProgress, handleFetchProgress } =
     useImportProgressHookBuilder();
 
   const hanldeDialogReset = useCallback(() => {
@@ -207,29 +206,27 @@ export const ImportDialog = () => {
     async (data: TApiFetchFormSchema) => {
       handleFetchProgress('fetching');
 
-      // Convert headers array to axios headers object
-      const headersObject = data.headers?.reduce<Record<string, string>>((aggregated, header) => {
-        if (header.key.trim() !== '') {
-          return { ...aggregated, [header.key]: header.value };
-        }
+      const headers = new Headers();
+      for (const header of data.headers ?? []) {
+        if (header.key.trim() !== '') headers.set(header.key, header.value);
+      }
 
-        return aggregated;
-      }, {});
-
-      // Parse body if provided
-      const parsedBody = hanldeJsonParse(data.body);
+      const method = data.method.toUpperCase();
+      const body =
+        method === 'GET' || method === 'HEAD' || data.body == null || data.body === '' ? undefined : data.body;
+      if (body != null && !headers.has('content-type')) headers.set('content-type', 'application/json');
 
       try {
-        const reply = await axios.request({
-          method: data.method,
-          url: data.url,
-          headers: headersObject,
-          data: parsedBody,
-          validateStatus: () => true,
+        const reply = await fetch(data.url, {
+          method,
+          headers,
+          body,
         });
+        const replyText = await reply.text();
 
-        if (reply.status < 300 && reply.data != null) {
-          const formattedJson = JSON.stringify(reply.data, null, 2);
+        if (reply.ok && replyText !== '') {
+          const replyData = reply.headers.get('content-type')?.includes('json') ? JSON.parse(replyText) : replyText;
+          const formattedJson = JSON.stringify(replyData, null, 2);
 
           setContent(formattedJson);
           updateFromContent(formattedJson);
@@ -275,7 +272,7 @@ export const ImportDialog = () => {
         handleOpenChange(false);
       }, 10);
     },
-    [intl, setContent, setNotification, hanldeJsonParse, handleFetchProgress, updateFromContent, handleOpenChange],
+    [intl, setContent, setNotification, handleFetchProgress, updateFromContent, handleOpenChange],
   );
 
   useEffect(() => {
