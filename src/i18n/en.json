@@ -49,6 +49,9 @@
       "content": "Source Data",
       "json-path": "JSON Path",
       "jq-path": "jq Path",
+      "action-copy-json-path": "Copy JSON Path",
+      "action-copy-jq-path": "Copy jq Path",
+      "copied": "Copied!",
       "action-find-in-editor": "Find Node in Editor",
       "action-close": "Close"
     },
