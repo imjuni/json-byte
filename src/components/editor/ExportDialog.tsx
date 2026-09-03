@@ -18,9 +18,11 @@ import {
 import { Label } from '#/components/ui/label';
 import { Textarea } from '#/components/ui/textarea';
 import { CE_EDITOR_URL } from '#/contracts/editors/CE_EDITOR_URL';
-import { encode } from '#/lib/messagepack/encode';
-import { toBase64 } from '#/lib/messagepack/toBase64';
+import { compressQueryString } from '#/lib/compression/queryStringCodec';
 import { useEditorStore } from '#/stores/editorStore';
+import { useGraphStore } from '#/stores/graphStore';
+
+const EXPORT_NODE_LIMIT = 1_000;
 
 export const ExportDialog = () => {
   const intl = useIntl();
@@ -28,6 +30,8 @@ export const ExportDialog = () => {
   const copyButtonRef = useRef<HTMLButtonElement>(null);
   const [querystring, setQuerystring] = useState<string>();
   const { content } = useEditorStore();
+  const nodeCount = useGraphStore((state) => state.nodes.length);
+  const isOverNodeLimit = nodeCount > EXPORT_NODE_LIMIT;
 
   const handleOpenChange = (open: boolean) => {
     if (open) {
@@ -39,18 +43,25 @@ export const ExportDialog = () => {
   };
 
   useEffect(() => {
-    const encoded = encode(content);
+    let active = true;
+    setQuerystring(undefined);
+    if (isOverNodeLimit) return undefined;
 
-    if (encoded instanceof Error) {
-      return;
-    }
+    const timeout = window.setTimeout(() => {
+      compressQueryString(content).then((compressed) => {
+        if (!active || compressed instanceof Error) return;
+        setQuerystring(compressed);
+      });
+    }, 350);
 
-    const base64ed = toBase64(encoded);
-    setQuerystring(base64ed);
-  }, [content, setQuerystring]);
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [content, isOverNodeLimit]);
 
   useEffect(() => {
-    if (copyButtonRef.current) {
+    if (copyButtonRef.current && querystring != null) {
       const clipboard = new Clipboard(copyButtonRef.current, {
         text: () => `${window.location.origin}${window.location.pathname}?${CE_EDITOR_URL.CONTENT}=${querystring}`,
       });
@@ -66,7 +77,7 @@ export const ExportDialog = () => {
   return (
     <Dialog onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button ref={copyButtonRef} size="sm" variant="outline">
+        <Button ref={copyButtonRef} disabled={querystring == null && !isOverNodeLimit} size="sm" variant="outline">
           <IconLink /> {intl.$t({ id: 'graph.export-dialog.trigger' })}
         </Button>
       </DialogTrigger>
@@ -74,25 +85,31 @@ export const ExportDialog = () => {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{intl.$t({ id: 'graph.export-dialog.title' })}</DialogTitle>
-          <DialogDescription>{intl.$t({ id: 'graph.export-dialog.description' })}</DialogDescription>
+          <DialogDescription>
+            {isOverNodeLimit
+              ? intl.$t({ id: 'graph.export-dialog.limit-description' }, { count: nodeCount })
+              : intl.$t({ id: 'graph.export-dialog.description' })}
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center gap-2">
-          <div className="grid flex-1 gap-2">
-            <Label className="sr-only" htmlFor="link">
-              {intl.$t({ id: 'graph.export-dialog.sr-textarea-label' })}
-            </Label>
+        {!isOverNodeLimit ? (
+          <div className="flex items-center gap-2">
+            <div className="grid flex-1 gap-2">
+              <Label className="sr-only" htmlFor="link">
+                {intl.$t({ id: 'graph.export-dialog.sr-textarea-label' })}
+              </Label>
 
-            <Textarea
-              ref={textareaRef}
-              readOnly
-              className="min-h-[120px] max-h-[120px] resize-none"
-              id="link"
-              rows={5}
-              value={`${window.location.origin}${window.location.pathname}?${CE_EDITOR_URL.CONTENT}=${querystring}`}
-            />
+              <Textarea
+                ref={textareaRef}
+                readOnly
+                className="min-h-[120px] max-h-[120px] resize-none"
+                id="link"
+                rows={5}
+                value={`${window.location.origin}${window.location.pathname}?${CE_EDITOR_URL.CONTENT}=${querystring}`}
+              />
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <DialogFooter className="sm:justify-start">
           <DialogClose asChild>

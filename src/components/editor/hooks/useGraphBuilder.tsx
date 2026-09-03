@@ -52,7 +52,9 @@ export function useGraphBuilder(): {
       setFuse(createFuse(nodes));
 
       if (ENABLE_QUERYSTRING) {
-        setTimeout(() => replaceHref(document), 10);
+        setTimeout(() => {
+          replaceHref(document).then(() => undefined);
+        }, 10);
       } else {
         window.history.replaceState(null, '', '/');
       }

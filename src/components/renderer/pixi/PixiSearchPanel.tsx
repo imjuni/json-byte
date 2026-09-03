@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Route, Search, Trash2, X } from 'lucide-react';
 import { Subject } from 'rxjs';
@@ -25,6 +25,7 @@ type TSearchMode = 'path' | 'text';
 const MAX_SEARCH_RESULTS = 200;
 
 export const PixiSearchPanel = ({ onFocusNode }: IPixiSearchPanelProps) => {
+  const inputRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<TSearchMode>();
   const [searchTerm, setSearchTerm] = useState('');
   const [pathTerm, setPathTerm] = useState('');
@@ -73,6 +74,10 @@ export const PixiSearchPanel = ({ onFocusNode }: IPixiSearchPanelProps) => {
     return () => subscription.unsubscribe();
   }, [search, searchTerm$]);
 
+  useEffect(() => {
+    if (mode != null) inputRef.current?.focus();
+  }, [mode]);
+
   const clear = useCallback(() => {
     setSearchTerm('');
     setPathTerm('');
@@ -120,6 +125,7 @@ export const PixiSearchPanel = ({ onFocusNode }: IPixiSearchPanelProps) => {
               <Search className="w-4 h-4 text-muted-foreground" />
             )}
             <Input
+              ref={inputRef}
               aria-label={mode === 'path' ? 'JSONPath or jq path' : 'Search nodes'}
               className="h-7 w-52 border-none shadow-none focus-visible:ring-0"
               placeholder={mode === 'path' ? '$.items[0] or .items[0]' : 'Search nodes...'}

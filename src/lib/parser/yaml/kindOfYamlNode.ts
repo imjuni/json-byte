@@ -1,5 +1,6 @@
 import { isMap, isScalar, isSeq } from 'yaml';
 
+import type { JsonValue } from 'type-fest';
 import type { Node as YamlNode } from 'yaml';
 
 import type { TComplexTypeString } from '#/contracts/json/TComplexTypeString';
@@ -9,9 +10,10 @@ export function kindOfYamlNode(node: YamlNode): TComplexTypeString | TPrimitiveT
   if (isMap(node)) return 'object';
   if (isSeq(node)) return 'array';
   if (isScalar(node)) {
-    const v = (node as any).toJSON ? (node as any).toJSON() : (node as any).value;
-    if (v === null) return 'null';
-    switch (typeof v) {
+    const scalar = node as unknown as { toJSON?: () => JsonValue; value: JsonValue };
+    const value = scalar.toJSON?.() ?? scalar.value;
+    if (value === null) return 'null';
+    switch (typeof value) {
       case 'string':
         return 'string';
       case 'number':
@@ -19,7 +21,7 @@ export function kindOfYamlNode(node: YamlNode): TComplexTypeString | TPrimitiveT
       case 'boolean':
         return 'boolean';
       default:
-        return 'string'; // 기타는 문자열 취급(앵커/태그 등은 일반화)
+        return 'string'; // Treat tags and other scalar values as strings.
     }
   }
   return 'null';
