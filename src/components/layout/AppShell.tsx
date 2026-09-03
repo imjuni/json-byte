@@ -1,4 +1,4 @@
-import { FooterEditorStatus } from '#/components/layout/FooterEditorStatus';
+import { FooterEditorStatus, FooterThemeStatus } from '#/components/layout/FooterEditorStatus';
 import { Nav } from '#/components/nav/Nav';
 import { Notification } from '#/components/nav/Notification';
 
@@ -18,7 +18,7 @@ export const AppShell = ({ activePage, children }: IAppShellProps) => (
     <main className="flex-1 mt-13 overflow-y-scroll md:overflow-hidden">{children}</main>
 
     <footer className="h-6 px-4 bg-card border-t flex items-center justify-between text-xs text-muted-foreground">
-      {activePage === 'visualization' ? <FooterEditorStatus /> : <span />}
+      {activePage === 'visualization' ? <FooterEditorStatus /> : <FooterThemeStatus compact={false} />}
       <div className="flex gap-4">
         <span>© 2025 JSON Byte</span>
 

@@ -3,9 +3,27 @@ import { BrowserView, MobileView } from 'react-device-detect';
 import { useEditorStore } from '#/stores/editorStore';
 import { useThemeStore } from '#/stores/themeStore';
 
+interface IFooterThemeStatusProps {
+  compact: boolean;
+}
+
+export const FooterThemeStatus = ({ compact }: IFooterThemeStatusProps) => {
+  const theme = useThemeStore((state) => state.theme);
+
+  if (compact) {
+    return <span className="font-bold">{theme}</span>;
+  }
+
+  return (
+    <div className="flex gap-2">
+      <span>Theme: </span>
+      <span className="font-bold">{theme}</span>
+    </div>
+  );
+};
+
 export const FooterEditorStatus = () => {
   const { language, indent } = useEditorStore();
-  const theme = useThemeStore((state) => state.theme);
 
   return (
     <>
@@ -20,10 +38,7 @@ export const FooterEditorStatus = () => {
           <span className="font-bold">{indent}</span>
         </div>
 
-        <div className="flex gap-2">
-          <span>Theme: </span>
-          <span className="font-bold">{theme}</span>
-        </div>
+        <FooterThemeStatus compact={false} />
       </BrowserView>
 
       <MobileView className="flex gap-1">
@@ -35,7 +50,7 @@ export const FooterEditorStatus = () => {
           {indent}
           {' / '}
         </span>
-        <span className="font-bold">{theme}</span>
+        <FooterThemeStatus compact />
       </MobileView>
     </>
   );
