@@ -9,7 +9,7 @@ import { useIntl } from 'react-intl';
 import { useEditorConfiger } from '#/components/editor/hooks/useEditorConfiger';
 import { useGraphBuilder } from '#/components/editor/hooks/useGraphBuilder';
 import { useLanguageConvertor } from '#/components/editor/hooks/useLanguageConvertor';
-import { editorConfigFormSchema, indents, languages, themes } from '#/components/editor/schemas/editorConfigFormSchema';
+import { editorConfigFormSchema, indents, languages } from '#/components/editor/schemas/editorConfigFormSchema';
 import { Button } from '#/components/ui/button';
 import {
   Dialog,
@@ -34,15 +34,13 @@ export const EditorConfigDialog = () => {
   const { convertToYaml, convertToJson, convertIndent } = useLanguageConvertor();
   const { handleChangeEditorLanguage } = useEditorConfiger();
   const { updateFromContent } = useGraphBuilder();
-  const { content, language, indent, theme, setEditorConfig, setContent, editorInstance, monacoInstance } =
-    useEditorStore();
+  const { content, language, indent, setEditorConfig, setContent, editorInstance, monacoInstance } = useEditorStore();
 
   const editorConfigForm = useForm<TEditorConfigFormSchema>({
     mode: 'onChange',
     resolver: zodResolver(editorConfigFormSchema),
     defaultValues: {
       indent: `${indent}`,
-      theme,
       language,
     },
   });
@@ -52,11 +50,10 @@ export const EditorConfigDialog = () => {
     if (open) {
       editorConfigForm.reset({
         indent: `${indent}`,
-        theme,
         language,
       });
     }
-  }, [open, indent, theme, language, editorConfigForm]);
+  }, [open, indent, language, editorConfigForm]);
 
   const onHandleSubmit = useCallback(
     (data: TEditorConfigFormSchema) => {
@@ -102,7 +99,7 @@ export const EditorConfigDialog = () => {
         });
       }
 
-      setEditorConfig({ indent: parsedIndent, theme: data.theme, language: data.language });
+      setEditorConfig({ indent: parsedIndent, language: data.language });
 
       setTimeout(() => setOpen(false), 50);
     },
@@ -133,7 +130,7 @@ export const EditorConfigDialog = () => {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{intl.$t({ id: 'graph.editor-config-dialog.title' })}</DialogTitle>
-          <DialogDescription>{intl.$t({ id: 'graph.export-dialog.description' })}</DialogDescription>
+          <DialogDescription>{intl.$t({ id: 'graph.editor-config-dialog.description' })}</DialogDescription>
         </DialogHeader>
 
         <div className="flex">
@@ -192,38 +189,6 @@ export const EditorConfigDialog = () => {
                       {languages.map((languageItem) => (
                         <SelectItem key={nanoid()} value={languageItem.value}>
                           {languageItem.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-              )}
-            />
-
-            <div className="h-4" />
-
-            <Controller
-              control={editorConfigForm.control}
-              name="theme"
-              render={({ field, fieldState }) => (
-                <Field>
-                  <FieldLabel htmlFor="editor-config-theme-select">
-                    {intl.$t({ id: 'graph.editor-config-dialog.theme' })}
-                  </FieldLabel>
-
-                  <Select name={field.name} onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger
-                      aria-invalid={fieldState.invalid}
-                      className="w-[100%]"
-                      id="editor-config-theme-select"
-                    >
-                      <SelectValue placeholder="theme" />
-                    </SelectTrigger>
-
-                    <SelectContent>
-                      {themes.map((themeItem) => (
-                        <SelectItem key={nanoid()} value={themeItem.value}>
-                          {themeItem.label}
                         </SelectItem>
                       ))}
                     </SelectContent>

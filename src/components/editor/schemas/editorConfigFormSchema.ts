@@ -8,12 +8,6 @@ export const indents = [
   { label: '8', value: '8' },
 ];
 
-export const themes = [
-  { label: 'Visual Studio', value: 'vs' },
-  { label: 'Visual Studio Dark', value: 'vs-dark' },
-  { label: 'High Contrast black', value: 'hc-black' },
-];
-
 export const languages = [
   { label: 'JSON', value: 'json' },
   // JSON with comment 규격은 주석을 유지하는 것이 쉽지 않아 현 시점에서 parse 만 지원한다
@@ -23,7 +17,6 @@ export const languages = [
 
 export const editorConfigFormSchema = z.object({
   indent: z.enum(indents.map((indent) => indent.value)),
-  theme: z.enum(themes.map((theme) => theme.value)),
   language: z.enum(languages.map((language) => language.value)),
 });
 

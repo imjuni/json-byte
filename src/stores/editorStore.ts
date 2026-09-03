@@ -86,19 +86,17 @@ export const useEditorStore = create<TEditorStore>()(
       content: JSON.stringify(example, undefined, 2),
       language: 'json',
       indent: 2,
-      theme: 'vs',
       editorInstance: undefined,
       monacoInstance: undefined,
 
       // Actions
       setContent: (content: string) => set({ content }),
       setLanguage: (language) => set({ language }),
-      setIndent: (theme) => set({ theme }),
-      setTheme: (theme) => set({ theme }),
+      setIndent: (indent) => set({ indent: Number.parseInt(indent, 10) }),
       setEditorInstance: (instance) => set({ editorInstance: instance }),
       setMonacoInstance: (instance) => set({ monacoInstance: instance }),
-      setEditorConfig: (config) => set({ language: config.language, indent: config.indent, theme: config.theme }),
-      reset: () => set({ content: '{}', language: 'json', theme: 'vs', indent: 2 }),
+      setEditorConfig: (config) => set({ language: config.language, indent: config.indent }),
+      reset: () => set({ content: '{}', language: 'json', indent: 2 }),
     }),
     {
       name: 'json-byte-editor',
@@ -107,7 +105,6 @@ export const useEditorStore = create<TEditorStore>()(
       partialize: (state) => ({
         content: state.content,
         language: state.language,
-        theme: state.theme,
         indent: state.indent,
       }),
       onRehydrateStorage: () => (state) => {
