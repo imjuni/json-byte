@@ -1,9 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Application, CanvasTextMetrics, Container, Graphics, Text, TextStyle } from 'pixi.js';
 
 import { PixiNodeDetailsDialog } from '#/components/renderer/pixi/PixiNodeDetailsDialog';
 import { PixiSearchPanel } from '#/components/renderer/pixi/PixiSearchPanel';
+import {
+  collapseAllBranches,
+  getDirectChildIds,
+  getVisibleGraph,
+  isGraphFullyCollapsed,
+  revealNodeBranches,
+  toggleCollapsedBranch,
+  toggleCollapsedNode,
+} from '#/lib/graph/graphCollapse';
 import {
   applyWheelTransform,
   distanceToSegment,
@@ -40,9 +49,11 @@ const TEXT_LINE_HEIGHT = 18;
 const HEADING_LINE_HEIGHT = 22.5;
 const TEXT_ROW_OFFSET = (LINE_HEIGHT - TEXT_LINE_HEIGHT) / 2;
 const FIELD_TEXT_X = 24;
+const COLLAPSIBLE_FIELD_TEXT_X = 40;
 const FIELD_TEXT_GAP = 4;
 const FIELD_RIGHT_PADDING = 12;
 const FIELD_TEXT_WIDTH = NODE_WIDTH - FIELD_TEXT_X - FIELD_RIGHT_PADDING;
+const COLLAPSIBLE_FIELD_TEXT_WIDTH = NODE_WIDTH - COLLAPSIBLE_FIELD_TEXT_X - FIELD_RIGHT_PADDING;
 const FIELD_TEXT_STYLE = new TextStyle({
   fontFamily: MONOSPACE_FONT,
   fontSize: 12,
@@ -159,20 +170,50 @@ const fitFieldText = (value: string, maxWidth: number): string => {
   return low === 0 ? '' : `${characters.slice(0, low).join('')}…`;
 };
 
-const getFieldTextLayout = (key: unknown, value: unknown): { key: string; keyWidth: number; value: string } => {
+const getFieldTextLayout = (
+  key: unknown,
+  value: unknown,
+  maxWidth = FIELD_TEXT_WIDTH,
+): { key: string; keyWidth: number; value: string } => {
   const fullKey = `${singleLine(key)}:`;
   const fullValue = singleLine(value);
   const fullKeyWidth = measureFieldText(fullKey);
   const fullValueWidth = measureFieldText(fullValue);
-  if (fullKeyWidth + FIELD_TEXT_GAP + fullValueWidth <= FIELD_TEXT_WIDTH) {
+  if (fullKeyWidth + FIELD_TEXT_GAP + fullValueWidth <= maxWidth) {
     return { key: fullKey, keyWidth: fullKeyWidth, value: fullValue };
   }
 
-  const reservedValueWidth = Math.min(fullValueWidth, FIELD_TEXT_WIDTH * 0.55);
-  const fittedKey = fitFieldText(fullKey, FIELD_TEXT_WIDTH - FIELD_TEXT_GAP - reservedValueWidth);
+  const reservedValueWidth = Math.min(fullValueWidth, maxWidth * 0.55);
+  const fittedKey = fitFieldText(fullKey, maxWidth - FIELD_TEXT_GAP - reservedValueWidth);
   const keyWidth = measureFieldText(fittedKey);
-  const fittedValue = fitFieldText(fullValue, FIELD_TEXT_WIDTH - FIELD_TEXT_GAP - keyWidth);
+  const fittedValue = fitFieldText(fullValue, maxWidth - FIELD_TEXT_GAP - keyWidth);
   return { key: fittedKey, keyWidth, value: fittedValue };
+};
+
+const drawCollapseToggle = (
+  x: number,
+  y: number,
+  collapsed: boolean,
+  theme: IRenderTheme,
+  onToggle: () => void,
+): Container => {
+  const toggle = new Container();
+  toggle.position.set(x, y);
+  toggle.eventMode = 'static';
+  toggle.cursor = 'pointer';
+  toggle.hitArea = { contains: (localX, localY) => localX >= 0 && localX <= 20 && localY >= 0 && localY <= 20 };
+  toggle.addChild(
+    new Graphics().roundRect(0, 0, 20, 20, 4).fill(theme.node).stroke({ color: theme.nodeBorder, width: 1 }),
+  );
+  const icon = new Graphics().moveTo(5, 10).lineTo(15, 10);
+  if (collapsed) icon.moveTo(10, 5).lineTo(10, 15);
+  icon.stroke({ color: theme.text, width: 2 });
+  toggle.addChild(icon);
+  toggle.on('pointertap', (event: FederatedPointerEvent) => {
+    event.stopPropagation();
+    onToggle();
+  });
+  return toggle;
 };
 
 const getViewportBounds = (
@@ -227,7 +268,10 @@ const drawNode = (
   bounds: IViewportBounds,
   textResolution: number,
   onClick: (node: IGraphNode) => void,
+  onToggleBranch: (childId: string) => void,
+  onToggleNode: (node: IGraphNode) => void,
   registerStroke: (update: (color: number) => void) => void,
+  collapsedBranchIds: ReadonlySet<string>,
   searchMatch?: IGraphSearchMatch,
 ): Container => {
   const container = new Container();
@@ -260,8 +304,14 @@ const drawNode = (
   const localTop = bounds.top - node.position.y;
   const localBottom = bounds.bottom - node.position.y;
   if (localTop <= HEADER_HEIGHT && localBottom >= 0) {
+    const childIds = getDirectChildIds(node);
+    const hasChildren = childIds.length > 0;
+    const allChildrenCollapsed = hasChildren && childIds.every((id) => collapsedBranchIds.has(id));
+    if (hasChildren) {
+      container.addChild(drawCollapseToggle(10, 10, allChildrenCollapsed, theme, () => onToggleNode(node)));
+    }
     const heading = new Text({
-      text: truncate(node.data.label, 34),
+      text: truncate(node.data.label, hasChildren ? 30 : 34),
       resolution: textResolution,
       roundPixels: true,
       style: {
@@ -272,7 +322,7 @@ const drawNode = (
         fontWeight: searchMatch?.heading ? '700' : '600',
       },
     });
-    heading.position.set(12, 10);
+    heading.position.set(hasChildren ? 40 : 12, 10);
     container.addChild(heading);
   }
 
@@ -332,16 +382,21 @@ const drawNode = (
   for (let index = firstComplex; index <= lastComplex; index += 1) {
     const field = node.data.complexFields[index];
     if (field != null) {
-      const size = field.type === 'array' ? `[${field.size}]` : `{${field.size}}`;
+      const collapsed = collapsedBranchIds.has(field.nodeId);
+      const unit = field.type === 'array' ? 'items' : 'keys';
+      let size = `… ${field.size} ${unit}`;
+      if (!collapsed) size = field.type === 'array' ? `[${field.size} ${unit}]` : `{${field.size} ${unit}}`;
       const rowY = HEADER_HEIGHT + (primitiveCount + index) * LINE_HEIGHT;
-      const fieldText = getFieldTextLayout(field.key, size);
+      const fieldText = getFieldTextLayout(field.key, size, COLLAPSIBLE_FIELD_TEXT_WIDTH);
       const color = getTypeColor(theme, field.type);
       const fieldMatch = searchMatch?.complexFields[index];
       if (fieldMatch?.key === true || fieldMatch?.value === true) {
         const highlightHeight = primitiveCount + index === fieldCount - 1 ? LINE_HEIGHT - 2 : LINE_HEIGHT;
         rowHighlights.rect(2, rowY, NODE_WIDTH - 4, highlightHeight).fill(searchRowColor);
       }
-      container.addChild(new Graphics().circle(15, rowY + LINE_HEIGHT / 2, 3).fill(color));
+      container.addChild(
+        drawCollapseToggle(8, rowY + (LINE_HEIGHT - 20) / 2, collapsed, theme, () => onToggleBranch(field.nodeId)),
+      );
       const keyText = new Text({
         text: fieldText.key,
         resolution: textResolution,
@@ -350,11 +405,13 @@ const drawNode = (
           fontFamily: MONOSPACE_FONT,
           fontSize: 12,
           lineHeight: TEXT_LINE_HEIGHT,
-          fill: fieldMatch?.key ? adjustSearchColor(theme.text, theme.searchTextAdjustment) : theme.text,
+          fill: fieldMatch?.key ? adjustSearchColor(theme.complexText, theme.searchTextAdjustment) : theme.complexText,
           fontWeight: fieldMatch?.key ? '700' : '400',
+          fontStyle: collapsed ? 'italic' : 'normal',
         },
       });
-      keyText.position.set(FIELD_TEXT_X, rowY + TEXT_ROW_OFFSET);
+      keyText.alpha = collapsed ? 0.7 : 1;
+      keyText.position.set(COLLAPSIBLE_FIELD_TEXT_X, rowY + TEXT_ROW_OFFSET);
       container.addChild(keyText);
       const valueText = new Text({
         text: fieldText.value,
@@ -366,12 +423,15 @@ const drawNode = (
           lineHeight: TEXT_LINE_HEIGHT,
           fill: fieldMatch?.value ? adjustSearchColor(color, theme.searchTextAdjustment) : color,
           fontWeight: fieldMatch?.value ? '700' : '400',
+          fontStyle: collapsed ? 'italic' : 'normal',
         },
       });
-      valueText.position.set(FIELD_TEXT_X + fieldText.keyWidth + FIELD_TEXT_GAP, rowY + TEXT_ROW_OFFSET);
+      valueText.alpha = collapsed ? 0.7 : 1;
+      valueText.position.set(COLLAPSIBLE_FIELD_TEXT_X + fieldText.keyWidth + FIELD_TEXT_GAP, rowY + TEXT_ROW_OFFSET);
       container.addChild(valueText);
       const port = ports.get(getSourcePortId(node.id, field.key));
-      if (port != null) container.addChild(new Graphics().circle(port.position.x, port.position.y, 5).fill(color));
+      if (!collapsed && port != null)
+        container.addChild(new Graphics().circle(port.position.x, port.position.y, 5).fill(color));
       if (primitiveCount + index < fieldCount - 1)
         separators.moveTo(0, rowY + LINE_HEIGHT).lineTo(NODE_WIDTH, rowY + LINE_HEIGHT);
     }
@@ -408,9 +468,45 @@ export const PixiGraphRenderer = () => {
   const updateStrokesRef = useRef<() => void>(() => undefined);
   const [tracker, setTracker] = useState(false);
   const [selectedNode, setSelectedNode] = useState<IGraphNode | null>(null);
+  const [collapsedBranchIds, setCollapsedBranchIds] = useState<Set<string>>(() => new Set());
+  const pendingFocusRef = useRef<IGraphNode | null>(null);
   const { nodes, edges, direction, locMap, searchMatches, setDirection } = useGraphStore();
   const { editorInstance } = useEditorStore();
   const { theme } = useThemeStore();
+  const visibleGraph = useMemo(
+    () => getVisibleGraph(nodes, edges, collapsedBranchIds),
+    [collapsedBranchIds, edges, nodes],
+  );
+  const graphFullyCollapsed = isGraphFullyCollapsed(nodes, collapsedBranchIds);
+  const hasCollapsibleBranches = edges.length > 0;
+
+  const toggleBranch = useCallback((childId: string) => {
+    if (draggedRef.current) return;
+    setCollapsedBranchIds((current) => toggleCollapsedBranch(current, childId));
+  }, []);
+
+  const toggleNode = useCallback((node: IGraphNode) => {
+    if (draggedRef.current) return;
+    setCollapsedBranchIds((current) => toggleCollapsedNode(current, node));
+  }, []);
+
+  const toggleAllBranches = useCallback(() => {
+    if (graphFullyCollapsed) {
+      setCollapsedBranchIds(new Set());
+      return;
+    }
+
+    // eslint-disable-next-line no-underscore-dangle
+    pendingFocusRef.current = nodes.find((node) => node.data._parent == null) ?? null;
+    setCollapsedBranchIds(collapseAllBranches(nodes));
+  }, [graphFullyCollapsed, nodes]);
+
+  const revealNodes = useCallback((targets: IGraphNode[]) => {
+    setCollapsedBranchIds((current) => {
+      const next = revealNodeBranches(current, targets);
+      return next.size === current.size ? current : next;
+    });
+  }, []);
 
   const toggleTracker = () => {
     const next = toggleTrackerMode({ enabled: trackerRef.current, selected: trackedRef.current });
@@ -458,9 +554,14 @@ export const PixiGraphRenderer = () => {
   useEffect(() => {
     trackedRef.current = new Set();
     hoveredRef.current = {};
+    pendingFocusRef.current = null;
     setSelectedNode(null);
     updateStrokesRef.current();
   }, [edges]);
+
+  useEffect(() => {
+    setCollapsedBranchIds(new Set());
+  }, [nodes]);
 
   const findNodeInEditor = useCallback(
     (node: IGraphNode) => {
@@ -485,10 +586,10 @@ export const PixiGraphRenderer = () => {
     [editorInstance, locMap],
   );
 
-  const focusNode = useCallback((node: IGraphNode) => {
+  const focusLayoutNode = useCallback((node: IGraphNode, currentLayout: IElkLayoutResult | null): boolean => {
     const app = appRef.current;
-    const layoutedNode = layoutRef.current?.nodes.find((candidate) => candidate.id === node.id);
-    if (app == null || layoutedNode == null) return;
+    const layoutedNode = currentLayout?.nodes.find((candidate) => candidate.id === node.id);
+    if (app == null || layoutedNode == null) return false;
     const scale = Math.max(transformRef.current.scale, 0.8);
     transformRef.current = {
       x: app.screen.width / 2 - (layoutedNode.position.x + NODE_WIDTH / 2) * scale,
@@ -496,10 +597,23 @@ export const PixiGraphRenderer = () => {
       scale,
     };
     renderRef.current();
+    return true;
   }, []);
 
+  const focusNode = useCallback(
+    (node: IGraphNode) => {
+      if (focusLayoutNode(node, layoutRef.current)) return;
+      pendingFocusRef.current = node;
+      setCollapsedBranchIds((current) => {
+        const next = revealNodeBranches(current, [node]);
+        return next.size === current.size ? current : next;
+      });
+    },
+    [focusLayoutNode],
+  );
+
   useEffect(() => {
-    if (nodes.length === 0) {
+    if (visibleGraph.nodes.length === 0) {
       setLayout(null);
       layoutRef.current = null;
       return undefined;
@@ -507,12 +621,14 @@ export const PixiGraphRenderer = () => {
     setIsLayouting(true);
     setLayoutError(null);
     let active = true;
-    const task = applyGraphLayout(nodes, edges, direction === 'LR' ? 'LR' : 'TB');
+    const task = applyGraphLayout(visibleGraph.nodes, visibleGraph.edges, direction === 'LR' ? 'LR' : 'TB');
     task.promise
       .then((result) => {
         if (!active) return;
         layoutRef.current = result;
         setLayout(result);
+        const pendingFocus = pendingFocusRef.current;
+        if (pendingFocus != null && focusLayoutNode(pendingFocus, result)) pendingFocusRef.current = null;
       })
       .catch((error: unknown) => {
         if (active) setLayoutError(error instanceof Error ? error.message : String(error));
@@ -524,9 +640,7 @@ export const PixiGraphRenderer = () => {
       active = false;
       task.cancel();
     };
-    // Search highlighting replaces node objects but does not change layout input.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [direction, edges, nodes.length, nodes[0]?.data.stringify]);
+  }, [direction, focusLayoutNode, visibleGraph]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -675,40 +789,42 @@ export const PixiGraphRenderer = () => {
       const strokeUpdates: (() => void)[] = [];
       const edgeLayer = new Container();
       const edgeLabels = new Container();
-      const graphEdges = new Map(edges.map((edge) => [edge.id, edge]));
+      const graphEdges = new Map(visibleGraph.edges.map((edge) => [edge.id, edge]));
       const layoutPorts = new Map(currentLayout.ports.map((port) => [port.id, port]));
+      const visibleLayoutEdges: { id: string; sections: { x: number; y: number }[][] }[] = [];
       for (const edge of currentLayout.edges) {
+        const visibleSections = edge.sections.filter((section) => sectionIntersectsViewport(section, viewportBounds));
+        // eslint-disable-next-line no-continue
+        if (visibleSections.length === 0) continue;
+        visibleLayoutEdges.push({ id: edge.id, sections: visibleSections });
         const edgeGraphics = new Graphics();
         edgeLayer.addChild(edgeGraphics);
-        const visibleSections = edge.sections.filter((section) => sectionIntersectsViewport(section, viewportBounds));
         let labelDrawn = false;
-        for (const section of edge.sections) {
-          if (sectionIntersectsViewport(section, viewportBounds)) {
-            const first = section[0];
-            if (first != null) {
-              edgeGraphics.moveTo(first.x, first.y);
-              for (const point of section.slice(1)) edgeGraphics.lineTo(point.x, point.y);
-            }
-            const graphEdge = graphEdges.get(edge.id);
-            const center = getSectionCenter(section);
-            if (!labelDrawn && graphEdge != null && center != null) {
-              const label = new Text({
-                text: truncate(singleLine(graphEdge.label), 24),
-                resolution: textResolution,
-                roundPixels: true,
-                style: {
-                  fontFamily: 'sans-serif',
-                  fontSize: 12,
-                  lineHeight: TEXT_LINE_HEIGHT,
-                  fill: renderTheme.heading,
-                  stroke: { color: renderTheme.background, width: 5 },
-                },
-              });
-              label.anchor.set(0.5);
-              label.position.set(center.x, center.y);
-              edgeLabels.addChild(label);
-              labelDrawn = true;
-            }
+        for (const section of visibleSections) {
+          const first = section[0];
+          if (first != null) {
+            edgeGraphics.moveTo(first.x, first.y);
+            for (const point of section.slice(1)) edgeGraphics.lineTo(point.x, point.y);
+          }
+          const graphEdge = graphEdges.get(edge.id);
+          const center = getSectionCenter(section);
+          if (!labelDrawn && graphEdge != null && center != null) {
+            const label = new Text({
+              text: truncate(singleLine(graphEdge.label), 24),
+              resolution: textResolution,
+              roundPixels: true,
+              style: {
+                fontFamily: 'sans-serif',
+                fontSize: 12,
+                lineHeight: TEXT_LINE_HEIGHT,
+                fill: renderTheme.heading,
+                stroke: { color: renderTheme.background, width: 5 },
+              },
+            });
+            label.anchor.set(0.5);
+            label.position.set(center.x, center.y);
+            edgeLabels.addChild(label);
+            labelDrawn = true;
           }
         }
         let previousColor: number | undefined;
@@ -746,6 +862,8 @@ export const PixiGraphRenderer = () => {
             viewportBounds,
             textResolution,
             clickNode,
+            toggleBranch,
+            toggleNode,
             (update) => {
               let previousColor: number | undefined;
               strokeUpdates.push(() => {
@@ -766,6 +884,7 @@ export const PixiGraphRenderer = () => {
                 }
               });
             },
+            collapsedBranchIds,
             searchMatches[node.id],
           ),
         );
@@ -797,7 +916,7 @@ export const PixiGraphRenderer = () => {
         let edgeId: string | undefined;
         let nearest = 6 / currentTransform.scale;
         if (point != null && node == null) {
-          for (const edge of currentLayout.edges) {
+          for (const edge of visibleLayoutEdges) {
             for (const section of edge.sections) {
               for (let index = 1; index < section.length; index += 1) {
                 const distance = distanceToSegment(point, section[index - 1], section[index]);
@@ -815,15 +934,30 @@ export const PixiGraphRenderer = () => {
       updateHoverRef.current();
     };
     renderRef.current();
-  }, [clickNode, direction, edges, layout, nodes, searchMatches, theme]);
+  }, [
+    clickNode,
+    collapsedBranchIds,
+    direction,
+    layout,
+    nodes,
+    searchMatches,
+    theme,
+    toggleBranch,
+    toggleNode,
+    visibleGraph.edges,
+  ]);
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-background">
       <div ref={hostRef} className="absolute inset-0" />
       <PixiSearchPanel
         direction={direction}
+        graphFullyCollapsed={graphFullyCollapsed}
+        hasCollapsibleBranches={hasCollapsibleBranches}
         onFitView={fitView}
         onFocusNode={focusNode}
+        onRevealNodes={revealNodes}
+        onToggleAllBranches={toggleAllBranches}
         onToggleDirection={() => setDirection(direction === 'LR' ? 'TB' : 'LR')}
         onToggleTracker={toggleTracker}
         onZoomIn={() => zoom(1.2)}
