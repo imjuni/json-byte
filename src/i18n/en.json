@@ -35,6 +35,10 @@
     "language-mismatch": "The document formats do not match. Compare JSON with JSON or YAML with YAML."
   },
   "graph": {
+    "toolbar": {
+      "collapse-all": "Collapse all",
+      "expand-all": "Expand all"
+    },
     "editor-config-dialog": {
       "title": "Editor Settings",
       "description": "Change editor settings such as indentation and language.",

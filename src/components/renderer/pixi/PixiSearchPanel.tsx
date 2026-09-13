@@ -1,6 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { ArrowDown, ArrowRight, Focus, Minus, Plus, Radar, Route, Search, Trash2, X } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Focus,
+  Minus,
+  Plus,
+  Radar,
+  Route,
+  Search,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { useIntl } from 'react-intl';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
@@ -20,12 +34,16 @@ import type { IGraphSearchResultItem } from '#/lib/graph/toGraphSearchResultItem
 
 interface IPixiSearchPanelProps {
   onFocusNode: (node: IGraphNode) => void;
+  onRevealNodes: (nodes: IGraphNode[]) => void;
   onFitView: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onToggleDirection: () => void;
   onToggleTracker: () => void;
+  onToggleAllBranches: () => void;
   direction: string;
+  graphFullyCollapsed: boolean;
+  hasCollapsibleBranches: boolean;
   tracker: boolean;
 }
 
@@ -35,14 +53,19 @@ const MAX_SEARCH_RESULTS = 200;
 
 export const PixiSearchPanel = ({
   onFocusNode,
+  onRevealNodes,
   onFitView,
   onZoomIn,
   onZoomOut,
   onToggleDirection,
   onToggleTracker,
+  onToggleAllBranches,
   direction,
+  graphFullyCollapsed,
+  hasCollapsibleBranches,
   tracker,
 }: IPixiSearchPanelProps) => {
+  const intl = useIntl();
   const inputRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<TSearchMode>();
   const [searchTerm, setSearchTerm] = useState('');
@@ -66,9 +89,9 @@ export const PixiSearchPanel = ({
       const nextResults = toGraphSearchResultItems(fuseResults, pathIndex);
       setResults(nextResults);
       setSearchMatches(toGraphSearchMatches(fuseResults));
-      if (nextResults.length === 1 && nextResults[0] != null) onFocusNode(nextResults[0].node);
+      onRevealNodes(nextResults.map((result) => resolveGraphPath(pathIndex, result.path)?.node ?? result.node));
     },
-    [fuse, onFocusNode, pathIndex, setSearchMatches],
+    [fuse, onRevealNodes, pathIndex, setSearchMatches],
   );
 
   const searchPath = useCallback(
@@ -82,9 +105,9 @@ export const PixiSearchPanel = ({
       }
       setResults([{ node: target.node, path: target.path, title: target.title }]);
       setSearchMatches({ [target.node.id]: target.match });
-      onFocusNode(target.node);
+      onRevealNodes([target.node]);
     },
-    [onFocusNode, pathIndex, setSearchMatches],
+    [onRevealNodes, pathIndex, setSearchMatches],
   );
 
   useEffect(() => {
@@ -112,6 +135,9 @@ export const PixiSearchPanel = ({
   );
 
   const activeTerm = mode === 'path' ? pathTerm : searchTerm;
+  const collapseLabel = intl.formatMessage({
+    id: graphFullyCollapsed ? 'graph.toolbar.expand-all' : 'graph.toolbar.collapse-all',
+  });
 
   return (
     <TooltipProvider disableHoverableContent delayDuration={1000} skipDelayDuration={0}>
@@ -122,6 +148,17 @@ export const PixiSearchPanel = ({
           role="toolbar"
         >
           <LegendPopover />
+          <ToolbarTooltip label={collapseLabel}>
+            <Button
+              aria-label={collapseLabel}
+              disabled={!hasCollapsibleBranches}
+              onClick={onToggleAllBranches}
+              size="icon"
+              variant="ghost"
+            >
+              {graphFullyCollapsed ? <ChevronsUpDown className="w-4 h-4" /> : <ChevronsDownUp className="w-4 h-4" />}
+            </Button>
+          </ToolbarTooltip>
           <ToolbarTooltip label="Fit graph to view">
             <Button aria-label="Fit graph to view" onClick={onFitView} size="icon" variant="ghost">
               <Focus className="w-4 h-4" />

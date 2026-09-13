@@ -35,6 +35,10 @@
     "language-mismatch": "좌우 문서의 형식이 다릅니다. JSON끼리 또는 YAML끼리 비교할 수 있습니다."
   },
   "graph": {
+    "toolbar": {
+      "collapse-all": "모두 접기",
+      "expand-all": "모두 펼치기"
+    },
     "editor-config-dialog": {
       "title": "에디터 설정",
       "description": "에디터의 들여쓰기와 언어 설정을 변경할 수 있습니다.",
