@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Route, Search, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowRight, Focus, Minus, Plus, Radar, Route, Search, Trash2, X } from 'lucide-react';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { LegendPopover } from '#/components/renderer/common/LegendPopover';
+import { ToolbarTooltip } from '#/components/renderer/common/ToolbarTooltip';
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
+import { TooltipProvider } from '#/components/ui/tooltip';
 import { createGraphPathIndex, resolveGraphPath } from '#/lib/graph/graphPathIndex';
 import { toGraphSearchMatches } from '#/lib/graph/toGraphSearchMatches';
 import { toGraphSearchResultItems } from '#/lib/graph/toGraphSearchResultItems';
@@ -18,13 +20,29 @@ import type { IGraphSearchResultItem } from '#/lib/graph/toGraphSearchResultItem
 
 interface IPixiSearchPanelProps {
   onFocusNode: (node: IGraphNode) => void;
+  onFitView: () => void;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onToggleDirection: () => void;
+  onToggleTracker: () => void;
+  direction: string;
+  tracker: boolean;
 }
 
 type TSearchMode = 'path' | 'text';
 
 const MAX_SEARCH_RESULTS = 200;
 
-export const PixiSearchPanel = ({ onFocusNode }: IPixiSearchPanelProps) => {
+export const PixiSearchPanel = ({
+  onFocusNode,
+  onFitView,
+  onZoomIn,
+  onZoomOut,
+  onToggleDirection,
+  onToggleTracker,
+  direction,
+  tracker,
+}: IPixiSearchPanelProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<TSearchMode>();
   const [searchTerm, setSearchTerm] = useState('');
@@ -96,29 +114,76 @@ export const PixiSearchPanel = ({ onFocusNode }: IPixiSearchPanelProps) => {
   const activeTerm = mode === 'path' ? pathTerm : searchTerm;
 
   return (
-    <>
-      <div className="absolute bottom-4 left-4 z-10 flex items-center gap-2">
-        <LegendPopover />
-        <Button
-          aria-label="Search nodes"
-          aria-pressed={mode === 'text'}
-          onClick={() => toggleMode('text')}
-          size="icon"
-          variant={mode === 'text' ? 'default' : 'outline'}
+    <TooltipProvider disableHoverableContent delayDuration={1000} skipDelayDuration={0}>
+      <div className="absolute bottom-4 left-1/2 z-10 flex w-max max-w-[calc(100%-1rem)] -translate-x-1/2 flex-col items-center gap-2">
+        <div
+          aria-label="Graph controls"
+          className="order-2 flex max-w-full flex-wrap justify-center items-center gap-1 rounded-2xl border border-border bg-card p-2 shadow-lg"
+          role="toolbar"
         >
-          <Search className="w-4 h-4" />
-        </Button>
-        <Button
-          aria-label="Find by JSONPath or jq path"
-          aria-pressed={mode === 'path'}
-          onClick={() => toggleMode('path')}
-          size="icon"
-          variant={mode === 'path' ? 'default' : 'outline'}
-        >
-          <Route className="w-4 h-4" />
-        </Button>
+          <LegendPopover />
+          <ToolbarTooltip label="Fit graph to view">
+            <Button aria-label="Fit graph to view" onClick={onFitView} size="icon" variant="ghost">
+              <Focus className="w-4 h-4" />
+            </Button>
+          </ToolbarTooltip>
+          <ToolbarTooltip label="Zoom out">
+            <Button aria-label="Zoom out" onClick={onZoomOut} size="icon" variant="ghost">
+              <Minus className="w-4 h-4" />
+            </Button>
+          </ToolbarTooltip>
+          <ToolbarTooltip label="Zoom in">
+            <Button aria-label="Zoom in" onClick={onZoomIn} size="icon" variant="ghost">
+              <Plus className="w-4 h-4" />
+            </Button>
+          </ToolbarTooltip>
+          <ToolbarTooltip label="Search nodes">
+            <Button
+              aria-label="Search nodes"
+              aria-pressed={mode === 'text'}
+              onClick={() => toggleMode('text')}
+              size="icon"
+              variant={mode === 'text' ? 'secondary' : 'ghost'}
+            >
+              <Search className="w-4 h-4" />
+            </Button>
+          </ToolbarTooltip>
+          <ToolbarTooltip label="Find by JSONPath or jq path">
+            <Button
+              aria-label="Find by JSONPath or jq path"
+              aria-pressed={mode === 'path'}
+              onClick={() => toggleMode('path')}
+              size="icon"
+              variant={mode === 'path' ? 'secondary' : 'ghost'}
+            >
+              <Route className="w-4 h-4" />
+            </Button>
+          </ToolbarTooltip>
+          <ToolbarTooltip label={direction === 'LR' ? 'Direction: left to right' : 'Direction: top to bottom'}>
+            <Button
+              aria-label={direction === 'LR' ? 'Direction: left to right' : 'Direction: top to bottom'}
+              onClick={onToggleDirection}
+              size="icon"
+              variant="ghost"
+            >
+              {direction === 'LR' ? <ArrowRight className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+            </Button>
+          </ToolbarTooltip>
+          <ToolbarTooltip label="Tracker mode">
+            <Button
+              aria-label="Tracker mode"
+              aria-pressed={tracker}
+              className={tracker ? 'text-orange-600 dark:text-orange-400' : undefined}
+              onClick={onToggleTracker}
+              size="icon"
+              variant={tracker ? 'secondary' : 'ghost'}
+            >
+              <Radar className="w-4 h-4" />
+            </Button>
+          </ToolbarTooltip>
+        </div>
         {mode != null ? (
-          <div className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 shadow-md">
+          <div className="flex w-full min-w-0 items-center gap-2 rounded-2xl border border-border bg-card px-3 py-1.5 shadow-md">
             {mode === 'path' ? (
               <Route className="w-4 h-4 text-muted-foreground" />
             ) : (
@@ -127,7 +192,7 @@ export const PixiSearchPanel = ({ onFocusNode }: IPixiSearchPanelProps) => {
             <Input
               ref={inputRef}
               aria-label={mode === 'path' ? 'JSONPath or jq path' : 'Search nodes'}
-              className="h-7 w-52 border-none shadow-none focus-visible:ring-0"
+              className="h-7 min-w-0 flex-1 border-none shadow-none focus-visible:ring-0"
               placeholder={mode === 'path' ? '$.items[0] or .items[0]' : 'Search nodes...'}
               value={activeTerm}
               onChange={(event) => {
@@ -186,6 +251,6 @@ export const PixiSearchPanel = ({ onFocusNode }: IPixiSearchPanelProps) => {
           )}
         </aside>
       ) : null}
-    </>
+    </TooltipProvider>
   );
 };
