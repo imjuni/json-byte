@@ -4,7 +4,17 @@ import { Application, CanvasTextMetrics, Container, Graphics, Text, TextStyle } 
 
 import { PixiNodeDetailsDialog } from '#/components/renderer/pixi/PixiNodeDetailsDialog';
 import { PixiSearchPanel } from '#/components/renderer/pixi/PixiSearchPanel';
-import { Button } from '#/components/ui/button';
+import {
+  applyWheelTransform,
+  distanceToSegment,
+  fitGraphViewport,
+  getStrokeState,
+  isTrackedEdge,
+  MAX_ZOOM,
+  MIN_ZOOM,
+  toggleTrackedNode,
+  toggleTrackerMode,
+} from '#/lib/graph/graphInteraction';
 import {
   applyGraphLayout,
   getNodeHeight,
@@ -24,8 +34,6 @@ import type { IGraphSearchMatch } from '#/contracts/graph/IGraphSearchMatch';
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 import type { IElkLayoutResult, ILayoutPort } from '#/lib/layout/interfaces/IElkLayoutResult';
 
-const MIN_ZOOM = 0.08;
-const MAX_ZOOM = 3;
 const VIEW_PADDING = 300;
 const MONOSPACE_FONT = 'SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace';
 const TEXT_LINE_HEIGHT = 18;
@@ -59,6 +67,8 @@ interface IRenderTheme {
   node: number;
   nodeBorder: number;
   nodeSearched: number;
+  hover: number;
+  tracker: number;
   heading: number;
   text: number;
   complexText: number;
@@ -78,6 +88,8 @@ const themes: Record<'light' | 'dark', IRenderTheme> = {
     node: 0xffffff,
     nodeBorder: 0xd4d4d8,
     nodeSearched: 0x3b82f6,
+    hover: 0x0891b2,
+    tracker: 0xea580c,
     heading: 0x18181b,
     text: 0x52525b,
     complexText: 0x2563eb,
@@ -95,6 +107,8 @@ const themes: Record<'light' | 'dark', IRenderTheme> = {
     node: 0x18181b,
     nodeBorder: 0x3f3f46,
     nodeSearched: 0x60a5fa,
+    hover: 0x22d3ee,
+    tracker: 0xfb923c,
     heading: 0xf4f4f5,
     text: 0xd4d4d8,
     complexText: 0x7dd3fc,
@@ -213,6 +227,7 @@ const drawNode = (
   bounds: IViewportBounds,
   textResolution: number,
   onClick: (node: IGraphNode) => void,
+  registerStroke: (update: (color: number) => void) => void,
   searchMatch?: IGraphSearchMatch,
 ): Container => {
   const container = new Container();
@@ -231,6 +246,13 @@ const drawNode = (
     .fill(theme.node)
     .stroke({ color: searchMatch == null ? theme.nodeBorder : theme.nodeSearched, width: searchMatch == null ? 2 : 3 });
   container.addChild(background);
+  registerStroke((color) => {
+    background
+      .clear()
+      .roundRect(0, 0, NODE_WIDTH, height, 6)
+      .fill(theme.node)
+      .stroke({ color, width: searchMatch == null ? 2 : 3 });
+  });
   const rowHighlights = new Graphics();
   container.addChild(rowHighlights);
   const searchRowColor = adjustColor(theme.node, theme.searchTextAdjustment, 0.05);
@@ -377,10 +399,68 @@ export const PixiGraphRenderer = () => {
   const [layout, setLayout] = useState<IElkLayoutResult | null>(null);
   const [isLayouting, setIsLayouting] = useState(false);
   const [layoutError, setLayoutError] = useState<string | null>(null);
+  const trackerRef = useRef(false);
+  const trackedRef = useRef(new Set<string>());
+  const hoveredRef = useRef<{ node?: string; edge?: string }>({});
+  const pointerRef = useRef<{ x: number; y: number } | null>(null);
+  const draggedRef = useRef(false);
+  const updateHoverRef = useRef<() => void>(() => undefined);
+  const updateStrokesRef = useRef<() => void>(() => undefined);
+  const [tracker, setTracker] = useState(false);
   const [selectedNode, setSelectedNode] = useState<IGraphNode | null>(null);
   const { nodes, edges, direction, locMap, searchMatches, setDirection } = useGraphStore();
   const { editorInstance } = useEditorStore();
   const { theme } = useThemeStore();
+
+  const toggleTracker = () => {
+    const next = toggleTrackerMode({ enabled: trackerRef.current, selected: trackedRef.current });
+    trackerRef.current = next.enabled;
+    setTracker(next.enabled);
+    trackedRef.current = new Set(next.selected);
+    setSelectedNode(null);
+    updateStrokesRef.current();
+  };
+
+  const clickNode = useCallback((node: IGraphNode) => {
+    if (draggedRef.current) return;
+    if (trackerRef.current) {
+      trackedRef.current = toggleTrackedNode(trackedRef.current, node.id);
+      updateStrokesRef.current();
+    } else setSelectedNode(node);
+  }, []);
+
+  const zoom = (factor: number) => {
+    const app = appRef.current;
+    if (app == null) return;
+    const previous = transformRef.current;
+    const scale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, previous.scale * factor));
+    transformRef.current = {
+      x: app.screen.width / 2 - ((app.screen.width / 2 - previous.x) * scale) / previous.scale,
+      y: app.screen.height / 2 - ((app.screen.height / 2 - previous.y) * scale) / previous.scale,
+      scale,
+    };
+    renderRef.current();
+  };
+
+  const fitView = () => {
+    const app = appRef.current;
+    const { current } = layoutRef;
+    if (app == null || current == null) return;
+    transformRef.current = fitGraphViewport(
+      current.bounds.width,
+      current.bounds.height,
+      app.screen.width,
+      app.screen.height,
+    );
+    renderRef.current();
+  };
+
+  useEffect(() => {
+    trackedRef.current = new Set();
+    hoveredRef.current = {};
+    setSelectedNode(null);
+    updateStrokesRef.current();
+  }, [edges]);
 
   const findNodeInEditor = useCallback(
     (node: IGraphNode) => {
@@ -455,8 +535,11 @@ export const PixiGraphRenderer = () => {
     let dragging = false;
     let lastX = 0;
     let lastY = 0;
+    let startX = 0;
+    let startY = 0;
     let renderTimer: ReturnType<typeof setTimeout> | undefined;
     const app = new Application();
+    let resizeObserver: ResizeObserver | undefined;
 
     const initialize = async () => {
       await app.init({
@@ -480,6 +563,8 @@ export const PixiGraphRenderer = () => {
         clearTimeout(renderTimer);
         renderTimer = setTimeout(() => renderRef.current(), 80);
       };
+      resizeObserver = new ResizeObserver(scheduleRender);
+      resizeObserver.observe(host);
       app.canvas.addEventListener(
         'wheel',
         (event) => {
@@ -487,31 +572,59 @@ export const PixiGraphRenderer = () => {
           const rect = app.canvas.getBoundingClientRect();
           const mouseX = event.clientX - rect.left;
           const mouseY = event.clientY - rect.top;
-          const previous = transformRef.current;
-          const scale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, previous.scale * Math.exp(-event.deltaY * 0.0015)));
-          const worldX = (mouseX - previous.x) / previous.scale;
-          const worldY = (mouseY - previous.y) / previous.scale;
-          transformRef.current = { x: mouseX - worldX * scale, y: mouseY - worldY * scale, scale };
+          pointerRef.current = { x: mouseX, y: mouseY };
+          transformRef.current = applyWheelTransform(
+            transformRef.current,
+            event,
+            pointerRef.current,
+            app.screen.height,
+          );
           world.position.set(transformRef.current.x, transformRef.current.y);
-          world.scale.set(scale);
+          world.scale.set(transformRef.current.scale);
+          updateHoverRef.current();
           scheduleRender();
         },
         { passive: false },
       );
       app.canvas.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0) return;
         dragging = true;
+        draggedRef.current = false;
+        startX = event.clientX;
+        startY = event.clientY;
         lastX = event.clientX;
         lastY = event.clientY;
         app.canvas.setPointerCapture(event.pointerId);
       });
       app.canvas.addEventListener('pointermove', (event) => {
-        if (!dragging) return;
+        const rect = app.canvas.getBoundingClientRect();
+        pointerRef.current = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+        if (!dragging) {
+          updateHoverRef.current();
+          return;
+        }
+        if (Math.hypot(event.clientX - startX, event.clientY - startY) > 4) draggedRef.current = true;
+        if (!draggedRef.current) return;
+        hoveredRef.current = {};
+        updateStrokesRef.current();
         transformRef.current.x += event.clientX - lastX;
         transformRef.current.y += event.clientY - lastY;
         lastX = event.clientX;
         lastY = event.clientY;
         world.position.set(transformRef.current.x, transformRef.current.y);
         scheduleRender();
+      });
+      app.canvas.addEventListener('pointerleave', () => {
+        pointerRef.current = null;
+        hoveredRef.current = {};
+        updateStrokesRef.current();
+      });
+      app.canvas.addEventListener('pointercancel', () => {
+        dragging = false;
+        draggedRef.current = true;
+        pointerRef.current = null;
+        hoveredRef.current = {};
+        updateStrokesRef.current();
       });
       app.canvas.addEventListener('pointerup', () => {
         dragging = false;
@@ -524,8 +637,11 @@ export const PixiGraphRenderer = () => {
     return () => {
       active = false;
       clearTimeout(renderTimer);
+      resizeObserver?.disconnect();
       appRef.current = null;
       worldRef.current = null;
+      updateStrokesRef.current = () => undefined;
+      updateHoverRef.current = () => undefined;
       if (app.canvas.parentNode != null) app.destroy(true, { children: true });
     };
     // Theme changes are applied without recreating the WebGL application.
@@ -541,6 +657,8 @@ export const PixiGraphRenderer = () => {
       const renderTheme = themes[theme];
       app.renderer.background.color = renderTheme.background;
       world.removeChildren().forEach((child) => child.destroy({ children: true }));
+      updateStrokesRef.current = () => undefined;
+      updateHoverRef.current = () => undefined;
       if (currentLayout == null) return;
       const transform = transformRef.current;
       const viewportBounds = getViewportBounds(transform, app.screen.width, app.screen.height);
@@ -554,11 +672,15 @@ export const PixiGraphRenderer = () => {
           const current = currentNodes.get(node.id);
           return current == null ? node : { ...node, data: current.data };
         });
-      const edgeGraphics = new Graphics();
+      const strokeUpdates: (() => void)[] = [];
+      const edgeLayer = new Container();
       const edgeLabels = new Container();
       const graphEdges = new Map(edges.map((edge) => [edge.id, edge]));
       const layoutPorts = new Map(currentLayout.ports.map((port) => [port.id, port]));
       for (const edge of currentLayout.edges) {
+        const edgeGraphics = new Graphics();
+        edgeLayer.addChild(edgeGraphics);
+        const visibleSections = edge.sections.filter((section) => sectionIntersectsViewport(section, viewportBounds));
         let labelDrawn = false;
         for (const section of edge.sections) {
           if (sectionIntersectsViewport(section, viewportBounds)) {
@@ -589,9 +711,31 @@ export const PixiGraphRenderer = () => {
             }
           }
         }
+        let previousColor: number | undefined;
+        strokeUpdates.push(() => {
+          const graphEdge = graphEdges.get(edge.id);
+          const tracked = graphEdge != null && isTrackedEdge(trackedRef.current, graphEdge.source, graphEdge.target);
+          const state = getStrokeState(hoveredRef.current.edge === edge.id, tracked);
+          const color = {
+            hover: renderTheme.hover,
+            tracker: renderTheme.tracker,
+            search: renderTheme.edge,
+            default: renderTheme.edge,
+          }[state];
+          if (color === previousColor) return;
+          previousColor = color;
+          edgeGraphics.clear();
+          for (const section of visibleSections) {
+            const first = section[0];
+            if (first != null) {
+              edgeGraphics.moveTo(first.x, first.y);
+              for (const point of section.slice(1)) edgeGraphics.lineTo(point.x, point.y);
+            }
+          }
+          edgeGraphics.stroke({ color, width: 2 / transform.scale });
+        });
       }
-      edgeGraphics.stroke({ color: renderTheme.edge, width: 2 / transform.scale });
-      world.addChild(edgeGraphics);
+      world.addChild(edgeLayer);
       world.addChild(edgeLabels);
       for (const node of visibleNodes) {
         world.addChild(
@@ -601,25 +745,91 @@ export const PixiGraphRenderer = () => {
             layoutPorts,
             viewportBounds,
             textResolution,
-            setSelectedNode,
+            clickNode,
+            (update) => {
+              let previousColor: number | undefined;
+              strokeUpdates.push(() => {
+                const state = getStrokeState(
+                  hoveredRef.current.node === node.id,
+                  trackedRef.current.has(node.id),
+                  searchMatches[node.id] != null,
+                );
+                const color = {
+                  hover: renderTheme.hover,
+                  tracker: renderTheme.tracker,
+                  search: renderTheme.nodeSearched,
+                  default: renderTheme.nodeBorder,
+                }[state];
+                if (color !== previousColor) {
+                  previousColor = color;
+                  update(color);
+                }
+              });
+            },
             searchMatches[node.id],
           ),
         );
       }
-      app.render();
+      updateStrokesRef.current = () => {
+        strokeUpdates.forEach((update) => update());
+        app.render();
+      };
+      updateHoverRef.current = () => {
+        const pointer = pointerRef.current;
+        const currentTransform = transformRef.current;
+        const point =
+          pointer == null
+            ? null
+            : {
+                x: (pointer.x - currentTransform.x) / currentTransform.scale,
+                y: (pointer.y - currentTransform.y) / currentTransform.scale,
+              };
+        const node =
+          point == null
+            ? undefined
+            : visibleNodes.find(
+                (candidate) =>
+                  point.x >= candidate.position.x &&
+                  point.x <= candidate.position.x + NODE_WIDTH &&
+                  point.y >= candidate.position.y &&
+                  point.y <= candidate.position.y + getNodeHeight(candidate),
+              );
+        let edgeId: string | undefined;
+        let nearest = 6 / currentTransform.scale;
+        if (point != null && node == null) {
+          for (const edge of currentLayout.edges) {
+            for (const section of edge.sections) {
+              for (let index = 1; index < section.length; index += 1) {
+                const distance = distanceToSegment(point, section[index - 1], section[index]);
+                if (distance <= nearest) {
+                  nearest = distance;
+                  edgeId = edge.id;
+                }
+              }
+            }
+          }
+        }
+        hoveredRef.current = { node: node?.id, edge: edgeId };
+        updateStrokesRef.current();
+      };
+      updateHoverRef.current();
     };
     renderRef.current();
-  }, [direction, edges, layout, nodes, searchMatches, theme]);
+  }, [clickNode, direction, edges, layout, nodes, searchMatches, theme]);
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-background">
       <div ref={hostRef} className="absolute inset-0" />
-      <div className="absolute top-3 right-3 z-10 flex gap-2">
-        <Button onClick={() => setDirection(direction === 'LR' ? 'TB' : 'LR')} size="sm" variant="outline">
-          {direction === 'LR' ? 'Left → Right' : 'Top → Bottom'}
-        </Button>
-      </div>
-      <PixiSearchPanel onFocusNode={focusNode} />
+      <PixiSearchPanel
+        direction={direction}
+        onFitView={fitView}
+        onFocusNode={focusNode}
+        onToggleDirection={() => setDirection(direction === 'LR' ? 'TB' : 'LR')}
+        onToggleTracker={toggleTracker}
+        onZoomIn={() => zoom(1.2)}
+        onZoomOut={() => zoom(1 / 1.2)}
+        tracker={tracker}
+      />
       {Boolean(isLayouting) && (
         <div className="absolute inset-0 z-20 grid place-items-center bg-background/70 pointer-events-none">
           <div className="rounded-md border bg-card px-5 py-3 text-sm shadow-lg">

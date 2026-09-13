@@ -2,6 +2,7 @@ import { Info as IconInfo } from 'lucide-react';
 import { tv } from 'tailwind-variants';
 
 import { FieldValue } from '#/components/renderer/common/FieldValue';
+import { ToolbarTooltip } from '#/components/renderer/common/ToolbarTooltip';
 import { TypeDisc } from '#/components/renderer/common/TypeDisc';
 import { Button } from '#/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '#/components/ui/popover';
@@ -16,13 +17,15 @@ const { line } = variants();
 
 export const LegendPopover = () => (
   <Popover>
-    <PopoverTrigger asChild>
-      <Button variant="outline">
-        <IconInfo />
-      </Button>
-    </PopoverTrigger>
+    <ToolbarTooltip label="Type legend">
+      <PopoverTrigger asChild>
+        <Button aria-label="Type legend" size="icon" variant="ghost">
+          <IconInfo />
+        </Button>
+      </PopoverTrigger>
+    </ToolbarTooltip>
 
-    <PopoverContent className="w-40 px-2">
+    <PopoverContent className="w-40 px-2" side="top">
       <div className={line()}>
         <TypeDisc type="string" />
         <FieldValue type="string" value="String" />
