@@ -18,7 +18,7 @@ import { useIntl } from 'react-intl';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { LegendPopover } from '#/components/renderer/common/LegendPopover';
+import { GraphInfoDialog } from '#/components/renderer/common/LegendPopover';
 import { ToolbarTooltip } from '#/components/renderer/common/ToolbarTooltip';
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
@@ -134,6 +134,21 @@ export const PixiSearchPanel = ({
     [clear],
   );
 
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && mode != null) {
+        clear();
+        setMode(undefined);
+        return;
+      }
+      if ((!event.metaKey && !event.ctrlKey) || event.key.toLowerCase() !== 'k') return;
+      event.preventDefault();
+      toggleMode(event.shiftKey ? 'path' : 'text');
+    };
+    window.addEventListener('keydown', handleShortcut);
+    return () => window.removeEventListener('keydown', handleShortcut);
+  }, [clear, mode, toggleMode]);
+
   const activeTerm = mode === 'path' ? pathTerm : searchTerm;
   const collapseLabel = intl.formatMessage({
     id: graphFullyCollapsed ? 'graph.toolbar.expand-all' : 'graph.toolbar.collapse-all',
@@ -147,7 +162,7 @@ export const PixiSearchPanel = ({
           className="order-2 flex max-w-full flex-wrap justify-center items-center gap-1 rounded-2xl border border-border bg-card p-2 shadow-lg"
           role="toolbar"
         >
-          <LegendPopover />
+          <GraphInfoDialog />
           <ToolbarTooltip label={collapseLabel}>
             <Button
               aria-label={collapseLabel}

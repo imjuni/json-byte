@@ -94,6 +94,11 @@ describe('wheel navigation', () => {
     }
   });
 
+  it('supports control wheel zoom on non-Mac platforms', () => {
+    const result = applyWheelTransform(viewport, { ...wheel, ctrlKey: true, deltaY: -100 }, pointer, 600);
+    expect(result.scale).toBeCloseTo(2 * Math.exp(0.15));
+  });
+
   it('normalizes line and page scrolling and enforces zoom limits', () => {
     expect(applyWheelTransform(viewport, { ...wheel, deltaY: 1, deltaMode: 1 }, pointer, 600).y).toBe(44);
     expect(applyWheelTransform(viewport, { ...wheel, deltaY: 1, deltaMode: 2 }, pointer, 600).y).toBe(-540);
