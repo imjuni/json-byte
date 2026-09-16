@@ -22,8 +22,11 @@ export const App = () => {
 
   return (
     <AppShell activePage="visualization">
-      <div className="flex h-full flex-col md:flex-row" style={workspaceStyle}>
-        <div className="flex h-(--editor-height) w-full md:h-full md:w-(--editor-width)" id="editor-control-container">
+      <div className="flex h-full flex-col workspace-wide:flex-row" style={workspaceStyle}>
+        <div
+          className="flex h-(--editor-height) w-full workspace-wide:h-full workspace-wide:w-(--editor-width)"
+          id="editor-control-container"
+        >
           <Editor />
         </div>
 
@@ -31,7 +34,7 @@ export const App = () => {
         <Resizer orientation="vertical" />
 
         <div
-          className="flex h-(--graph-height) w-full md:h-full md:w-(--graph-width)"
+          className="flex h-(--graph-height) w-full workspace-wide:h-full workspace-wide:w-(--graph-width)"
           id="graph-tree-control-container"
         >
           <PixiGraphRenderer />

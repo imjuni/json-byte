@@ -25,7 +25,7 @@ export const FooterEditorStatus = () => {
 
   return (
     <>
-      <div className="hidden gap-6 md:flex">
+      <div className="hidden gap-6 workspace-wide:flex">
         <div className="flex gap-2">
           <span>{`{}`}</span>
           <span className="font-bold">{language.toUpperCase()}</span>
@@ -39,7 +39,7 @@ export const FooterEditorStatus = () => {
         <FooterThemeStatus compact={false} />
       </div>
 
-      <div className="flex gap-1 md:hidden">
+      <div className="flex gap-1 workspace-wide:hidden">
         <span className="font-bold">
           {language.toUpperCase()}
           {' / '}

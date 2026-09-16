@@ -105,7 +105,7 @@ export const PixiMinimap = ({ layout, onNavigate, theme, viewport }: IPixiMinima
     <canvas
       ref={canvasRef}
       aria-label="Graph minimap"
-      className="absolute bottom-3 right-3 z-10 h-20 w-30 touch-none rounded-md border bg-card/90 shadow-lg md:h-24 md:w-36"
+      className="absolute right-3 bottom-24 z-10 h-20 w-30 touch-none rounded-md border bg-card/90 shadow-lg md:h-24 md:w-36 workspace-wide:bottom-3"
       onPointerUp={(event) => event.currentTarget.releasePointerCapture(event.pointerId)}
       onPointerDown={(event) => {
         event.stopPropagation();
