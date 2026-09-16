@@ -9,6 +9,7 @@ interface Props {
 
 const { canonicalPath = '/', description, title } = Astro.props;
 const canonicalUrl = new URL(canonicalPath, Astro.site);
+const socialImage = new URL('/json-byte-desktop-screenshot-001.png', Astro.site);
 ---
 
 <!doctype html>
@@ -18,14 +19,28 @@ const canonicalUrl = new URL(canonicalPath, Astro.site);
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="author" content="RovinjSoft" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="JSON Byte" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content="https://json-byte.pages.dev/json-byte-desktop-screenshot-001.png" />
+    <meta property="og:image" content={socialImage} />
+    <meta property="og:image:width" content="1468" />
+    <meta property="og:image:height" content="859" />
+    <meta property="og:image:alt" content="JSON Byte JSON and YAML visualization interface" />
     <meta property="og:url" content={canonicalUrl} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@rovinjsoft" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImage} />
+    <meta name="twitter:image:alt" content="JSON Byte JSON and YAML visualization interface" />
     <link rel="icon" type="image/png" href="/json-byte-favicon.png" />
     <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="JSON Byte information for language models" />
     <title>{title}</title>
     <script type="application/ld+json" is:inline>
       {
@@ -51,7 +66,16 @@ const canonicalUrl = new URL(canonicalPath, Astro.site);
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "Web",
         "description": "Visualize and explore JSON or YAML data as an interactive graph in your browser.",
-        "softwareVersion": "2.3.1",
+        "softwareVersion": "3.1.0",
+        "isAccessibleForFree": true,
+        "browserRequirements": "Requires JavaScript and a modern web browser",
+        "featureList": [
+          "JSON and YAML graph visualization",
+          "Interactive node search and navigation",
+          "JSONPath and jq path lookup",
+          "JSON and YAML document comparison",
+          "Local-only browser processing"
+        ],
         "offers": {
           "@type": "Offer",
           "price": "0",
@@ -62,6 +86,7 @@ const canonicalUrl = new URL(canonicalPath, Astro.site);
     </script>
   </head>
   <body>
+    <h1 class="sr-only">{title}</h1>
     <slot />
   </body>
 </html>

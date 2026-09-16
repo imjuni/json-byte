@@ -1,0 +1,31 @@
+# JSON Byte
+
+> JSON Byte is a free, privacy-focused web application for visualizing, exploring, editing, and comparing JSON and YAML documents. Processing happens locally in the browser.
+
+## Primary pages
+
+- [JSON/YAML Visualizer](https://json-byte.pages.dev/): Edit JSON or YAML alongside an interactive graph. Search nodes, navigate with JSONPath or jq paths, collapse branches, inspect and edit source data, and share supported visualizations.
+- [JSON/YAML Diff Viewer](https://json-byte.pages.dev/diff/): Compare two JSON or YAML documents with syntax-aware formatting, configurable context, and changed-line filtering.
+
+## Key capabilities
+
+- Parse JSON, JSON with comments, YAML, and multi-document YAML.
+- Visualize objects and arrays as an interactive node-and-edge graph.
+- Keep the Monaco text editor and graph representation synchronized.
+- Search by content, JSONPath, or jq path.
+- Inspect and edit a selected node's source data.
+- Import local files or fetch JSON from a URL.
+- Export shareable links for supported graph sizes.
+- Compare JSON or YAML documents side by side.
+- Run document processing locally in the browser without uploading document contents to a server.
+
+## Project resources
+
+- [Source code](https://github.com/imjuni/json-byte)
+- [README](https://github.com/imjuni/json-byte/blob/main/README.md)
+- [Issue tracker](https://github.com/imjuni/json-byte/issues)
+- [License](https://github.com/imjuni/json-byte/blob/main/LICENSE): Apache License 2.0
+
+## Publisher
+
+JSON Byte is developed by [RovinjSoft](https://rovinjsoft.com/).
