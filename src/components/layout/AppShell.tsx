@@ -15,7 +15,7 @@ export const AppShell = ({ activePage, children }: IAppShellProps) => (
     <Nav activePage={activePage} />
     <Notification />
 
-    <main className="flex-1 mt-13 overflow-y-scroll md:overflow-hidden">{children}</main>
+    <main className="flex-1 mt-13 overflow-y-scroll workspace-wide:overflow-hidden">{children}</main>
 
     <footer className="h-6 px-4 bg-card border-t flex items-center justify-between text-xs text-muted-foreground">
       {activePage === 'visualization' ? <FooterEditorStatus /> : <FooterThemeStatus compact={false} />}

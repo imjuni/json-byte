@@ -14,7 +14,7 @@ const variants = tv({
     dividerContainer: {
       vertical: [
         'hidden',
-        'md:flex',
+        'workspace-wide:flex',
         'w-4',
         'bg-transparent',
         'cursor-col-resize',
@@ -27,7 +27,7 @@ const variants = tv({
       ].join(' '),
       horizontal: [
         'flex',
-        'md:hidden',
+        'workspace-wide:hidden',
         'h-4',
         'bg-transparent',
         'cursor-row-resize',

@@ -61,12 +61,12 @@ export const Editor = () => {
       <div className="h-10 px-4 bg-card flex justify-end items-center space-x-1">
         <Button disabled={language === 'yaml'} onClick={handlePretty} size="sm" variant="outline">
           <Maximize2 />
-          <span className="hidden md:inline">{intl.$t({ id: 'editor.pretty' })}</span>
+          <span className="hidden workspace-wide:inline">{intl.$t({ id: 'editor.pretty' })}</span>
         </Button>
 
         <Button disabled={language === 'yaml'} onClick={handleCompact} size="sm" variant="outline">
           <Minimize2 />
-          <span className="hidden md:inline">{intl.$t({ id: 'editor.compact' })}</span>
+          <span className="hidden workspace-wide:inline">{intl.$t({ id: 'editor.compact' })}</span>
         </Button>
 
         <ImportDialog />

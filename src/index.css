@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant workspace-wide (@media (width >= 80rem) and (min-aspect-ratio: 3 / 2));
 
 @layer base {
   html,
