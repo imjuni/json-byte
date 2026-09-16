@@ -199,6 +199,21 @@
   @apply fill-card transition-all duration-200;
 }
 
+/* json-edit-react does not theme its native type selector. */
+.dark .json-byte-node-editor .jer-select {
+  --jer-select-arrow: #8b949e;
+  --jer-select-border: #30363d;
+  --jer-select-focus: #58a6ff;
+  background: #161b22;
+  color: #e6edf3;
+}
+
+.dark .json-byte-node-editor .jer-select select,
+.dark .json-byte-node-editor .jer-select option {
+  background-color: #161b22;
+  color: #e6edf3;
+}
+
 /* Edge hover styles */
 .react-flow__edge:hover .react-flow__edge-path {
   @apply stroke-blue-600 dark:stroke-blue-900;
