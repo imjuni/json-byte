@@ -12,6 +12,8 @@ interface ISegmentReference {
 
 const COORDINATE_PRECISION = 100;
 const OVERLAP_EPSILON = 0.01;
+export const EDGE_LANE_GAP = 6;
+export const EDGE_LANE_SEPARATION_NODE_CAP = 1_000;
 
 const cloneEdges = (edges: ILayoutEdge[]): ILayoutEdge[] =>
   edges.map((edge) => ({
@@ -97,7 +99,7 @@ const groupOverlappingSegments = (segments: ISegmentReference[]): ISegmentRefere
   return overlaps;
 };
 
-export const separateOverlappingEdgeSegments = (edges: ILayoutEdge[], laneGap = 6): ILayoutEdge[] => {
+export const separateOverlappingEdgeSegments = (edges: ILayoutEdge[], laneGap = EDGE_LANE_GAP): ILayoutEdge[] => {
   const separated = cloneEdges(edges);
   const groups = groupOverlappingSegments(collectInternalSegments(edges));
 
