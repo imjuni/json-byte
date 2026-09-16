@@ -4,8 +4,26 @@ import BaseLayout from '#/layouts/BaseLayout.astro';
 ---
 
 <BaseLayout
-  description="Visualize and explore JSON or YAML data as an interactive graph in your browser. Free, private, and developed by RovinjSoft."
-  title="JSON Byte - JSON/YAML Visualizer & Graph Viewer"
+  description="Visualize JSON or YAML as an interactive graph, compare documents with a free diff viewer, and generate jq paths and JSONPath for any node—all in your browser."
+  featureList={[
+    'Visualize JSON and YAML as an interactive node graph',
+    'Generate a jq path and JSONPath from any graph node',
+    'Compare JSON or YAML documents with the built-in free diff viewer',
+    'Edit source data while keeping the Monaco editor and graph synchronized',
+    'Process document contents locally without uploading them to a server',
+  ]}
+  keywords={[
+    'JSON visualizer',
+    'YAML visualizer',
+    'JSON diff',
+    'YAML diff',
+    'jq path generator',
+    'JSONPath generator',
+    'JSON graph viewer',
+    'free JSON tool',
+  ]}
+  seoHeading="Free JSON/YAML Visualizer with Diff and jq Path Generator"
+  title="Free JSON/YAML Visualizer, Diff & jq Path | JSON Byte"
 >
   <AppWithIntl client:only="react" />
 </BaseLayout>

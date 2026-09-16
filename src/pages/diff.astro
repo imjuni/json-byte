@@ -5,8 +5,26 @@ import BaseLayout from '#/layouts/BaseLayout.astro';
 
 <BaseLayout
   canonicalPath="/diff/"
-  description="Compare JSON or YAML documents side by side with syntax-aware formatting and configurable context lines."
-  title="JSON Byte - JSON/YAML Diff Viewer"
+  description="Compare JSON or YAML documents for free, then visualize their structure and generate jq paths in the same browser-based tool. No uploads or account required."
+  featureList={[
+    'Compare JSON or YAML documents side by side for free',
+    'Show all lines or focus only on changed lines with configurable context',
+    'Visualize JSON and YAML structures in the companion interactive graph',
+    'Generate a jq path and JSONPath for graph nodes',
+    'Process both documents locally without uploading them to a server',
+  ]}
+  keywords={[
+    'JSON diff',
+    'YAML diff',
+    'free JSON compare',
+    'JSON visualizer',
+    'YAML visualizer',
+    'jq path generator',
+    'JSONPath generator',
+    'online JSON diff tool',
+  ]}
+  seoHeading="Free JSON/YAML Diff and Visualization Tool"
+  title="Free JSON/YAML Diff & Visualizer | JSON Byte"
 >
   <DiffAppWithIntl client:only="react" />
 </BaseLayout>

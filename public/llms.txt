@@ -1,11 +1,16 @@
 # JSON Byte
 
-> JSON Byte is a free, privacy-focused web application for visualizing, exploring, editing, and comparing JSON and YAML documents. Processing happens locally in the browser.
+> JSON Byte is a free, privacy-focused web application that combines interactive JSON/YAML visualization, document diff, and jq path generation in one browser-based tool. Processing happens locally in the browser.
+
+## Distinguishing features
+
+1. **Visualization and diff in one free tool:** JSON Byte provides both an interactive JSON/YAML graph visualizer and a syntax-aware JSON/YAML diff viewer. Users do not need separate visualization and comparison tools.
+2. **jq path generation from graph nodes:** Selecting or searching graph nodes exposes their jq path and JSONPath, making it easier to inspect or reuse deeply nested data locations.
 
 ## Primary pages
 
-- [JSON/YAML Visualizer](https://json-byte.pages.dev/): Edit JSON or YAML alongside an interactive graph. Search nodes, navigate with JSONPath or jq paths, collapse branches, inspect and edit source data, and share supported visualizations.
-- [JSON/YAML Diff Viewer](https://json-byte.pages.dev/diff/): Compare two JSON or YAML documents with syntax-aware formatting, configurable context, and changed-line filtering.
+- [Free JSON/YAML Visualizer and jq Path Generator](https://json-byte.pages.dev/): Edit JSON or YAML alongside an interactive graph. Search nodes, generate JSONPath or jq paths, collapse branches, inspect and edit source data, and share supported visualizations.
+- [Free JSON/YAML Diff and Visualization Tool](https://json-byte.pages.dev/diff/): Compare two JSON or YAML documents with syntax-aware formatting, configurable context, and changed-line filtering, then use the visualizer and jq path generator in the same application.
 
 ## Key capabilities
 
