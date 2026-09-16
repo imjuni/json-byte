@@ -50,6 +50,8 @@
     "node-details-dialog": {
       "title": "Node Details",
       "content": "Source Data",
+      "action-edit-source": "Edit",
+      "action-editing-source": "Editing",
       "json-path": "JSON Path",
       "jq-path": "jq Path",
       "action-copy-json-path": "Copy JSON Path",

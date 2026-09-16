@@ -4,7 +4,7 @@ import type { IGraphSearchMatch } from '#/contracts/graph/IGraphSearchMatch';
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 import type { IPathLoCIndexMap } from '#/lib/parser/interfaces/IPathLoCIndexMap';
 
-type TPathSegment = string | number;
+export type TPathSegment = string | number;
 
 export interface IGraphPathTarget {
   match: IGraphSearchMatch;

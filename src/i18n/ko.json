@@ -50,6 +50,8 @@
     "node-details-dialog": {
       "title": "노드 상세",
       "content": "원본 데이터",
+      "action-edit-source": "수정",
+      "action-editing-source": "수정 중",
       "json-path": "JSON Path",
       "jq-path": "jq Path",
       "action-copy-json-path": "JSON Path 복사",

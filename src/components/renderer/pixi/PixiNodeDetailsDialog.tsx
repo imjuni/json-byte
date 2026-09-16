@@ -1,14 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { githubDarkTheme, githubLightTheme, JsonEditor } from 'json-edit-react';
-import { Copy } from 'lucide-react';
+import { Copy, Pencil } from 'lucide-react';
 import { useIntl } from 'react-intl';
 
+import { useGraphBuilder } from '#/components/editor/hooks/useGraphBuilder';
 import { Button } from '#/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '#/components/ui/popover';
+import { multiParse } from '#/lib/json/multiParse';
+import { multiStringify } from '#/lib/json/multiStringify';
+import { replaceJsonPathValue } from '#/lib/json/replaceJsonPathValue';
 import { jsonPathToJqPath } from '#/lib/parser/json/jsonPathToJqPath';
+import { useEditorStore } from '#/stores/editorStore';
 import { useThemeStore } from '#/stores/themeStore';
+
+import type { JsonValue } from 'type-fest';
 
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 
@@ -21,6 +28,33 @@ interface IPixiNodeDetailsDialogProps {
 export const PixiNodeDetailsDialog = ({ node, onClose, onFindInEditor }: IPixiNodeDetailsDialogProps) => {
   const intl = useIntl();
   const { theme } = useThemeStore();
+  const { content, indent, setContent } = useEditorStore();
+  const { updateFromContent } = useGraphBuilder();
+  const [editing, setEditing] = useState(false);
+  const [sourceData, setSourceData] = useState<JsonValue | null>(null);
+
+  useEffect(() => {
+    setEditing(false);
+    setSourceData(node?.data.origin ?? null);
+  }, [node]);
+
+  const updateSourceData = useCallback(
+    (data: unknown) => {
+      if (node == null) return;
+      const parsed = multiParse(content);
+      if (parsed instanceof Error) return;
+      const nextDocument = replaceJsonPathValue(parsed.data, node.id, data as JsonValue);
+      if (nextDocument instanceof Error) return;
+      const nextContent = multiStringify(nextDocument, parsed.language, undefined, indent);
+      if (nextContent instanceof Error) return;
+
+      setEditing(false);
+      setSourceData(data as JsonValue);
+      setContent(nextContent);
+      updateFromContent(nextContent);
+    },
+    [content, indent, node, setContent, updateFromContent],
+  );
 
   return (
     <Dialog onOpenChange={(open) => !open && onClose()} open={node != null}>
@@ -30,17 +64,30 @@ export const PixiNodeDetailsDialog = ({ node, onClose, onFindInEditor }: IPixiNo
         </DialogHeader>
         {node != null && (
           <section className="flex min-h-0 flex-col gap-2">
-            <h3 className="text-sm font-semibold">{intl.formatMessage({ id: 'graph.node-details-dialog.content' })}</h3>
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">
+                {intl.formatMessage({ id: 'graph.node-details-dialog.content' })}
+              </h3>
+              <Button disabled={editing} onClick={() => setEditing(true)} size="sm" type="button" variant="outline">
+                <Pencil />
+                {intl.formatMessage({
+                  id: editing
+                    ? 'graph.node-details-dialog.action-editing-source'
+                    : 'graph.node-details-dialog.action-edit-source',
+                })}
+              </Button>
+            </div>
             <div className="min-h-0 overflow-auto rounded-md border bg-muted/30 p-3">
               <JsonEditor
                 enableClipboard
-                viewOnly
                 collapse={false}
-                data={node.data.origin}
+                data={sourceData}
                 maxWidth="100%"
                 minWidth="100%"
                 rootName={node.data.label}
+                setData={updateSourceData}
                 theme={theme === 'dark' ? githubDarkTheme : githubLightTheme}
+                viewOnly={!editing}
               />
             </div>
           </section>
