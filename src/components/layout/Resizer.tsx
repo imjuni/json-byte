@@ -13,6 +13,7 @@ const variants = tv({
   variants: {
     dividerContainer: {
       vertical: [
+        'hidden',
         'md:flex',
         'w-4',
         'bg-transparent',
@@ -132,7 +133,7 @@ export const Resizer = ({ orientation }: IResizerProps) => {
       document.addEventListener('mouseup', handleEnd);
       document.addEventListener('touchmove', handleMovePassive, { passive: false });
       document.addEventListener('touchend', handleEnd, { passive: false });
-      document.body.style.cursor = orientation === 'horizontal' ? 'col-resize' : 'row-resize';
+      document.body.style.cursor = orientation === 'horizontal' ? 'row-resize' : 'col-resize';
       document.body.style.userSelect = 'none';
       document.body.style.touchAction = 'none';
 

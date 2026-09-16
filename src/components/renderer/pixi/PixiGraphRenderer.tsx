@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Application, CanvasTextMetrics, Container, Graphics, Text, TextStyle } from 'pixi.js';
 
+import { PixiMinimap } from '#/components/renderer/pixi/PixiMinimap';
 import { PixiNodeDetailsDialog } from '#/components/renderer/pixi/PixiNodeDetailsDialog';
 import { PixiSearchPanel } from '#/components/renderer/pixi/PixiSearchPanel';
 import {
@@ -39,6 +40,7 @@ import { useThemeStore } from '#/stores/themeStore';
 
 import type { FederatedPointerEvent } from 'pixi.js';
 
+import type { IMinimapViewport } from '#/components/renderer/pixi/PixiMinimap';
 import type { IGraphSearchMatch } from '#/contracts/graph/IGraphSearchMatch';
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
 import type { IElkLayoutResult, ILayoutPort } from '#/lib/layout/interfaces/IElkLayoutResult';
@@ -459,6 +461,7 @@ export const PixiGraphRenderer = () => {
   const [layout, setLayout] = useState<IElkLayoutResult | null>(null);
   const [isLayouting, setIsLayouting] = useState(false);
   const [layoutError, setLayoutError] = useState<string | null>(null);
+  const [minimapViewport, setMinimapViewport] = useState<IMinimapViewport | null>(null);
   const trackerRef = useRef(false);
   const trackedRef = useRef(new Set<string>());
   const hoveredRef = useRef<{ node?: string; edge?: string }>({});
@@ -550,6 +553,18 @@ export const PixiGraphRenderer = () => {
     );
     renderRef.current();
   };
+
+  const navigateFromMinimap = useCallback((x: number, y: number) => {
+    const app = appRef.current;
+    if (app == null) return;
+    const { scale } = transformRef.current;
+    transformRef.current = {
+      x: app.screen.width / 2 - x * scale,
+      y: app.screen.height / 2 - y * scale,
+      scale,
+    };
+    renderRef.current();
+  }, []);
 
   useEffect(() => {
     trackedRef.current = new Set();
@@ -775,6 +790,23 @@ export const PixiGraphRenderer = () => {
       updateHoverRef.current = () => undefined;
       if (currentLayout == null) return;
       const transform = transformRef.current;
+      setMinimapViewport((current) => {
+        const next = {
+          screenHeight: app.screen.height,
+          screenWidth: app.screen.width,
+          scale: transform.scale,
+          x: transform.x,
+          y: transform.y,
+        };
+        return current != null &&
+          current.screenHeight === next.screenHeight &&
+          current.screenWidth === next.screenWidth &&
+          current.scale === next.scale &&
+          current.x === next.x &&
+          current.y === next.y
+          ? current
+          : next;
+      });
       const viewportBounds = getViewportBounds(transform, app.screen.width, app.screen.height);
       const textResolution = Math.min(Math.max(app.renderer.resolution, app.renderer.resolution * transform.scale), 3);
       world.position.set(transform.x, transform.y);
@@ -964,6 +996,9 @@ export const PixiGraphRenderer = () => {
         onZoomOut={() => zoom(1 / 1.2)}
         tracker={tracker}
       />
+      {layout != null && minimapViewport != null && (
+        <PixiMinimap layout={layout} onNavigate={navigateFromMinimap} theme={theme} viewport={minimapViewport} />
+      )}
       {Boolean(isLayouting) && (
         <div className="absolute inset-0 z-20 grid place-items-center bg-background/70 pointer-events-none">
           <div className="rounded-md border bg-card px-5 py-3 text-sm shadow-lg">
