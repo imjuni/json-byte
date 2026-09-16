@@ -23,14 +23,24 @@ interface IPixiMinimapProps {
 
 const PADDING = 8;
 
-const getProjection = (layout: IElkLayoutResult, width: number, height: number) => {
+const getProjection = (layout: IElkLayoutResult, viewport: IMinimapViewport, width: number, height: number) => {
+  const viewportLeft = -viewport.x / viewport.scale;
+  const viewportTop = -viewport.y / viewport.scale;
+  const viewportRight = viewportLeft + viewport.screenWidth / viewport.scale;
+  const viewportBottom = viewportTop + viewport.screenHeight / viewport.scale;
+  const left = Math.min(0, viewportLeft);
+  const top = Math.min(0, viewportTop);
+  const right = Math.max(layout.bounds.width, viewportRight);
+  const bottom = Math.max(layout.bounds.height, viewportBottom);
+  const contentWidth = right - left;
+  const contentHeight = bottom - top;
   const scale = Math.min(
-    Math.max(1, width - PADDING * 2) / Math.max(1, layout.bounds.width),
-    Math.max(1, height - PADDING * 2) / Math.max(1, layout.bounds.height),
+    Math.max(1, width - PADDING * 2) / Math.max(1, contentWidth),
+    Math.max(1, height - PADDING * 2) / Math.max(1, contentHeight),
   );
   return {
-    offsetX: (width - layout.bounds.width * scale) / 2,
-    offsetY: (height - layout.bounds.height * scale) / 2,
+    offsetX: (width - contentWidth * scale) / 2 - left * scale,
+    offsetY: (height - contentHeight * scale) / 2 - top * scale,
     scale,
   };
 };
@@ -55,7 +65,7 @@ export const PixiMinimap = ({ layout, onNavigate, theme, viewport }: IPixiMinima
       const styles = getComputedStyle(document.documentElement);
       const nodeColor = styles.getPropertyValue(theme === 'dark' ? '--color-gray-500' : '--color-gray-400').trim();
       const viewportColor = styles.getPropertyValue(theme === 'dark' ? '--color-blue-300' : '--color-blue-600').trim();
-      const { offsetX, offsetY, scale } = getProjection(layout, rect.width, rect.height);
+      const { offsetX, offsetY, scale } = getProjection(layout, viewport, rect.width, rect.height);
 
       context.fillStyle = nodeColor;
       for (const node of layout.nodes) {
@@ -87,7 +97,7 @@ export const PixiMinimap = ({ layout, onNavigate, theme, viewport }: IPixiMinima
 
   const navigate = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
-    const { offsetX, offsetY, scale } = getProjection(layout, rect.width, rect.height);
+    const { offsetX, offsetY, scale } = getProjection(layout, viewport, rect.width, rect.height);
     onNavigate((event.clientX - rect.left - offsetX) / scale, (event.clientY - rect.top - offsetY) / scale);
   };
 
