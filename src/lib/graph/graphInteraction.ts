@@ -64,14 +64,15 @@ export const toggleTrackerMode = (state: ITrackerState): ITrackerState => ({
 
 export const applyWheelTransform = (
   previous: { x: number; y: number; scale: number },
-  wheel: Pick<WheelEvent, 'deltaX' | 'deltaY' | 'deltaMode' | 'metaKey' | 'shiftKey'>,
+  wheel: Pick<WheelEvent, 'deltaX' | 'deltaY' | 'deltaMode' | 'metaKey' | 'shiftKey'> &
+    Partial<Pick<WheelEvent, 'ctrlKey'>>,
   pointer: ILayoutPoint,
   screenHeight: number,
 ): { x: number; y: number; scale: number } => {
   const units = [1, 16, screenHeight][wheel.deltaMode] ?? 1;
   const deltaX = wheel.deltaX * units;
   const deltaY = wheel.deltaY * units;
-  if (wheel.metaKey) {
+  if (wheel.metaKey || wheel.ctrlKey) {
     const scale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, previous.scale * Math.exp(-deltaY * 0.0015)));
     return {
       x: pointer.x - ((pointer.x - previous.x) / previous.scale) * scale,

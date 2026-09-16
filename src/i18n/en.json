@@ -39,6 +39,23 @@
       "collapse-all": "Collapse all",
       "expand-all": "Expand all"
     },
+    "info-dialog": {
+      "title": "Graph guide",
+      "description": "Learn the graph colors, keyboard shortcuts, and navigation controls.",
+      "type-legend": "Data type legend",
+      "shortcuts": "Keyboard shortcuts",
+      "navigation": "Mouse and trackpad navigation",
+      "search-nodes": "Search nodes",
+      "search-path": "Find by JSONPath or jq path",
+      "close-search": "Close active search",
+      "pan": "Pan the graph",
+      "vertical-pan": "Pan vertically",
+      "horizontal-pan": "Pan horizontally",
+      "zoom": "Zoom at the pointer",
+      "drag-key": "Drag",
+      "wheel-key": "Wheel",
+      "action-close": "Close"
+    },
     "editor-config-dialog": {
       "title": "Editor Settings",
       "description": "Change editor settings such as indentation and language.",
