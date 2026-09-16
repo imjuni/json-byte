@@ -1,4 +1,7 @@
-import { separateOverlappingEdgeSegments } from '#/lib/layout/separateOverlappingEdgeSegments';
+import {
+  EDGE_LANE_SEPARATION_NODE_CAP,
+  separateOverlappingEdgeSegments,
+} from '#/lib/layout/separateOverlappingEdgeSegments';
 
 import type { ElkExtendedEdge, ElkNode, ElkPort } from 'elkjs/lib/elk-api.js';
 
@@ -10,7 +13,7 @@ export const NODE_WIDTH = 280;
 export const HEADER_HEIGHT = 40;
 export const LINE_HEIGHT = 30;
 export const NODE_PADDING = 10;
-export const EDGE_LANE_SEPARATION_NODE_CAP = 1_000;
+export { EDGE_LANE_SEPARATION_NODE_CAP } from '#/lib/layout/separateOverlappingEdgeSegments';
 
 export const shouldSeparateEdgeLanes = (nodeCount: number): boolean => nodeCount <= EDGE_LANE_SEPARATION_NODE_CAP;
 
