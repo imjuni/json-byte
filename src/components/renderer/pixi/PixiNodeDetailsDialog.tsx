@@ -15,9 +15,18 @@ import { jsonPathToJqPath } from '#/lib/parser/json/jsonPathToJqPath';
 import { useEditorStore } from '#/stores/editorStore';
 import { useThemeStore } from '#/stores/themeStore';
 
+import type { ThemeStyles } from 'json-edit-react';
 import type { JsonValue } from 'type-fest';
 
 import type { IGraphNode } from '#/lib/graph/interfaces/IGraphNode';
+
+const darkEditorFormTheme = {
+  input: {
+    backgroundColor: '#161b22',
+    border: '1px solid #30363d',
+    color: '#e6edf3',
+  },
+} satisfies Partial<ThemeStyles>;
 
 interface IPixiNodeDetailsDialogProps {
   node: IGraphNode | null;
@@ -80,13 +89,14 @@ export const PixiNodeDetailsDialog = ({ node, onClose, onFindInEditor }: IPixiNo
             <div className="min-h-0 overflow-auto rounded-md border bg-muted/30 p-3">
               <JsonEditor
                 enableClipboard
+                className="json-byte-node-editor"
                 collapse={false}
                 data={sourceData}
                 maxWidth="100%"
                 minWidth="100%"
                 rootName={node.data.label}
                 setData={updateSourceData}
-                theme={theme === 'dark' ? githubDarkTheme : githubLightTheme}
+                theme={theme === 'dark' ? [githubDarkTheme, darkEditorFormTheme] : githubLightTheme}
                 viewOnly={!editing}
               />
             </div>
