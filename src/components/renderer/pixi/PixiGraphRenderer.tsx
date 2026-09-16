@@ -570,9 +570,15 @@ export const PixiGraphRenderer = () => {
     trackedRef.current = new Set();
     hoveredRef.current = {};
     pendingFocusRef.current = null;
-    setSelectedNode(null);
     updateStrokesRef.current();
   }, [edges]);
+
+  useEffect(() => {
+    setSelectedNode((current) => {
+      if (current == null) return null;
+      return nodes.find((candidate) => candidate.id === current.id) ?? null;
+    });
+  }, [nodes]);
 
   useEffect(() => {
     setCollapsedBranchIds(new Set());
