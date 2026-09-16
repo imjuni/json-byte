@@ -4,12 +4,47 @@ import '#/index.css';
 interface Props {
   canonicalPath?: string;
   description: string;
+  featureList: string[];
+  keywords: string[];
+  seoHeading: string;
   title: string;
 }
 
-const { canonicalPath = '/', description, title } = Astro.props;
+const { canonicalPath = '/', description, featureList, keywords, seoHeading, title } = Astro.props;
 const canonicalUrl = new URL(canonicalPath, Astro.site);
 const socialImage = new URL('/json-byte-desktop-screenshot-001.png', Astro.site);
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'JSON Byte',
+  url: canonicalUrl,
+  image: socialImage,
+  author: {
+    '@type': 'Organization',
+    name: 'RovinjSoft',
+    url: 'https://rovinjsoft.com',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'RovinjSoft',
+    url: 'https://rovinjsoft.com',
+  },
+  applicationCategory: 'DeveloperApplication',
+  applicationSubCategory: 'JSON and YAML developer tool',
+  operatingSystem: 'Web',
+  description,
+  softwareVersion: '3.1.0',
+  isAccessibleForFree: true,
+  browserRequirements: 'Requires JavaScript and a modern web browser',
+  featureList,
+  keywords: keywords.join(', '),
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+  license: 'https://www.apache.org/licenses/LICENSE-2.0',
+};
 ---
 
 <!doctype html>
@@ -18,6 +53,7 @@ const socialImage = new URL('/json-byte-desktop-screenshot-001.png', Astro.site)
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
+    <meta name="keywords" content={keywords.join(', ')} />
     <meta name="author" content="RovinjSoft" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
@@ -42,51 +78,16 @@ const socialImage = new URL('/json-byte-desktop-screenshot-001.png', Astro.site)
     <link rel="canonical" href={canonicalUrl} />
     <link rel="alternate" type="text/plain" href="/llms.txt" title="JSON Byte information for language models" />
     <title>{title}</title>
-    <script type="application/ld+json" is:inline>
-      {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "JSON Byte",
-        "url": "https://json-byte.pages.dev",
-        "image": "https://json-byte.pages.dev/json-byte-mobile-screenshot-001.png",
-        "author": {
-          "@type": "Organization",
-          "name": "RovinjSoft",
-          "url": "https://rovinjsoft.com"
-        },
-        "publisher": {
-          "@type": "Organization",
-          "name": "RovinjSoft",
-          "url": "https://rovinjsoft.com",
-          "logo": {
-            "@type": "ImageObject",
-            "url": "https://rovinjsoft.com/icon_body.png"
-          }
-        },
-        "applicationCategory": "DeveloperApplication",
-        "operatingSystem": "Web",
-        "description": "Visualize and explore JSON or YAML data as an interactive graph in your browser.",
-        "softwareVersion": "3.1.0",
-        "isAccessibleForFree": true,
-        "browserRequirements": "Requires JavaScript and a modern web browser",
-        "featureList": [
-          "JSON and YAML graph visualization",
-          "Interactive node search and navigation",
-          "JSONPath and jq path lookup",
-          "JSON and YAML document comparison",
-          "Local-only browser processing"
-        ],
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        },
-        "license": "https://www.apache.org/licenses/LICENSE-2.0"
-      }
-    </script>
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(structuredData)} />
   </head>
   <body>
-    <h1 class="sr-only">{title}</h1>
+    <section class="sr-only" aria-label="About this tool">
+      <h1>{seoHeading}</h1>
+      <p>{description}</p>
+      <ul>
+        {featureList.map((feature) => <li>{feature}</li>)}
+      </ul>
+    </section>
     <slot />
   </body>
 </html>
