@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 
 import { Maximize2, Minimize2 } from 'lucide-react';
-import { BrowserView, MobileView } from 'react-device-detect';
 import { useIntl } from 'react-intl';
 
 import { EditorConfigDialog } from '#/components/editor/EditorConfigDialog';
@@ -59,29 +58,15 @@ export const Editor = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <BrowserView className="h-10 px-4 bg-card flex justify-end items-center space-x-1">
-        <Button disabled={language === 'yaml'} onClick={handlePretty} size="sm" variant="outline">
-          <Maximize2 /> {intl.$t({ id: 'editor.pretty' })}
-        </Button>
-
-        <Button disabled={language === 'yaml'} onClick={handleCompact} size="sm" variant="outline">
-          <Minimize2 /> {intl.$t({ id: 'editor.compact' })}
-        </Button>
-
-        <ImportDialog />
-
-        <ExportDialog />
-
-        <EditorConfigDialog />
-      </BrowserView>
-
-      <MobileView className="h-10 px-4 bg-card flex justify-end items-center space-x-1">
+      <div className="h-10 px-4 bg-card flex justify-end items-center space-x-1">
         <Button disabled={language === 'yaml'} onClick={handlePretty} size="sm" variant="outline">
           <Maximize2 />
+          <span className="hidden md:inline">{intl.$t({ id: 'editor.pretty' })}</span>
         </Button>
 
         <Button disabled={language === 'yaml'} onClick={handleCompact} size="sm" variant="outline">
           <Minimize2 />
+          <span className="hidden md:inline">{intl.$t({ id: 'editor.compact' })}</span>
         </Button>
 
         <ImportDialog />
@@ -89,7 +74,7 @@ export const Editor = () => {
         <ExportDialog />
 
         <EditorConfigDialog />
-      </MobileView>
+      </div>
 
       <div className="flex-1 overflow-hidden">
         <JsonByteEditor />

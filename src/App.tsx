@@ -1,5 +1,3 @@
-import { BrowserView, MobileView } from 'react-device-detect';
-
 import { Editor } from '#/components/editor/Editor';
 import { useQueryStringContent } from '#/components/editor/hooks/useQueryStringContent';
 import { AppShell } from '#/components/layout/AppShell';
@@ -9,51 +7,36 @@ import { useAppStore } from '#/stores/appStore';
 
 import './App.css';
 
+import type { CSSProperties } from 'react';
+
 export const App = () => {
   const { editorWidthPercent, editorHeightPercent } = useAppStore();
   useQueryStringContent();
 
+  const workspaceStyle = {
+    '--editor-height': `${editorHeightPercent}%`,
+    '--editor-width': `${editorWidthPercent}%`,
+    '--graph-height': `${100 - editorHeightPercent}%`,
+    '--graph-width': `${100 - editorWidthPercent}%`,
+  } as CSSProperties;
+
   return (
     <AppShell activePage="visualization">
-      <BrowserView className="flex flex-col md:flex-row h-full">
-        <div
-          className="flex w-full h-full md:w-auto"
-          id="editor-control-container"
-          style={{ width: `${editorWidthPercent}%` }}
-        >
-          <Editor />
-        </div>
-
-        <Resizer orientation="vertical" />
-
-        <div
-          className="flex w-full h-full md:w-auto"
-          id="graph-tree-control-container"
-          style={{ width: `${100 - editorWidthPercent}%` }}
-        >
-          <PixiGraphRenderer />
-        </div>
-      </BrowserView>
-
-      <MobileView className="flex flex-col md:flex-row h-full">
-        <div
-          className="flex w-full h-full md:w-auto"
-          id="editor-control-container"
-          style={{ height: `${editorHeightPercent}%` }}
-        >
+      <div className="flex h-full flex-col md:flex-row" style={workspaceStyle}>
+        <div className="flex h-(--editor-height) w-full md:h-full md:w-(--editor-width)" id="editor-control-container">
           <Editor />
         </div>
 
         <Resizer orientation="horizontal" />
+        <Resizer orientation="vertical" />
 
         <div
-          className="flex w-full h-full md:w-auto"
+          className="flex h-(--graph-height) w-full md:h-full md:w-(--graph-width)"
           id="graph-tree-control-container"
-          style={{ height: `${100 - editorHeightPercent}%` }}
         >
           <PixiGraphRenderer />
         </div>
-      </MobileView>
+      </div>
     </AppShell>
   );
 };

@@ -1,5 +1,3 @@
-import { BrowserView, MobileView } from 'react-device-detect';
-
 import { useEditorStore } from '#/stores/editorStore';
 import { useThemeStore } from '#/stores/themeStore';
 
@@ -27,7 +25,7 @@ export const FooterEditorStatus = () => {
 
   return (
     <>
-      <BrowserView className="flex gap-6">
+      <div className="hidden gap-6 md:flex">
         <div className="flex gap-2">
           <span>{`{}`}</span>
           <span className="font-bold">{language.toUpperCase()}</span>
@@ -39,9 +37,9 @@ export const FooterEditorStatus = () => {
         </div>
 
         <FooterThemeStatus compact={false} />
-      </BrowserView>
+      </div>
 
-      <MobileView className="flex gap-1">
+      <div className="flex gap-1 md:hidden">
         <span className="font-bold">
           {language.toUpperCase()}
           {' / '}
@@ -51,7 +49,7 @@ export const FooterEditorStatus = () => {
           {' / '}
         </span>
         <FooterThemeStatus compact />
-      </MobileView>
+      </div>
     </>
   );
 };
